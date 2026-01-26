@@ -1,4 +1,3 @@
-use_modular_headers!
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
@@ -30,6 +29,7 @@ self.define_singleton_method(use_autolinking_method_symbol) do |*args|
 end
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
+use_modular_headers!
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -68,14 +68,37 @@ target 'Nightout' do
         end
       end
     end
-
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
+    # ---- gRPC / Clang fix (Xcode strict warnings) ----
+    installer.pods_project.targets.each do |t|
+      next unless t.name.start_with?("gRPC") || t.name.include?("gRPC-Core") || t.name.include?("gRPC-C++")
+      t.build_configurations.each do |config|
         config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-        config.build_settings['CLANG_WARN_NULLABILITY_COMPLETENESS'] = 'NO'
-        config.build_settings['CLANG_WARN_STRICT_PROTOTYPES'] = 'NO'
+        config.build_settings['CLANG_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+        flags = config.build_settings['OTHER_CPLUSPLUSFLAGS'] || '$(inherited)'
+        flags = flags.is_a?(Array) ? flags : [flags]
+        flags << '-Wno-error=missing-template-arg-list-after-template-kw'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = flags.uniq
+        cflags = config.build_settings['OTHER_CFLAGS'] || '$(inherited)'
+        cflags = cflags.is_a?(Array) ? cflags : [cflags]
+        cflags << '-Wno-error=missing-template-arg-list-after-template-kw'
+        config.build_settings['OTHER_CFLAGS'] = cflags.uniq
       end
     end
+    # -----------------------------------------------
+
+# ---- strip unsupported -G flag ----
+  installer.pods_project.targets.each do |t|
+    t.build_configurations.each do |config|
+      ['OTHER_CFLAGS','OTHER_CPLUSPLUSFLAGS','OTHER_LDFLAGS'].each do |key|
+        v = config.build_settings[key]
+        next if v.nil?
+        arr = v.is_a?(Array) ? v : [v]
+        arr = arr.map { |x| x.to_s.gsub(/\s+-G(\s+|$)/, ' ') }.map(&:strip)
+        config.build_settings[key] = arr.uniq
+      end
+    end
+  end
+# -----------------------------------------------
   end
 
   post_integrate do |installer|
@@ -85,4 +108,5 @@ target 'Nightout' do
       Pod::UI.warn e
     end
   end
+
 end

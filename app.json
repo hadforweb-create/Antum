@@ -1,36 +1,11 @@
 {
   "expo": {
-    "name": "Nightout",
+    "name": "nightout-app",
     "slug": "nightout-app",
     "scheme": "nightout-app",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.yourname.nightout",
+      "bundleIdentifier": "com.antum.app",
       "googleServicesFile": "./GoogleService-Info.plist"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#000000"
-      },
-      "package": "com.yourname.nightout"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-image-picker",
-      "@react-native-firebase/app"
-    ]
+    }
   }
 }
