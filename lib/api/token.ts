@@ -26,3 +26,7 @@ export async function removeToken(): Promise<void> {
         console.error("Failed to remove token:", error);
     }
 }
+
+// Alias for removeToken
+export const clearToken = removeToken;
+
