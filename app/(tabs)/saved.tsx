@@ -10,11 +10,14 @@ import { useThemeStore } from "@/lib/store";
 export default function SavedScreen() {
   const { isDark, toggleTheme } = useThemeStore();
 
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  // ANTUM Design System
+  const bgColor = isDark ? "#121214" : "#FAFAFC";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
-  const primaryColor = isDark ? "#FF453A" : "#FF3B30";
+  const mutedColor = "#8E8E93";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+  const accentColor = "#5050F0";
+  const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
+  const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
@@ -55,10 +58,10 @@ export default function SavedScreen() {
         <View
           style={[
             styles.emptyIcon,
-            { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" },
+            { backgroundColor: isDark ? "rgba(80,80,240,0.1)" : "rgba(80,80,240,0.08)" },
           ]}
         >
-          <Bookmark size={32} color={mutedColor} strokeWidth={1.5} />
+          <Bookmark size={32} color={accentColor} strokeWidth={1.5} />
         </View>
         <Text style={[styles.emptyTitle, { color: textColor }]}>
           No Saved Activities
@@ -70,9 +73,9 @@ export default function SavedScreen() {
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
-          style={[styles.exploreButton, { backgroundColor: primaryColor }]}
+          style={[styles.exploreButton, { backgroundColor: primaryButtonBg }]}
         >
-          <Text style={styles.exploreButtonText}>Explore Now</Text>
+          <Text style={[styles.exploreButtonText, { color: primaryButtonText }]}>Explore Now</Text>
         </Pressable>
       </View>
     </View>

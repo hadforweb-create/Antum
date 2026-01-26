@@ -305,7 +305,7 @@ export default function CreateReelScreen() {
           )}
 
           <Text style={styles.headerTitle}>
-            {step === "media" && "New Reel"}
+            {step === "media" && "New Post"}
             {step === "details" && "Add Details"}
             {step === "skills" && "Add Skills"}
           </Text>
@@ -521,7 +521,7 @@ function PostButton({
       >
         <Film size={20} color="#FFF" strokeWidth={2.5} />
         <Text style={styles.postButtonText}>
-          {loading ? "Uploading..." : "Post Reel"}
+          {loading ? "Uploading..." : "Post"}
         </Text>
       </Animated.View>
     </Pressable>
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: "#000",
   },
   nextButtonText: {
     color: "#FFF",
@@ -797,9 +797,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: colors.primary,
+    backgroundColor: "#000",
     paddingVertical: 18,
-    borderRadius: 18,
+    borderRadius: 14,
   },
   postButtonDisabled: {
     opacity: 0.5,

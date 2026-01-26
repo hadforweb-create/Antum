@@ -13,8 +13,9 @@ import { useThemeStore } from "@/lib/store";
 export default function TabsLayout() {
   const { isDark } = useThemeStore();
 
-  const activeColor = isDark ? "#FF453A" : "#FF3B30";
-  const inactiveColor = isDark ? "#8E8E93" : "#3C3C43";
+  // ANTUM purple accent
+  const activeColor = "#5050F0";
+  const inactiveColor = isDark ? "#8E8E93" : "#8E8E93";
 
   return (
     <Tabs
@@ -71,7 +72,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="reels"
         options={{
-          title: "Reels",
+          title: "Posts",
           tabBarIcon: ({ color, size }) => (
             <Film size={size} color={color} strokeWidth={2} />
           ),

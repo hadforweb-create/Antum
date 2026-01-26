@@ -155,12 +155,12 @@ export default function HomeScreen() {
   const { activities, setActivities, setLoadingState, isJoined } = useActivitiesStore();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Colors
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  // ANTUM Design System Colors
+  const bgColor = isDark ? "#121214" : "#FAFAFC";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
+  const mutedColor = "#8E8E93";
   const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
 
   // Load activities
   const loadActivities = useCallback(async () => {
@@ -169,7 +169,7 @@ export default function HomeScreen() {
       // Try Firebase first, fallback to mock data
       // const data = await activitiesDb.getAll();
       // setActivities(data);
-      
+
       // Using mock data for demo
       setActivities(MOCK_ACTIVITIES);
     } catch (error) {
@@ -211,7 +211,7 @@ export default function HomeScreen() {
             ]}
           >
             <Text style={[styles.headerTitle, { color: textColor }]}>
-              Nightout
+              ANTUM
             </Text>
             <Pressable
               onPress={() => {
@@ -253,7 +253,7 @@ export default function HomeScreen() {
             isJoined={isJoined(activity.id)}
           />
         ))}
-        
+
         {/* Bottom spacing for tab bar */}
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -319,11 +319,11 @@ function ActivityCard({ activity, onPress, index, isDark, isJoined }: ActivityCa
                   source={{ uri: activity.images[0] }}
                   style={styles.thumbnail}
                 />
-                
+
                 {/* Joined badge */}
                 {isJoined && (
                   <View style={[styles.joinedBadge, { backgroundColor: "rgba(255,255,255,0.95)" }]}>
-                    <Text style={{ color: "#FF3B30", fontSize: 12, fontWeight: "700" }}>✓</Text>
+                    <Text style={{ color: "#5050F0", fontSize: 12, fontWeight: "700" }}>✓</Text>
                   </View>
                 )}
 

@@ -31,14 +31,16 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Colors
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  // Colors - ANTUM Design System
+  const bgColor = isDark ? "#121214" : "#FAFAFC";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
+  const mutedColor = "#8E8E93";
   const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
-  const primaryColor = isDark ? "#FF453A" : "#FF3B30";
+  const accentColor = "#5050F0";
+  const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
+  const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
 
   const handleSignup = async () => {
     // Validation
@@ -115,7 +117,7 @@ export default function SignupScreen() {
             <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
               <Text style={[styles.title, { color: textColor }]}>Create account</Text>
               <Text style={[styles.subtitle, { color: mutedColor }]}>
-                Join Nightout and start exploring activities
+                Join ANTUM and start exploring activities
               </Text>
             </Animated.View>
 
@@ -126,7 +128,7 @@ export default function SignupScreen() {
                   {/* Display Name */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <User size={18} color={primaryColor} strokeWidth={2.5} />
+                      <User size={18} color={accentColor} strokeWidth={2.5} />
                     </View>
                     <TextInput
                       placeholder="Full name"
@@ -143,7 +145,7 @@ export default function SignupScreen() {
                   {/* Username */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <AtSign size={18} color={primaryColor} strokeWidth={2.5} />
+                      <AtSign size={18} color={accentColor} strokeWidth={2.5} />
                     </View>
                     <TextInput
                       placeholder="Username"
@@ -161,7 +163,7 @@ export default function SignupScreen() {
                   {/* Email */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <Mail size={18} color={primaryColor} strokeWidth={2.5} />
+                      <Mail size={18} color={accentColor} strokeWidth={2.5} />
                     </View>
                     <TextInput
                       placeholder="Email"
@@ -180,7 +182,7 @@ export default function SignupScreen() {
                   {/* Password */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <Lock size={18} color={primaryColor} strokeWidth={2.5} />
+                      <Lock size={18} color={accentColor} strokeWidth={2.5} />
                     </View>
                     <TextInput
                       placeholder="Password (8+ characters)"
@@ -210,8 +212,8 @@ export default function SignupScreen() {
             <Animated.View entering={FadeInDown.delay(300)} style={styles.termsRow}>
               <Text style={[styles.termsText, { color: mutedColor }]}>
                 By signing up, you agree to our{" "}
-                <Text style={{ color: primaryColor }}>Terms of Service</Text> and{" "}
-                <Text style={{ color: primaryColor }}>Privacy Policy</Text>
+                <Text style={{ color: accentColor }}>Terms of Service</Text> and{" "}
+                <Text style={{ color: accentColor }}>Privacy Policy</Text>
               </Text>
             </Animated.View>
 
@@ -222,10 +224,10 @@ export default function SignupScreen() {
                 disabled={loading}
                 style={[
                   styles.signupButton,
-                  { backgroundColor: primaryColor, opacity: loading ? 0.6 : 1 },
+                  { backgroundColor: primaryButtonBg, opacity: loading ? 0.6 : 1 },
                 ]}
               >
-                <Text style={styles.signupButtonText}>
+                <Text style={[styles.signupButtonText, { color: primaryButtonText }]}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Text>
               </Pressable>
@@ -238,7 +240,7 @@ export default function SignupScreen() {
               </Text>
               <Link href="/(auth)/login" asChild>
                 <Pressable>
-                  <Text style={[styles.loginLink, { color: primaryColor }]}>
+                  <Text style={[styles.loginLink, { color: accentColor }]}>
                     Sign in
                   </Text>
                 </Pressable>

@@ -339,13 +339,13 @@ const styles = StyleSheet.create({
   },
   joinButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#FF3B30",
+    backgroundColor: "#000000",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 14,
-    shadowColor: "#FF3B30",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
   },
   joinButtonText: {

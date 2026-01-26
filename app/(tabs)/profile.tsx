@@ -27,13 +27,14 @@ export default function ProfileScreen() {
   const { isDark, toggleTheme } = useThemeStore();
   const { user, logout } = useAuthStore();
 
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  // ANTUM Design System
+  const bgColor = isDark ? "#121214" : "#FAFAFC";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
+  const mutedColor = "#8E8E93";
   const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
-  const primaryColor = isDark ? "#FF453A" : "#FF3B30";
+  const accentColor = "#5050F0";
 
   const handleLogout = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -181,7 +182,7 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionTitle, { color: mutedColor }]}>
               MY ACTIVITIES
             </Text>
-            <Text style={[styles.sectionCount, { color: primaryColor }]}>2</Text>
+            <Text style={[styles.sectionCount, { color: accentColor }]}>2</Text>
           </View>
 
           <View style={[styles.emptyActivities, { backgroundColor: cardBg, borderColor }]}>
@@ -196,8 +197,8 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           style={[styles.logoutButton, { backgroundColor: "rgba(255,59,48,0.1)" }]}
         >
-          <LogOut size={18} color={primaryColor} strokeWidth={2} />
-          <Text style={[styles.logoutText, { color: primaryColor }]}>
+          <LogOut size={18} color="#FF3B30" strokeWidth={2} />
+          <Text style={[styles.logoutText, { color: "#FF3B30" }]}>
             Sign Out
           </Text>
         </Pressable>
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.1)",
+    borderColor: "#5050F0",
   },
   avatar: {
     width: "100%",
