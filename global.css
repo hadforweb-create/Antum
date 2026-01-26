@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* iOS Light Mode Colors */
+:root {
+  --color-background: 242 242 247;
+  --color-foreground: 0 0 0;
+  --color-card: 255 255 255;
+  --color-card-foreground: 0 0 0;
+  --color-muted: 242 242 247;
+  --color-muted-foreground: 60 60 67;
+  --color-primary: 255 59 48;
+  --color-primary-foreground: 255 255 255;
+  --color-secondary: 242 242 247;
+  --color-secondary-foreground: 0 0 0;
+  --color-destructive: 255 59 48;
+  --color-border: 0 0 0;
+}
+
+/* iOS Dark Mode Colors */
+.dark {
+  --color-background: 0 0 0;
+  --color-foreground: 255 255 255;
+  --color-card: 28 28 30;
+  --color-card-foreground: 255 255 255;
+  --color-muted: 44 44 46;
+  --color-muted-foreground: 142 142 147;
+  --color-primary: 255 69 58;
+  --color-primary-foreground: 255 255 255;
+  --color-secondary: 44 44 46;
+  --color-secondary-foreground: 255 255 255;
+  --color-destructive: 255 69 58;
+  --color-border: 255 255 255;
+}

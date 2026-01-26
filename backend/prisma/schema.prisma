@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  FREELANCER
+  EMPLOYER
+}
+
+enum MediaType {
+  VIDEO
+  IMAGE
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  password           String
+  role               UserRole
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  freelancerProfile  FreelancerProfile?
+  employerProfile    EmployerProfile?
+  sentMessages       Message[]           @relation("SentMessages")
+  conversationsAsEmployer  Conversation[] @relation("EmployerConversations")
+  conversationsAsFreelancer Conversation[] @relation("FreelancerConversations")
+}
+
+model FreelancerProfile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  displayName String
+  bio         String?
+  location    String?
+  avatarUrl   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills      Skill[]
+  reels       Reel[]
+  shortlistedBy Shortlist[]
+}
+
+model EmployerProfile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  companyName String
+  website     String?
+  industry    String?
+  avatarUrl   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shortlists  Shortlist[]
+}
+
+model Skill {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  freelancers FreelancerProfile[]
+  reels     Reel[]
+}
+
+model Reel {
+  id           String    @id @default(cuid())
+  freelancerId String
+  mediaType    MediaType @default(VIDEO)
+  mediaUrl     String    // Stores either video or image URL
+  thumbnailUrl String?
+  caption      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+  skills       Skill[]
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  employerId   String
+  freelancerId String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  employer     User      @relation("EmployerConversations", fields: [employerId], references: [id], onDelete: Cascade)
+  freelancer   User      @relation("FreelancerConversations", fields: [freelancerId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@unique([employerId, freelancerId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  text           String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Shortlist {
+  id           String    @id @default(cuid())
+  employerId   String
+  freelancerId String
+  createdAt    DateTime  @default(now())
+  employer     EmployerProfile   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  freelancer   FreelancerProfile @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+
+  @@unique([employerId, freelancerId])
+}
