@@ -14,8 +14,8 @@
 		96905EF65AED1B983A6B3ABC /* libPods-Nightout.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58EEBF8E8E6FB1BC6CAF49B5 /* libPods-Nightout.a */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		EE114802F81B437793229788 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7E9973A32F4B4D969A189E25 /* GoogleService-Info.plist */; };
-		797E6DFA2231406DA65E87AD /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24E679B55664E10B5DD7D64 /* noop-file.swift */; };
+		33AA0DB5B4354768B30B4F5D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 344124BDEB5547D5BA235770 /* GoogleService-Info.plist */; };
+		8A07D89692C240179B6706EB /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = C140A4D118044B3C90441C14 /* noop-file.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,9 +32,9 @@
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Nightout/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		7E9973A32F4B4D969A189E25 /* GoogleService-Info.plist */ = {isa = PBXFileReference; name = "GoogleService-Info.plist"; path = "Nightout/GoogleService-Info.plist"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = text.plist.xml; explicitFileType = undefined; includeInIndex = 0; };
-		F24E679B55664E10B5DD7D64 /* noop-file.swift */ = {isa = PBXFileReference; name = "noop-file.swift"; path = "Nightout/noop-file.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
-		74D347E279DD41C1AA037AC3 /* Nightout-Bridging-Header.h */ = {isa = PBXFileReference; name = "Nightout-Bridging-Header.h"; path = "Nightout/Nightout-Bridging-Header.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		344124BDEB5547D5BA235770 /* GoogleService-Info.plist */ = {isa = PBXFileReference; name = "GoogleService-Info.plist"; path = "Nightout/GoogleService-Info.plist"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = text.plist.xml; explicitFileType = undefined; includeInIndex = 0; };
+		C140A4D118044B3C90441C14 /* noop-file.swift */ = {isa = PBXFileReference; name = "noop-file.swift"; path = "Nightout/noop-file.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		589922297EF24E1A8830904A /* Nightout-Bridging-Header.h */ = {isa = PBXFileReference; name = "Nightout-Bridging-Header.h"; path = "Nightout/Nightout-Bridging-Header.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,9 +59,9 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				7E9973A32F4B4D969A189E25 /* GoogleService-Info.plist */,
-				F24E679B55664E10B5DD7D64 /* noop-file.swift */,
-				74D347E279DD41C1AA037AC3 /* Nightout-Bridging-Header.h */,
+				344124BDEB5547D5BA235770 /* GoogleService-Info.plist */,
+				C140A4D118044B3C90441C14 /* noop-file.swift */,
+				589922297EF24E1A8830904A /* Nightout-Bridging-Header.h */,
 			);
 			name = Nightout;
 			sourceTree = "<group>";
@@ -201,8 +201,8 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				EE114802F81B437793229788 /* GoogleService-Info.plist in Resources */,
-				EEA03FBA86894A46B63AD628 /* Nightout-Bridging-Header.h in Resources */,
+				33AA0DB5B4354768B30B4F5D /* GoogleService-Info.plist in Resources */,
+				F847F44512F347E1A72CD2C4 /* Nightout-Bridging-Header.h in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,7 +278,7 @@
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
-				797E6DFA2231406DA65E87AD /* noop-file.swift in Sources */,
+				8A07D89692C240179B6706EB /* noop-file.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
