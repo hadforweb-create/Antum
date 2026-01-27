@@ -29,22 +29,31 @@ self.define_singleton_method(use_autolinking_method_symbol) do |*args|
 end
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
+use_modular_headers!
 install! 'cocoapods',
   :deterministic_uuids => false
 
 prepare_react_native_project!
 
+# Firebase pods need modular headers for Swift static library integration
+pod 'FirebaseCore', :modular_headers => true
+pod 'FirebaseCoreInternal', :modular_headers => true
+pod 'FirebaseCoreExtension', :modular_headers => true
+pod 'FirebaseFirestoreInternal', :modular_headers => true
+pod 'FirebaseAuthInterop', :modular_headers => true
+pod 'FirebaseAppCheckInterop', :modular_headers => true
+pod 'GoogleUtilities', :modular_headers => true
+
 target 'Nightout' do
   use_expo_modules!
   config = use_native_modules!
 
-  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
-  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+  # Static frameworks required for Firebase
+  use_frameworks! :linkage => :static
 
   use_react_native!(
     :path => config[:reactNativePath],
     :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
@@ -57,13 +66,36 @@ target 'Nightout' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
-    # This is necessary for Xcode 14, because it signs resource bundles by default
-    # when building for devices.
+    # Code signing fix for Xcode 14+
     installer.target_installation_results.pod_target_installation_results
       .each do |pod_name, target_installation_result|
       target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
         resource_bundle_target.build_configurations.each do |config|
           config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        end
+      end
+    end
+
+    # Fix gRPC/BoringSSL warnings and -G flag issues
+    installer.pods_project.targets.each do |t|
+      if t.name.include?("BoringSSL") || t.name.include?("gRPC")
+        t.build_configurations.each do |config|
+          config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+          config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+          config.build_settings['CLANG_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+        end
+      end
+
+      t.build_configurations.each do |config|
+        ['OTHER_CFLAGS', 'OTHER_CPLUSPLUSFLAGS', 'OTHER_LDFLAGS'].each do |key|
+          flags = config.build_settings[key]
+          next if flags.nil?
+          if flags.is_a?(Array)
+            flags.reject! { |f| f.to_s.strip =~ /^-G/ }
+            config.build_settings[key] = flags
+          elsif flags.is_a?(String)
+            config.build_settings[key] = flags.gsub(/\s*-G\S*/, '').strip
+          end
         end
       end
     end
@@ -77,3 +109,4 @@ target 'Nightout' do
     end
   end
 end
+
