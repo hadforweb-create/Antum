@@ -57,3 +57,5 @@ Thumbs.db
 expo-env.d.ts
 # @end expo-cli*.log
 backend.dev.log
+nightout-app@*
+patch-package
