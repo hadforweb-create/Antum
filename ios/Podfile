@@ -29,7 +29,7 @@ self.define_singleton_method(use_autolinking_method_symbol) do |*args|
 end
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
-use_modular_headers!
+# use_modular_headers!
 
 install! 'cocoapods',
   :deterministic_uuids => false
@@ -41,6 +41,16 @@ target 'Nightout' do
   config = use_native_modules!
   pod 'Firebase', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseFirestoreInternal', :modular_headers => true
+  pod 'FirebaseAppCheckInterop', :modular_headers => true
+  pod 'FirebaseAuthInterop', :modular_headers => true
+  pod 'FirebaseAuth', :modular_headers => true
+  pod 'FirebaseStorage', :modular_headers => true
+  pod 'FirebaseFirestore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'GTMSessionFetcher', :modular_headers => true
   pod 'gRPC-Core', :modular_headers => false
   pod 'gRPC-C++', :modular_headers => false
 
@@ -122,6 +132,61 @@ target 'Nightout' do
       FileUtils.cp(module_map_source, module_map_dest)
     end
 
+    # Fix FirebaseStorage-Swift.h not found for RNFB* pods
+    # Create wrapper headers that redirect to the actual Swift compatibility headers
+    swift_pods = ['FirebaseStorage', 'FirebaseAuth', 'FirebaseFirestore']
+    ['Headers/Private', 'Headers/Public'].each do |header_base|
+      swift_pods.each do |pod_name|
+        header_dir = File.join(installer.sandbox.root, header_base, pod_name)
+        FileUtils.mkdir_p(header_dir)
+        wrapper_header = File.join(header_dir, "#{pod_name}-Swift.h")
+        wrapper_content = <<~HEADER
+          // Auto-generated wrapper header for #{pod_name} Swift compatibility
+          // This redirects to the generated Swift header in build products
+          #if __has_include("#{pod_name}/Swift Compatibility Header/#{pod_name}-Swift.h")
+          #import "#{pod_name}/Swift Compatibility Header/#{pod_name}-Swift.h"
+          #elif __has_include("Swift Compatibility Header/#{pod_name}-Swift.h")
+          #import "Swift Compatibility Header/#{pod_name}-Swift.h"
+          #else
+          // Placeholder when Swift header is not yet generated
+          #endif
+        HEADER
+        File.write(wrapper_header, wrapper_content)
+      end
+    end
+
+    # Add header search paths pointing to build products for Swift headers
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        header_paths = config.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        header_paths = [header_paths] unless header_paths.is_a?(Array)
+        header_paths << '"${PODS_CONFIGURATION_BUILD_DIR}"'
+        config.build_settings['HEADER_SEARCH_PATHS'] = header_paths
+      end
+    end
+
+    # Fix expo-dev-menu Swift TARGET_IPHONE_SIMULATOR macro issue
+    dev_menu_file = File.join(Pod::Config.instance.installation_root, '..', 'node_modules', 'expo-dev-menu', 'ios', 'DevMenuViewController.swift')
+    if File.exist?(dev_menu_file)
+      content = File.read(dev_menu_file)
+      if content.include?('TARGET_IPHONE_SIMULATOR > 0')
+        content.gsub!('let isSimulator = TARGET_IPHONE_SIMULATOR > 0', "#if targetEnvironment(simulator)\n    let isSimulator = true\n    #else\n    let isSimulator = false\n    #endif")
+        File.write(dev_menu_file, content)
+      end
+    end
+
+    # Fix FirebaseFirestoreInternal being linked as framework instead of static library
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        ldflags = config.build_settings['OTHER_LDFLAGS']
+        if ldflags.is_a?(Array)
+          config.build_settings['OTHER_LDFLAGS'] = ldflags.reject { |f| f.include?('FirebaseFirestoreInternal') && f.include?('framework') }
+        elsif ldflags.is_a?(String) && ldflags.include?('-weak_framework') && ldflags.include?('FirebaseFirestoreInternal')
+          config.build_settings['OTHER_LDFLAGS'] = ldflags.gsub(/-weak_framework\s+FirebaseFirestoreInternal/, '')
+        end
+      end
+    end
+
     # This is necessary for Xcode 14, because it signs resource bundles by default
     # when building for devices.
     installer.target_installation_results.pod_target_installation_results
@@ -139,6 +204,19 @@ target 'Nightout' do
       expo_patch_react_imports!(installer)
     rescue => e
       Pod::UI.warn e
+    end
+
+    # Fix weak_framework FirebaseFirestoreInternal in xcconfig files
+    ['debug', 'release'].each do |config|
+      xcconfig_path = File.join(installer.sandbox.root, "Target Support Files/Pods-Nightout/Pods-Nightout.#{config}.xcconfig")
+      if File.exist?(xcconfig_path)
+        content = File.read(xcconfig_path)
+        if content.include?('-weak_framework "FirebaseFirestoreInternal"')
+          content.gsub!('-weak_framework "FirebaseFirestoreInternal"', '')
+          File.write(xcconfig_path, content)
+          Pod::UI.puts "Patched #{xcconfig_path} to remove weak_framework FirebaseFirestoreInternal"
+        end
+      end
     end
   end
 end

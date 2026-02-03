@@ -1,41 +1,58 @@
 import { httpClient } from "./http";
 
-export interface UserProfile {
+// ============================================
+// TYPES
+// ============================================
+
+export interface User {
     id: string;
+    name: string | null;
     email: string;
-    role: "FREELANCER" | "EMPLOYER";
-    profile: {
-        id: string;
-        displayName?: string;
-        companyName?: string;
-        bio?: string;
-        location?: string;
-        avatarUrl?: string;
-        skills?: { id: string; name: string }[];
-        reels?: { id: string; mediaUrl: string; thumbnailUrl?: string }[];
-    } | null;
+    avatarUrl: string | null;
+    bio: string | null;
+    location: string | null;
+    role: string;
+    createdAt: string;
+    servicesCount?: number;
+    reelsCount?: number;
+    shortlistCount?: number;
 }
 
 export interface UpdateProfileData {
-    displayName?: string;
-    bio?: string;
-    location?: string;
+    name?: string;
+    bio?: string | null;
+    location?: string | null;
     avatarUrl?: string | null;
-    companyName?: string;
-    website?: string | null;
-    industry?: string;
+}
+
+// ============================================
+// API FUNCTIONS
+// ============================================
+
+/**
+ * Get a user by ID (public profile)
+ */
+export async function getUser(userId: string): Promise<User> {
+    return httpClient.get<User>(`/api/users/${userId}`);
 }
 
 /**
- * Get user by ID
+ * Get current user's profile (authenticated)
  */
-export async function getUser(userId: string): Promise<UserProfile> {
-    return httpClient.get<UserProfile>(`/api/users/${userId}`);
+export async function getCurrentUser(): Promise<User> {
+    return httpClient.get<User>("/api/users/me");
 }
 
 /**
- * Update user profile
+ * Update current user's profile
  */
-export async function updateUser(userId: string, data: UpdateProfileData): Promise<{ profile: any }> {
-    return httpClient.put<{ profile: any }>(`/api/users/${userId}`, data);
+export async function updateCurrentUser(data: UpdateProfileData): Promise<User> {
+    return httpClient.patch<User>("/api/users/me", data);
+}
+
+/**
+ * Update user profile by ID (legacy - owner only)
+ */
+export async function updateUser(userId: string, data: UpdateProfileData): Promise<User> {
+    return httpClient.put<User>(`/api/users/${userId}`, data);
 }

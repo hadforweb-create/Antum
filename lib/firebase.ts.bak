@@ -1,63 +1,12 @@
-import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
-import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import storage from "@react-native-firebase/storage";
-import type { 
-  Activity, 
-  User, 
-  Reel, 
-  ActivityParticipant, 
-  SavedActivity,
-  CreateActivityForm,
-  ActivityCategory 
+import type {
+  Activity,
+  ActivityCategory
 } from "@/types";
 
 // Firebase is auto-initialized from google-services.json / GoogleService-Info.plist
 // No manual config needed with @react-native-firebase
-
-// ============================================
-// AUTH FUNCTIONS
-// ============================================
-
-export const firebaseAuth = {
-  // Get current user
-  getCurrentUser: (): FirebaseAuthTypes.User | null => {
-    return auth().currentUser;
-  },
-
-  // Sign up with email/password
-  signUp: async (email: string, password: string): Promise<FirebaseAuthTypes.UserCredential> => {
-    return auth().createUserWithEmailAndPassword(email, password);
-  },
-
-  // Sign in with email/password
-  signIn: async (email: string, password: string): Promise<FirebaseAuthTypes.UserCredential> => {
-    return auth().signInWithEmailAndPassword(email, password);
-  },
-
-  // Sign out
-  signOut: async (): Promise<void> => {
-    return auth().signOut();
-  },
-
-  // Listen to auth state changes
-  onAuthStateChanged: (callback: (user: FirebaseAuthTypes.User | null) => void) => {
-    return auth().onAuthStateChanged(callback);
-  },
-
-  // Send password reset email
-  sendPasswordReset: async (email: string): Promise<void> => {
-    return auth().sendPasswordResetEmail(email);
-  },
-
-  // Update profile
-  updateProfile: async (displayName: string, photoURL?: string): Promise<void> => {
-    const user = auth().currentUser;
-    if (user) {
-      await user.updateProfile({ displayName, photoURL });
-    }
-  },
-};
 
 // ============================================
 // FIRESTORE REFERENCES
@@ -106,7 +55,7 @@ export const usersDb = {
       collections.activities.where("organizerId", "==", userId).get(),
       db.collectionGroup("participants").where("userId", "==", userId).get(),
     ]);
-    
+
     return {
       hosted: hostedSnap.size,
       joined: joinedSnap.size,
@@ -143,11 +92,11 @@ export const activitiesDb = {
   get: async (activityId: string): Promise<Activity | null> => {
     const doc = await collections.activities.doc(activityId).get();
     if (!doc.exists) return null;
-    
+
     const data = doc.data()!;
     const organizerDoc = await collections.users.doc(data.organizerId).get();
     const organizer = organizerDoc.data();
-    
+
     return {
       id: doc.id,
       ...data,
@@ -168,13 +117,13 @@ export const activitiesDb = {
       .orderBy("createdAt", "desc")
       .limit(limit)
       .get();
-    
+
     const activities = await Promise.all(
       snap.docs.map(async (doc) => {
         const data = doc.data();
         const organizerDoc = await collections.users.doc(data.organizerId).get();
         const organizer = organizerDoc.data();
-        
+
         return {
           id: doc.id,
           ...data,
@@ -189,7 +138,7 @@ export const activitiesDb = {
         } as Activity;
       })
     );
-    
+
     return activities;
   },
 
@@ -200,7 +149,7 @@ export const activitiesDb = {
       .orderBy("createdAt", "desc")
       .limit(limit)
       .get();
-    
+
     return snap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -214,7 +163,7 @@ export const activitiesDb = {
       .where("organizerId", "==", userId)
       .orderBy("createdAt", "desc")
       .get();
-    
+
     return snap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -238,46 +187,46 @@ export const activitiesDb = {
   // Join activity
   join: async (activityId: string, userId: string): Promise<void> => {
     const batch = db.batch();
-    
+
     // Add participant
     const participantRef = collections.activities
       .doc(activityId)
       .collection("participants")
       .doc(userId);
-    
+
     batch.set(participantRef, {
       userId,
       joinedAt: firestore.FieldValue.serverTimestamp(),
       status: "confirmed",
     });
-    
+
     // Increment attendee count
     const activityRef = collections.activities.doc(activityId);
     batch.update(activityRef, {
       attendeeCount: firestore.FieldValue.increment(1),
     });
-    
+
     await batch.commit();
   },
 
   // Leave activity
   leave: async (activityId: string, userId: string): Promise<void> => {
     const batch = db.batch();
-    
+
     // Remove participant
     const participantRef = collections.activities
       .doc(activityId)
       .collection("participants")
       .doc(userId);
-    
+
     batch.delete(participantRef);
-    
+
     // Decrement attendee count
     const activityRef = collections.activities.doc(activityId);
     batch.update(activityRef, {
       attendeeCount: firestore.FieldValue.increment(-1),
     });
-    
+
     await batch.commit();
   },
 
@@ -288,7 +237,7 @@ export const activitiesDb = {
       .collection("participants")
       .doc(userId)
       .get();
-    
+
     return doc.exists;
   },
 
@@ -298,7 +247,7 @@ export const activitiesDb = {
       .doc(activityId)
       .collection("participants")
       .get();
-    
+
     return snap.docs.map((doc) => ({
       id: doc.id,
       activityId,
@@ -340,7 +289,7 @@ export const savedDb = {
       .collection("saved")
       .doc(activityId)
       .get();
-    
+
     return doc.exists;
   },
 
@@ -351,15 +300,15 @@ export const savedDb = {
       .collection("saved")
       .orderBy("savedAt", "desc")
       .get();
-    
+
     const activityIds = savedSnap.docs.map((doc) => doc.data().activityId);
-    
+
     if (activityIds.length === 0) return [];
-    
+
     const activities = await Promise.all(
       activityIds.map((id) => activitiesDb.get(id))
     );
-    
+
     return activities.filter((a): a is Activity => a !== null);
   },
 };
@@ -380,11 +329,11 @@ export const reelsDb = {
     // Get activity info
     const activity = await activitiesDb.get(activityId);
     if (!activity) throw new Error("Activity not found");
-    
+
     // Get user info
     const user = await usersDb.get(userId);
     if (!user) throw new Error("User not found");
-    
+
     const docRef = await collections.reels.add({
       activityId,
       userId,
@@ -404,7 +353,7 @@ export const reelsDb = {
       },
       createdAt: firestore.FieldValue.serverTimestamp(),
     });
-    
+
     return docRef.id;
   },
 
@@ -414,7 +363,7 @@ export const reelsDb = {
       .orderBy("createdAt", "desc")
       .limit(limit)
       .get();
-    
+
     return snap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -452,7 +401,7 @@ export const firebaseStorage = {
     imageUris: string[]
   ): Promise<string[]> => {
     return Promise.all(
-      imageUris.map((uri, index) => 
+      imageUris.map((uri, index) =>
         firebaseStorage.uploadActivityImage(activityId, uri, index)
       )
     );
@@ -485,4 +434,4 @@ export const firebaseStorage = {
   },
 };
 
-export { auth, firestore, storage };
+export { firestore, storage };

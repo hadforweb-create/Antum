@@ -14,7 +14,6 @@ router.get("/", async (_req, res) => {
             select: {
                 id: true,
                 name: true,
-                slug: true,
             },
         });
 
@@ -63,10 +62,7 @@ router.post("/seed", async (_req, res) => {
                 prisma.skill.upsert({
                     where: { name },
                     update: {},
-                    create: {
-                        name,
-                        slug: name.toLowerCase().replace(/\s+/g, "-"),
-                    },
+                    create: { name },
                 })
             )
         );

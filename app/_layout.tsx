@@ -1,73 +1,129 @@
-import { useEffect } from "react";
-import { Stack } from "expo-router";
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import * as SplashScreen from "expo-splash-screen";
-import { useThemeStore, useAuthStore } from "@/lib/store";
-import { firebaseAuth } from "@/lib/firebase";
+import { RefreshCw, AlertTriangle } from "lucide-react-native";
+import { useThemeStore } from "@/lib/store";
+import { GlobalToast } from "@/components/ui/GlobalToast";
+import * as Sentry from "@sentry/react-native";
 import "../global.css";
 
-// Keep splash screen visible while loading
-SplashScreen.preventAutoHideAsync();
+// Initialize Sentry
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  debug: __DEV__,
+});
 
+// Error Boundary with improved UI
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  state = { hasError: false, error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Only log in development
+    if (__DEV__) {
+      console.error("App Error:", error, errorInfo);
+    }
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.errorContainer}>
+          <View style={styles.errorIconContainer}>
+            <AlertTriangle size={48} color="#FF3B30" strokeWidth={1.5} />
+          </View>
+          <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles.errorMessage}>
+            {__DEV__
+              ? this.state.error?.message || "Unknown error"
+              : "We're having trouble loading the app. Please try again."
+            }
+          </Text>
+          <Pressable style={styles.retryButton} onPress={this.handleRetry}>
+            <RefreshCw size={18} color="#FFF" strokeWidth={2.5} />
+            <Text style={styles.retryText}>Try Again</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ROOT LAYOUT - PURE WRAPPER ONLY
+// NO useEffect, NO useRouter, NO auth logic, NO navigation
 export default function RootLayout() {
   const { isDark } = useThemeStore();
-  const { setUser, setLoading } = useAuthStore();
-
-  useEffect(() => {
-    // Listen to auth state
-    const unsubscribe = firebaseAuth.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in - fetch full profile
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email || "",
-          displayName: firebaseUser.displayName || "User",
-          username: firebaseUser.email?.split("@")[0] || "user",
-          avatarUrl: firebaseUser.photoURL,
-          bio: "",
-          interests: [],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-      SplashScreen.hideAsync();
-    });
-
-    return unsubscribe;
-  }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#F2F2F7" }}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: isDark ? "#000" : "#F2F2F7",
-              },
-              animation: "slide_from_right",
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="activity/[id]"
-              options={{
-                presentation: "modal",
-                animation: "slide_from_bottom",
-              }}
-            />
-          </Stack>
-          <StatusBar style={isDark ? "light" : "dark"} />
-        </View>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#F2F2F7" }}>
+            <Slot />
+            <GlobalToast />
+            <StatusBar style={isDark ? "light" : "dark"} />
+          </View>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+    backgroundColor: "#121214",
+  },
+  errorIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255, 59, 48, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFF",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  errorMessage: {
+    fontSize: 15,
+    color: "#8E8E93",
+    textAlign: "center",
+    marginBottom: 32,
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#5050F0",
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  retryText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

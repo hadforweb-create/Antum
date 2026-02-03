@@ -1233,6 +1233,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - ExpoSecureStore (13.0.2):
+    - ExpoModulesCore
   - ExpoSystemUI (3.0.7):
     - ExpoModulesCore
   - EXSplashScreen (0.27.7):
@@ -1262,9 +1264,6 @@ PODS:
   - FBLazyVector (0.74.1)
   - Firebase (10.29.0):
     - Firebase/Core (= 10.29.0)
-  - Firebase/Auth (10.29.0):
-    - Firebase/CoreOnly
-    - FirebaseAuth (~> 10.29.0)
   - Firebase/Core (10.29.0):
     - Firebase/CoreOnly
     - FirebaseAnalytics (~> 10.29.0)
@@ -1488,7 +1487,11 @@ PODS:
     - gRPC-Core/Privacy (= 1.62.5)
   - gRPC-Core/Interface (1.62.5)
   - gRPC-Core/Privacy (1.62.5)
+  - GTMSessionFetcher (3.5.0):
+    - GTMSessionFetcher/Full (= 3.5.0)
   - GTMSessionFetcher/Core (3.5.0)
+  - GTMSessionFetcher/Full (3.5.0):
+    - GTMSessionFetcher/Core
   - hermes-engine (0.74.1):
     - hermes-engine/Pre-built (= 0.74.1)
   - hermes-engine/Pre-built (0.74.1)
@@ -2702,10 +2705,6 @@ PODS:
   - RNFBApp (20.5.0):
     - Firebase/CoreOnly (= 10.29.0)
     - React-Core
-  - RNFBAuth (20.5.0):
-    - Firebase/Auth (= 10.29.0)
-    - React-Core
-    - RNFBApp
   - RNFBFirestore (20.5.0):
     - Firebase/Firestore (= 10.29.0)
     - nanopb (< 2.30910.0, >= 2.30908.0)
@@ -2827,16 +2826,27 @@ DEPENDENCIES:
   - ExpoLinearGradient (from `../node_modules/expo-linear-gradient/ios`)
   - ExpoMediaLibrary (from `../node_modules/expo-media-library/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
+  - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - EXSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - EXUpdatesInterface (from `../node_modules/expo-updates-interface/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - Firebase
+  - FirebaseAppCheckInterop
+  - FirebaseAuth
+  - FirebaseAuthInterop
+  - FirebaseCore
+  - FirebaseCoreExtension
+  - FirebaseCoreInternal
+  - FirebaseFirestore
+  - FirebaseFirestoreInternal
+  - FirebaseStorage
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - GoogleUtilities
   - "gRPC-C++"
   - gRPC-Core
+  - GTMSessionFetcher
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCT-Folly/Fabric (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
@@ -2891,7 +2901,6 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
-  - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
   - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - "RNFBStorage (from `../node_modules/@react-native-firebase/storage`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
@@ -2989,6 +2998,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-media-library/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
+  ExpoSecureStore:
+    :path: "../node_modules/expo-secure-store/ios"
   ExpoSystemUI:
     :path: "../node_modules/expo-system-ui/ios"
   EXSplashScreen:
@@ -3106,8 +3117,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNFBApp:
     :path: "../node_modules/@react-native-firebase/app"
-  RNFBAuth:
-    :path: "../node_modules/@react-native-firebase/auth"
   RNFBFirestore:
     :path: "../node_modules/@react-native-firebase/firestore"
   RNFBStorage:
@@ -3152,6 +3161,7 @@ SPEC CHECKSUMS:
   ExpoLinearGradient: 4c44b3803b441724874b232e6520b51ca6a50db1
   ExpoMediaLibrary: b30366bf8f938166b1fe2d019e5b15337349d91e
   ExpoModulesCore: 9ac73e2f60e0ea1d30137ca96cfc8c2aa34ef2b2
+  ExpoSecureStore: 6506992a9f53c94ea716c54d4a63144965945c2c
   ExpoSystemUI: 2072307375696c398a5d75633bdd5143fadc3d26
   EXSplashScreen: a4ce3dd5d28d48e8b9132bcd9b58ee8e340db78c
   EXUpdatesInterface: c3a9494c2173db6442c7d5ad4e5b984972760fd3
@@ -3235,7 +3245,6 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
   RNCAsyncStorage: aa75595c1aefa18f868452091fa0c411a516ce11
   RNFBApp: 0e66b9f844efdf2ac3fa2b30e64c9db41a263b3d
-  RNFBAuth: a33d15faa7f061c350c0744ee9ee2897ee102cf3
   RNFBFirestore: 53071595c30ffe2fca5a6b3e89342471efc67840
   RNFBStorage: 8a55b1e6fe73155f3cb43e737c2591525cbe5d88
   RNGestureHandler: 326e35460fb6c8c64a435d5d739bea90d7ed4e49
@@ -3250,6 +3259,6 @@ SPEC CHECKSUMS:
   Yoga: 348f8b538c3ed4423eb58a8e5730feec50bce372
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: ce8c78e1b9d963b00869418c607bfe69cdac12dc
+PODFILE CHECKSUM: 9219dd0fb931be69f5d502894aa3e8bb9099df6d
 
 COCOAPODS: 1.16.2

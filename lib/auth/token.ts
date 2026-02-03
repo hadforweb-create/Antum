@@ -1,7 +1,7 @@
 // Token management using SecureStore
 import * as SecureStore from "expo-secure-store";
 
-const TOKEN_KEY = "auth_token";
+const TOKEN_KEY = "nightout_auth_token";
 
 export async function getToken(): Promise<string | null> {
     try {
@@ -19,14 +19,10 @@ export async function setToken(token: string): Promise<void> {
     }
 }
 
-export async function removeToken(): Promise<void> {
+export async function clearToken(): Promise<void> {
     try {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
     } catch (error) {
         console.error("Failed to remove token:", error);
     }
 }
-
-// Alias for removeToken
-export const clearToken = removeToken;
-

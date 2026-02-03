@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: nightout-backend
+    env: node
+    plan: starter
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nightout-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: AWS_REGION
+        value: auto
+      - key: AWS_ENDPOINT
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_BUCKET_NAME
+        sync: false
+
+databases:
+  - name: nightout-db
+    plan: starter
+    databaseName: nightout
+    user: nightout

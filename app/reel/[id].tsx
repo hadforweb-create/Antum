@@ -5,15 +5,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
-import { X, MapPin, MessageCircle, Star, Play, Volume2, VolumeX, ImageIcon } from "lucide-react-native";
+import { X, MapPin, MessageCircle, Play, Volume2, VolumeX, ImageIcon, Briefcase, User } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { useAuthStore, useShortlistStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
 import { colors } from "@/lib/theme";
 import { getReel } from "@/lib/api/reels";
 import { createConversation } from "@/lib/api/conversations";
-import { addToShortlist, removeFromShortlist, checkShortlist } from "@/lib/api/shortlist";
 import { Shimmer } from "@/components/ui/Shimmer";
+import { toast } from "@/lib/ui/toast";
 import type { Reel } from "@/types";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -22,19 +22,15 @@ export default function ReelDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const { user } = useAuthStore();
-    const { addToShortlist: addToStore, removeFromShortlist: removeFromStore } = useShortlistStore();
 
     const videoRef = useRef<Video>(null);
     const [reel, setReel] = useState<Reel | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [shortlisted, setShortlisted] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [isPlaying, setIsPlaying] = useState(true);
     const [isMuted, setIsMuted] = useState(false);
     const [mediaLoading, setMediaLoading] = useState(true);
-
-    const isEmployer = user?.role === "EMPLOYER";
 
     useEffect(() => {
         if (!id) return;
@@ -45,11 +41,6 @@ export default function ReelDetailScreen() {
                 setError(null);
                 const data = await getReel(id);
                 setReel(data);
-
-                if (isEmployer && data.freelancer?.userId) {
-                    const status = await checkShortlist(data.freelancer.userId);
-                    setShortlisted(status.shortlisted);
-                }
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Failed to load reel";
                 setError(message);
@@ -59,7 +50,7 @@ export default function ReelDetailScreen() {
         };
 
         fetchReel();
-    }, [id, isEmployer]);
+    }, [id]);
 
     const handleClose = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -94,44 +85,33 @@ export default function ReelDetailScreen() {
     };
 
     const handleMessage = async () => {
-        if (!reel?.freelancer?.userId) return;
+        if (!reel?.userId) return;
+
+        // Check if trying to message self
+        if (reel.userId === user?.id) {
+            toast.info("You can't message yourself");
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            return;
+        }
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setActionLoading(true);
 
         try {
-            const conversation = await createConversation(reel.freelancer.userId);
+            const conversation = await createConversation(reel.userId);
             router.push(`/conversation/${conversation.id}`);
         } catch (err) {
             const message = err instanceof Error ? err.message : "Failed to start conversation";
-            Alert.alert("Error", message);
+            toast.error(message);
         } finally {
             setActionLoading(false);
         }
     };
 
-    const handleShortlist = async () => {
-        if (!reel?.freelancer?.userId) return;
-
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setActionLoading(true);
-
-        try {
-            if (shortlisted) {
-                await removeFromShortlist(reel.freelancer.userId);
-                removeFromStore(reel.freelancer.userId);
-                setShortlisted(false);
-            } else {
-                await addToShortlist(reel.freelancer.userId);
-                addToStore(reel.freelancer.userId);
-                setShortlisted(true);
-            }
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to update shortlist";
-            Alert.alert("Error", message);
-        } finally {
-            setActionLoading(false);
-        }
+    const handleViewProfile = () => {
+        if (!reel?.userId) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push(`/profile/${reel.userId}`);
     };
 
     // Loading state
@@ -169,6 +149,7 @@ export default function ReelDetailScreen() {
     }
 
     const isVideo = reel.mediaType === "VIDEO";
+    const displayName = reel.user?.name || "User";
 
     return (
         <View style={styles.container}>
@@ -185,8 +166,6 @@ export default function ReelDetailScreen() {
                             isMuted={isMuted}
                             shouldPlay
                             onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                            posterSource={reel.thumbnailUrl ? { uri: reel.thumbnailUrl } : undefined}
-                            usePoster={!!reel.thumbnailUrl}
                         />
                         {mediaLoading && (
                             <View style={styles.mediaLoadingOverlay}>
@@ -256,31 +235,29 @@ export default function ReelDetailScreen() {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
                 >
-                    {/* Freelancer info */}
-                    <Animated.View entering={FadeInDown.delay(100).duration(300)} style={styles.freelancerCard}>
-                        <View style={styles.freelancerHeader}>
+                    {/* User info */}
+                    <Animated.View entering={FadeInDown.delay(100).duration(300)} style={styles.userCard}>
+                        <Pressable onPress={handleViewProfile} style={styles.userHeader}>
                             <View style={styles.avatar}>
-                                {reel.freelancer.avatarUrl ? (
-                                    <Image source={{ uri: reel.freelancer.avatarUrl }} style={styles.avatarImage} />
+                                {reel.user?.avatarUrl ? (
+                                    <Image source={{ uri: reel.user.avatarUrl }} style={styles.avatarImage} />
                                 ) : (
-                                    <Text style={styles.avatarText}>
-                                        {reel.freelancer.displayName.charAt(0).toUpperCase()}
-                                    </Text>
+                                    <User size={24} color="#FFF" />
                                 )}
                             </View>
-                            <View style={styles.freelancerInfo}>
-                                <Text style={styles.freelancerName}>{reel.freelancer.displayName}</Text>
-                                {reel.freelancer.location && (
+                            <View style={styles.userInfo}>
+                                <Text style={styles.userName}>{displayName}</Text>
+                                {reel.user?.location && (
                                     <View style={styles.locationRow}>
                                         <MapPin size={14} color="rgba(255,255,255,0.6)" strokeWidth={2} />
-                                        <Text style={styles.locationText}>{reel.freelancer.location}</Text>
+                                        <Text style={styles.locationText}>{reel.user.location}</Text>
                                     </View>
                                 )}
                             </View>
-                        </View>
+                        </Pressable>
 
-                        {reel.freelancer.bio && (
-                            <Text style={styles.bio}>{reel.freelancer.bio}</Text>
+                        {reel.user?.bio && (
+                            <Text style={styles.bio}>{reel.user.bio}</Text>
                         )}
                     </Animated.View>
 
@@ -291,37 +268,22 @@ export default function ReelDetailScreen() {
                         </Animated.View>
                     )}
 
-                    {/* Skills */}
-                    {reel.skills.length > 0 && (
-                        <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.skillsContainer}>
-                            <View style={styles.skillsRow}>
-                                {reel.skills.map((skill) => (
-                                    <View key={skill.id} style={styles.skillChip}>
-                                        <Text style={styles.skillText}>#{skill.slug}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        </Animated.View>
-                    )}
-
-                    {/* Action buttons for employers */}
-                    {isEmployer && (
-                        <Animated.View entering={FadeInDown.delay(400).duration(300)} style={styles.actionsContainer}>
-                            <ActionButton
-                                onPress={handleMessage}
-                                loading={actionLoading}
-                                icon={<MessageCircle size={20} color="#FFF" strokeWidth={2.5} />}
-                                label="Message"
-                                primary
-                            />
-                            <ActionButton
-                                onPress={handleShortlist}
-                                loading={actionLoading}
-                                icon={<Star size={20} color={shortlisted ? "#FFD700" : "#FFF"} fill={shortlisted ? "#FFD700" : "transparent"} strokeWidth={2.5} />}
-                                label={shortlisted ? "Saved" : "Save"}
-                            />
-                        </Animated.View>
-                    )}
+                    {/* Action buttons */}
+                    <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.actionsContainer}>
+                        <ActionButton
+                            onPress={handleMessage}
+                            loading={actionLoading}
+                            icon={<MessageCircle size={20} color="#FFF" strokeWidth={2.5} />}
+                            label="Message"
+                            primary
+                        />
+                        <ActionButton
+                            onPress={handleViewProfile}
+                            loading={false}
+                            icon={<Briefcase size={20} color="#FFF" strokeWidth={2.5} />}
+                            label="View Profile"
+                        />
+                    </Animated.View>
                 </ScrollView>
             </SafeAreaView>
         </View>
@@ -482,10 +444,10 @@ const styles = StyleSheet.create({
         padding: 20,
         paddingBottom: 40,
     },
-    freelancerCard: {
+    userCard: {
         marginBottom: 16,
     },
-    freelancerHeader: {
+    userHeader: {
         flexDirection: "row",
         alignItems: "center",
     },
@@ -505,15 +467,10 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "100%",
     },
-    avatarText: {
-        color: "#FFF",
-        fontSize: 22,
-        fontWeight: "700",
-    },
-    freelancerInfo: {
+    userInfo: {
         flex: 1,
     },
-    freelancerName: {
+    userName: {
         color: "#FFF",
         fontSize: 20,
         fontWeight: "700",
@@ -541,25 +498,6 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontSize: 16,
         lineHeight: 24,
-    },
-    skillsContainer: {
-        marginBottom: 20,
-    },
-    skillsRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-    },
-    skillChip: {
-        backgroundColor: "rgba(255,255,255,0.15)",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 16,
-    },
-    skillText: {
-        color: "#FFF",
-        fontSize: 14,
-        fontWeight: "600",
     },
     actionsContainer: {
         flexDirection: "row",

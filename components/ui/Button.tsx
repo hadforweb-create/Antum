@@ -180,8 +180,8 @@ export function Button({
               styles.text,
               sizeStyles.text,
               variantStyles.text,
-              icon && iconPosition === "left" && { marginLeft: 8 },
-              icon && iconPosition === "right" && { marginRight: 8 },
+              icon && iconPosition === "left" ? { marginLeft: 8 } : null,
+              icon && iconPosition === "right" ? { marginRight: 8 } : null,
               textStyle,
             ]}
           >

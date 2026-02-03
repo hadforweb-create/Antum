@@ -30,8 +30,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#121214"
       },
-      "package": "com.antum.app",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.antum.app"
     },
     "web": {
       "bundler": "metro",
@@ -41,7 +40,6 @@
     "plugins": [
       "expo-router",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth",
       [
         "expo-image-picker",
         {
@@ -64,7 +62,8 @@
           "savePhotosPermission": "Allow Nightout to save photos.",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

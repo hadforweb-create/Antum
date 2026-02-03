@@ -5,16 +5,19 @@ import { authenticate, optionalAuth, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
+// Validation schemas
 const createReelSchema = z.object({
     mediaType: z.enum(["VIDEO", "IMAGE"]),
-    mediaUrl: z.string().url(),
-    thumbnailUrl: z.string().url().optional(),
-    caption: z.string().max(500).optional(),
-    skillIds: z.array(z.string()).optional(),
+    mediaUrl: z.string().url("Invalid media URL"),
+    caption: z.string().max(500, "Caption must be 500 characters or less").optional(),
+});
+
+const updateReelSchema = z.object({
+    caption: z.string().max(500, "Caption must be 500 characters or less").optional(),
 });
 
 /**
- * GET /api/reels - Feed with pagination
+ * GET /api/reels - Feed with cursor-based pagination
  */
 router.get("/", optionalAuth, async (req: AuthRequest, res) => {
     try {
@@ -29,18 +32,11 @@ router.get("/", optionalAuth, async (req: AuthRequest, res) => {
             }),
             orderBy: { createdAt: "desc" },
             include: {
-                freelancer: {
-                    select: {
-                        id: true,
-                        displayName: true,
-                        avatarUrl: true,
-                        userId: true,
-                    },
-                },
-                skills: {
+                user: {
                     select: {
                         id: true,
                         name: true,
+                        avatarUrl: true,
                     },
                 },
             },
@@ -62,22 +58,22 @@ router.get("/", optionalAuth, async (req: AuthRequest, res) => {
 });
 
 /**
- * GET /api/reels/:id
+ * GET /api/reels/:id - Single reel detail
  */
 router.get("/:id", async (req, res) => {
     try {
         const reel = await prisma.reel.findUnique({
             where: { id: req.params.id },
             include: {
-                freelancer: {
+                user: {
                     select: {
                         id: true,
-                        displayName: true,
+                        name: true,
                         avatarUrl: true,
-                        userId: true,
+                        bio: true,
+                        location: true,
                     },
                 },
-                skills: true,
             },
         });
 
@@ -98,38 +94,23 @@ router.get("/:id", async (req, res) => {
 router.post("/", authenticate, async (req: AuthRequest, res) => {
     try {
         const data = createReelSchema.parse(req.body);
-
-        // Get freelancer profile
-        const profile = await prisma.freelancerProfile.findUnique({
-            where: { userId: req.user!.userId },
-        });
-
-        if (!profile) {
-            return res.status(403).json({ error: "Only freelancers can create reels" });
-        }
+        const userId = req.user!.userId;
 
         const reel = await prisma.reel.create({
             data: {
-                freelancerId: profile.id,
+                userId,
                 mediaType: data.mediaType,
                 mediaUrl: data.mediaUrl,
-                thumbnailUrl: data.thumbnailUrl,
                 caption: data.caption,
-                ...(data.skillIds && {
-                    skills: {
-                        connect: data.skillIds.map((id) => ({ id })),
-                    },
-                }),
             },
             include: {
-                freelancer: {
+                user: {
                     select: {
                         id: true,
-                        displayName: true,
+                        name: true,
                         avatarUrl: true,
                     },
                 },
-                skills: true,
             },
         });
 
@@ -144,13 +125,16 @@ router.post("/", authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
- * DELETE /api/reels/:id
+ * PATCH /api/reels/:id - Update reel (owner only)
  */
-router.delete("/:id", authenticate, async (req: AuthRequest, res) => {
+router.patch("/:id", authenticate, async (req: AuthRequest, res) => {
     try {
+        const data = updateReelSchema.parse(req.body);
+        const userId = req.user!.userId;
+
+        // Find the reel
         const reel = await prisma.reel.findUnique({
             where: { id: req.params.id },
-            include: { freelancer: true },
         });
 
         if (!reel) {
@@ -158,8 +142,55 @@ router.delete("/:id", authenticate, async (req: AuthRequest, res) => {
         }
 
         // Check ownership
-        if (reel.freelancer.userId !== req.user!.userId) {
-            return res.status(403).json({ error: "Not authorized" });
+        if (reel.userId !== userId) {
+            return res.status(403).json({ error: "Not authorized to update this reel" });
+        }
+
+        // Update the reel
+        const updated = await prisma.reel.update({
+            where: { id: req.params.id },
+            data: {
+                caption: data.caption,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        avatarUrl: true,
+                    },
+                },
+            },
+        });
+
+        res.json(updated);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.errors[0].message });
+        }
+        console.error("Update reel error:", error);
+        res.status(500).json({ error: "Failed to update reel" });
+    }
+});
+
+/**
+ * DELETE /api/reels/:id - Delete reel (owner only)
+ */
+router.delete("/:id", authenticate, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user!.userId;
+
+        const reel = await prisma.reel.findUnique({
+            where: { id: req.params.id },
+        });
+
+        if (!reel) {
+            return res.status(404).json({ error: "Reel not found" });
+        }
+
+        // Check ownership
+        if (reel.userId !== userId) {
+            return res.status(403).json({ error: "Not authorized to delete this reel" });
         }
 
         await prisma.reel.delete({

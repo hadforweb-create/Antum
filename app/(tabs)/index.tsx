@@ -1,278 +1,330 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  RefreshControl,
+  Dimensions,
   Pressable,
   Image,
   StyleSheet,
+  FlatList,
+  ViewToken,
+  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
-import { Sun, Moon, Calendar, MapPin, Users } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Heart, MessageCircle, Bookmark, Share2, User, AlertCircle, Film, RefreshCw } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, {
+  FadeIn,
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 
-import { useThemeStore, useActivitiesStore, useAuthStore } from "@/lib/store";
-import { activitiesDb } from "@/lib/firebase";
-import { formatShortDate, getCategoryConfig, CATEGORIES } from "@/lib/utils";
-import type { Activity, ActivityCategory } from "@/types";
+import { useThemeStore, useAuthStore } from "@/lib/store";
+import { createConversation } from "@/lib/api/conversations";
+import { getReels } from "@/lib/api/reels";
+import { Shimmer } from "@/components/ui/Shimmer";
+import { toast } from "@/lib/ui/toast";
+import type { Reel } from "@/types";
 
-// Mock data for demo (when Firebase isn't connected)
-const MOCK_ACTIVITIES: Activity[] = [
-  {
-    id: "1",
-    title: "Sunset Hike at Griffith Park",
-    description: "Join us for a beautiful sunset hike! We'll explore the trails and catch the golden hour views.",
-    category: "Outdoors",
-    location: "Griffith Park, Los Angeles",
-    date: new Date("2025-01-25"),
-    time: "5:00 PM",
-    maxAttendees: 20,
-    attendeeCount: 12,
-    images: ["https://images.unsplash.com/photo-1551632811-561732d1e306?w=800"],
-    organizerId: "user1",
-    organizer: {
-      id: "user1",
-      displayName: "Sarah Miller",
-      avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    title: "Coffee & Conversations",
-    description: "Casual meetup for coffee lovers and great conversation.",
-    category: "Social",
-    location: "Blue Bottle Coffee, Venice",
-    date: new Date("2025-01-26"),
-    time: "10:00 AM",
-    maxAttendees: 15,
-    attendeeCount: 8,
-    images: ["https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800"],
-    organizerId: "user2",
-    organizer: {
-      id: "user2",
-      displayName: "Alex Johnson",
-      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    title: "Live Music Night: Jazz Sessions",
-    description: "Experience an evening of soulful jazz music with local artists.",
-    category: "Music",
-    location: "The Blue Note, Hollywood",
-    date: new Date("2025-01-24"),
-    time: "8:00 PM",
-    maxAttendees: 30,
-    attendeeCount: 24,
-    images: ["https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800"],
-    organizerId: "user3",
-    organizer: {
-      id: "user3",
-      displayName: "Marcus Chen",
-      avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "4",
-    title: "Morning Yoga in the Park",
-    description: "Start your day with energizing yoga practice in beautiful surroundings.",
-    category: "Wellness",
-    location: "Echo Park, LA",
-    date: new Date("2025-01-25"),
-    time: "7:30 AM",
-    maxAttendees: 25,
-    attendeeCount: 15,
-    images: ["https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800"],
-    organizerId: "user4",
-    organizer: {
-      id: "user4",
-      displayName: "Emma Watson",
-      avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200",
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "5",
-    title: "Dinner Party: Mediterranean Night",
-    description: "Homemade Mediterranean feast with friends!",
-    category: "Food & Drink",
-    location: "Private Home, Santa Monica",
-    date: new Date("2025-01-25"),
-    time: "7:00 PM",
-    maxAttendees: 10,
-    attendeeCount: 6,
-    images: ["https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800"],
-    organizerId: "user5",
-    organizer: {
-      id: "user5",
-      displayName: "Sofia Rodriguez",
-      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "6",
-    title: "Beach Volleyball Tournament",
-    description: "Friendly beach volleyball games! All skill levels welcome.",
-    category: "Sports",
-    location: "Manhattan Beach",
-    date: new Date("2025-01-26"),
-    time: "2:00 PM",
-    maxAttendees: 24,
-    attendeeCount: 18,
-    images: ["https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800"],
-    organizerId: "user6",
-    organizer: {
-      id: "user6",
-      displayName: "Jake Thompson",
-      avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200",
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-export default function HomeScreen() {
+export default function ReelsFeedScreen() {
   const router = useRouter();
-  const { isDark, toggleTheme } = useThemeStore();
-  const { activities, setActivities, setLoadingState, isJoined } = useActivitiesStore();
+  const { isDark } = useThemeStore();
+  const { user } = useAuthStore();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [likedReels, setLikedReels] = useState<Set<string>>(new Set());
+  const [savedReels, setSavedReels] = useState<Set<string>>(new Set());
+  const flatListRef = useRef<FlatList>(null);
+
+  // Data loading state
+  const [reels, setReels] = useState<Reel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [cursor, setCursor] = useState<string | null>(null);
 
-  // ANTUM Design System Colors
-  const bgColor = isDark ? "#121214" : "#FAFAFC";
-  const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = "#8E8E93";
-  const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
-
-  // Load activities
-  const loadActivities = useCallback(async () => {
-    setLoadingState("loading");
+  // Fetch reels
+  const fetchReels = useCallback(async (isRefresh = false) => {
     try {
-      // Try Firebase first, fallback to mock data
-      // const data = await activitiesDb.getAll();
-      // setActivities(data);
+      if (isRefresh) {
+        setRefreshing(true);
+        setCursor(null);
+      } else if (!loading) {
+        setLoading(true);
+      }
+      setError(null);
 
-      // Using mock data for demo
-      setActivities(MOCK_ACTIVITIES);
-    } catch (error) {
-      console.error("Error loading activities:", error);
-      setActivities(MOCK_ACTIVITIES);
+      const response = await getReels({ limit: 10 });
+      setReels(response.items);
+      setHasMore(response.hasMore);
+      setCursor(response.nextCursor);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load reels";
+      setError(message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [loading]);
+
+  // Load more reels
+  const loadMoreReels = useCallback(async () => {
+    if (loadingMore || !hasMore || !cursor) return;
+
+    try {
+      setLoadingMore(true);
+      const response = await getReels({ cursor, limit: 10 });
+      setReels(prev => [...prev, ...response.items]);
+      setHasMore(response.hasMore);
+      setCursor(response.nextCursor);
+    } catch (err) {
+      console.error("Failed to load more reels:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, cursor]);
 
   useEffect(() => {
-    loadActivities();
+    fetchReels();
   }, []);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await loadActivities();
-    setRefreshing(false);
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+        setCurrentIndex(viewableItems[0].index);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // Load more when near the end
+        if (viewableItems[0].index >= reels.length - 3) {
+          loadMoreReels();
+        }
+      }
+    },
+    [reels.length, loadMoreReels]
+  );
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50,
   };
 
-  const handleActivityPress = (activity: Activity) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/activity/${activity.id}`);
+  const handleReelPress = (reelId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push(`/reel/${reelId}`);
   };
+
+  const handleProfilePress = (userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/profile/${userId}`);
+  };
+
+  const handleLike = (reelId: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    toast.info("Coming soon");
+  };
+
+  const handleSave = (reelId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toast.info("Coming soon");
+  };
+
+  const handleShare = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toast.info("Coming soon");
+  };
+
+  const handleMessage = async (userId: string) => {
+    // Don't message yourself
+    if (userId === user?.id) {
+      toast.info("You can't message yourself");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      const conversation = await createConversation(userId);
+      router.push(`/conversation/${conversation.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to start conversation";
+      toast.error(message);
+    }
+  };
+
+  const renderReel = ({ item, index }: { item: Reel; index: number }) => (
+    <ReelItem
+      reel={item}
+      isActive={index === currentIndex}
+      isLiked={likedReels.has(item.id)}
+      isSaved={savedReels.has(item.id)}
+      onPress={() => handleReelPress(item.id)}
+      onProfilePress={() => handleProfilePress(item.userId)}
+      onLike={() => handleLike(item.id)}
+      onSave={() => handleSave(item.id)}
+      onShare={handleShare}
+      onMessage={() => handleMessage(item.userId)}
+    />
+  );
+
+  // Loading state
+  if (loading && reels.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Shimmer style={styles.loadingShimmer} />
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color="#5050F0" />
+            <Text style={styles.loadingText}>Loading reels...</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error && reels.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Animated.View entering={FadeIn.duration(300)} style={styles.errorContent}>
+            <View style={styles.errorIconContainer}>
+              <AlertCircle size={48} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
+            </View>
+            <Text style={styles.errorTitle}>Something went wrong</Text>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable onPress={() => fetchReels()} style={styles.retryButton}>
+              <RefreshCw size={18} color="#FFF" strokeWidth={2.5} />
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
+
+  // Empty state
+  if (!loading && reels.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.emptyContent}>
+            <View style={styles.emptyIconContainer}>
+              <Film size={64} color="rgba(255,255,255,0.3)" strokeWidth={1} />
+            </View>
+            <Text style={styles.emptyTitle}>No reels yet</Text>
+            <Text style={styles.emptyText}>
+              Be the first to share your work!{"\n"}Create a reel to showcase your skills.
+            </Text>
+            <Pressable onPress={() => router.push("/(tabs)/create")} style={styles.createButton}>
+              <Text style={styles.createButtonText}>Create Reel</Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Glass Header */}
-      <SafeAreaView edges={["top"]} style={{ zIndex: 10 }}>
-        <BlurView intensity={80} tint={isDark ? "dark" : "light"}>
-          <View
-            style={[
-              styles.header,
-              {
-                backgroundColor: isDark
-                  ? "rgba(28,28,30,0.92)"
-                  : "rgba(255,255,255,0.92)",
-                borderBottomColor: borderColor,
-              },
-            ]}
-          >
-            <Text style={[styles.headerTitle, { color: textColor }]}>
-              ANTUM
-            </Text>
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                toggleTheme();
-              }}
-              style={styles.themeButton}
-            >
-              {isDark ? (
-                <Sun size={22} color={textColor} strokeWidth={2} />
-              ) : (
-                <Moon size={22} color={textColor} strokeWidth={2} />
-              )}
-            </Pressable>
-          </View>
-        </BlurView>
-      </SafeAreaView>
-
-      {/* Activity Feed */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+    <View style={styles.container}>
+      <FlatList
+        ref={flatListRef}
+        data={reels}
+        renderItem={renderReel}
+        keyExtractor={(item) => item.id}
+        pagingEnabled
         showsVerticalScrollIndicator={false}
+        snapToInterval={SCREEN_HEIGHT}
+        decelerationRate="fast"
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        getItemLayout={(_, index) => ({
+          length: SCREEN_HEIGHT,
+          offset: SCREEN_HEIGHT * index,
+          index,
+        })}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={isDark ? "#FFF" : "#000"}
+            onRefresh={() => fetchReels(true)}
+            tintColor="#FFF"
+            progressViewOffset={60}
           />
         }
-      >
-        {(activities.length > 0 ? activities : MOCK_ACTIVITIES).map((activity, index) => (
-          <ActivityCard
-            key={activity.id}
-            activity={activity}
-            onPress={() => handleActivityPress(activity)}
-            index={index}
-            isDark={isDark}
-            isJoined={isJoined(activity.id)}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color="#5050F0" />
+            </View>
+          ) : null
+        }
+      />
+
+      {/* Progress Indicators */}
+      <View style={styles.progressContainer}>
+        {reels.slice(0, 6).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.progressDot,
+              index === currentIndex && styles.progressDotActive,
+            ]}
           />
         ))}
+        {reels.length > 6 && (
+          <Text style={styles.moreIndicator}>+{reels.length - 6}</Text>
+        )}
+      </View>
 
-        {/* Bottom spacing for tab bar */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {/* ANTUM branding */}
+      <View style={styles.brandingContainer}>
+        <Text style={styles.brandingText}>ANTUM</Text>
+      </View>
+
+      {/* Instructions (first reel only) */}
+      {currentIndex === 0 && (
+        <Animated.View entering={FadeIn.delay(500)} style={styles.instructions}>
+          <Text style={styles.instructionsText}>Swipe up to discover freelancers</Text>
+        </Animated.View>
+      )}
     </View>
   );
 }
 
-// Activity Card Component
-interface ActivityCardProps {
-  activity: Activity;
+// Individual Reel Component
+interface ReelItemProps {
+  reel: Reel;
+  isActive: boolean;
+  isLiked: boolean;
+  isSaved: boolean;
   onPress: () => void;
-  index: number;
-  isDark: boolean;
-  isJoined: boolean;
+  onProfilePress: () => void;
+  onLike: () => void;
+  onSave: () => void;
+  onShare: () => void;
+  onMessage: () => void;
 }
 
-function ActivityCard({ activity, onPress, index, isDark, isJoined }: ActivityCardProps) {
+function ReelItem({
+  reel,
+  isActive,
+  isLiked,
+  isSaved,
+  onPress,
+  onProfilePress,
+  onLike,
+  onSave,
+  onShare,
+  onMessage,
+}: ReelItemProps) {
   const scale = useSharedValue(1);
-  const categoryConfig = getCategoryConfig(activity.category);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -286,217 +338,369 @@ function ActivityCard({ activity, onPress, index, isDark, isJoined }: ActivityCa
     scale.value = withSpring(1, { damping: 15, stiffness: 400 });
   };
 
-  const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
-  const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
-  const glassBg = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.04)";
+  // Get display name - fallback to "User" if no name
+  const displayName = reel.user?.name || "User";
+  const username = displayName.replace(/\s+/g, "").toLowerCase();
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 80).springify()}
-      style={[animatedStyle, styles.cardWrapper]}
-    >
+    <View style={styles.reelContainer}>
+      {/* Background Image */}
+      <Image source={{ uri: reel.mediaUrl }} style={styles.reelImage} />
+
+      {/* Gradient Overlay */}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.3)", "transparent", "rgba(0,0,0,0.8)"]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Tap to view detail */}
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-      >
-        <BlurView intensity={60} tint={isDark ? "dark" : "light"} style={styles.cardBlur}>
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: cardBg,
-                borderColor: borderColor,
-              },
-            ]}
-          >
-            <View style={styles.cardInner}>
-              {/* Thumbnail */}
-              <View style={styles.thumbnailContainer}>
-                <Image
-                  source={{ uri: activity.images[0] }}
-                  style={styles.thumbnail}
-                />
+        style={StyleSheet.absoluteFill}
+      />
 
-                {/* Joined badge */}
-                {isJoined && (
-                  <View style={[styles.joinedBadge, { backgroundColor: "rgba(255,255,255,0.95)" }]}>
-                    <Text style={{ color: "#5050F0", fontSize: 12, fontWeight: "700" }}>✓</Text>
-                  </View>
-                )}
-
-                {/* Category badge */}
-                <View style={[styles.categoryBadge, { backgroundColor: "rgba(255,255,255,0.9)" }]}>
-                  <Text style={[styles.categoryText, { color: categoryConfig.color }]}>
-                    {activity.category}
-                  </Text>
-                </View>
+      {/* Right side actions */}
+      <View style={styles.actionsContainer}>
+        {/* Profile */}
+        <Pressable onPress={onProfilePress} style={styles.actionButton}>
+          <View style={styles.avatarContainer}>
+            {reel.user?.avatarUrl ? (
+              <Image source={{ uri: reel.user.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <User size={24} color="#FFF" />
               </View>
-
-              {/* Content */}
-              <View style={styles.cardContent}>
-                <Text
-                  style={[styles.cardTitle, { color: textColor }]}
-                  numberOfLines={2}
-                >
-                  {activity.title}
-                </Text>
-
-                {/* Meta */}
-                <View style={styles.metaRow}>
-                  <View style={[styles.metaBadge, { backgroundColor: glassBg }]}>
-                    <Calendar size={12} color={mutedColor} strokeWidth={2.5} />
-                    <Text style={[styles.metaText, { color: textColor }]}>
-                      {formatShortDate(activity.date)}
-                    </Text>
-                  </View>
-                  <View style={[styles.metaBadge, { backgroundColor: glassBg }]}>
-                    <Users size={12} color={mutedColor} strokeWidth={2.5} />
-                    <Text style={[styles.metaText, { color: textColor }]}>
-                      {activity.attendeeCount}/{activity.maxAttendees}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Location */}
-                <View style={styles.locationRow}>
-                  <MapPin size={14} color={mutedColor} strokeWidth={2.5} />
-                  <Text
-                    style={[styles.locationText, { color: mutedColor }]}
-                    numberOfLines={1}
-                  >
-                    {activity.location.split(",")[0]}
-                  </Text>
-                </View>
-              </View>
-            </View>
+            )}
           </View>
-        </BlurView>
-      </Pressable>
-    </Animated.View>
+        </Pressable>
+
+        {/* Like */}
+        <Pressable onPress={onLike} style={styles.actionButton}>
+          <Heart
+            size={28}
+            color={isLiked ? "#FF3B5C" : "#FFF"}
+            fill={isLiked ? "#FF3B5C" : "transparent"}
+            strokeWidth={2}
+          />
+        </Pressable>
+
+        {/* Comment/Message */}
+        <Pressable onPress={onMessage} style={styles.actionButton}>
+          <MessageCircle size={28} color="#FFF" strokeWidth={2} />
+        </Pressable>
+
+        {/* Save */}
+        <Pressable onPress={onSave} style={styles.actionButton}>
+          <Bookmark
+            size={28}
+            color={isSaved ? "#5050F0" : "#FFF"}
+            fill={isSaved ? "#5050F0" : "transparent"}
+            strokeWidth={2}
+          />
+        </Pressable>
+
+        {/* Share */}
+        <Pressable onPress={onShare} style={styles.actionButton}>
+          <Share2 size={26} color="#FFF" strokeWidth={2} />
+        </Pressable>
+      </View>
+
+      {/* Bottom Content */}
+      <View style={styles.reelOverlay}>
+        <View style={styles.reelContent}>
+          {/* Creator info */}
+          <Pressable onPress={onProfilePress} style={styles.creatorRow}>
+            <Text style={styles.creatorName}>@{username}</Text>
+            <View style={styles.followButton}>
+              <Text style={styles.followButtonText}>Follow</Text>
+            </View>
+          </Pressable>
+
+          {/* Caption */}
+          {reel.caption && (
+            <Text style={styles.reelCaption} numberOfLines={3}>
+              {reel.caption}
+            </Text>
+          )}
+
+          {/* Hire button */}
+          <Pressable onPress={onMessage} style={styles.hireButton}>
+            <User size={18} color="#FFF" strokeWidth={2.5} />
+            <Text style={styles.hireButtonText}>Hire Me</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#000",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 0.5,
+  reelContainer: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: -0.5,
-  },
-  themeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 16,
-  },
-  cardWrapper: {
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  cardBlur: {
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-  },
-  cardInner: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  thumbnailContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  thumbnail: {
+  reelImage: {
+    ...StyleSheet.absoluteFillObject,
     width: "100%",
     height: "100%",
   },
-  joinedBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  reelOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+    padding: 20,
+    paddingBottom: 120,
+    paddingRight: 70,
+  },
+  reelContent: {
+    gap: 12,
+  },
+  creatorRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    gap: 12,
   },
-  categoryBadge: {
-    position: "absolute",
-    bottom: 8,
-    left: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  categoryText: {
-    fontSize: 11,
+  creatorName: {
+    color: "#FFF",
+    fontSize: 16,
     fontWeight: "700",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  cardContent: {
-    flex: 1,
-    paddingVertical: 4,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  metaRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 12,
-  },
-  metaBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
+  followButton: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
   },
-  metaText: {
+  followButtonText: {
+    color: "#FFF",
     fontSize: 13,
     fontWeight: "600",
   },
-  locationRow: {
+  reelCaption: {
+    color: "#FFF",
+    fontSize: 15,
+    lineHeight: 22,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  hireButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    alignSelf: "flex-start",
+    gap: 8,
+    backgroundColor: "#5050F0",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 4,
   },
-  locationText: {
-    fontSize: 14,
+  hireButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  actionsContainer: {
+    position: "absolute",
+    right: 12,
+    bottom: 200,
+    alignItems: "center",
+    gap: 20,
+  },
+  actionButton: {
+    alignItems: "center",
+    gap: 4,
+  },
+  avatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#FFF",
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+  },
+  avatarPlaceholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#5050F0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressContainer: {
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    transform: [{ translateY: -50 }],
+    gap: 8,
+    alignItems: "center",
+  },
+  progressDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.4)",
+  },
+  progressDotActive: {
+    height: 32,
+    backgroundColor: "#FFF",
+  },
+  moreIndicator: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  brandingContainer: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+  },
+  brandingText: {
+    color: "#FFF",
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  instructions: {
+    position: "absolute",
+    top: "35%",
+    alignSelf: "center",
+  },
+  instructionsText: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 15,
     fontWeight: "500",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  // Loading state
+  loadingContainer: {
     flex: 1,
+    position: "relative",
+  },
+  loadingShimmer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  loadingContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  loadingMoreContainer: {
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // Error state
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  errorContent: {
+    alignItems: "center",
+  },
+  errorIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  errorTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  errorText: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 28,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#5050F0",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 25,
+  },
+  retryButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // Empty state
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyContent: {
+    alignItems: "center",
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    color: "#FFF",
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  emptyText: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  createButton: {
+    backgroundColor: "#5050F0",
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 25,
+  },
+  createButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
