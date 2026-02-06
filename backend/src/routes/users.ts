@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../index";
@@ -72,7 +73,7 @@ router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json(response);
     } catch (error) {
-        console.error("Get current user error:", error);
+        logger.error("Get current user error:", error);
         return res.status(500).json({ error: "Failed to get user" });
     }
 });
@@ -108,7 +109,7 @@ router.patch("/me", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json(formatUserResponse(user));
     } catch (error) {
-        console.error("Update user error:", error);
+        logger.error("Update user error:", error);
         return res.status(500).json({ error: "Failed to update user" });
     }
 });
@@ -149,7 +150,7 @@ router.get("/:id", async (req, res: Response) => {
 
         return res.json(response);
     } catch (error) {
-        console.error("Get user error:", error);
+        logger.error("Get user error:", error);
         return res.status(500).json({ error: "Failed to get user" });
     }
 });
@@ -202,7 +203,7 @@ router.get("/:id/reels", async (req, res: Response) => {
             hasMore,
         });
     } catch (error) {
-        console.error("Get user reels error:", error);
+        logger.error("Get user reels error:", error);
         return res.status(500).json({ error: "Failed to get user reels" });
     }
 });
@@ -243,7 +244,7 @@ router.put("/:id", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json(formatUserResponse(user));
     } catch (error) {
-        console.error("Update user error:", error);
+        logger.error("Update user error:", error);
         return res.status(500).json({ error: "Failed to update user" });
     }
 });

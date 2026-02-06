@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../index";
@@ -6,28 +7,25 @@ import { v4 as uuidv4 } from "uuid";
 import { Resend } from "resend";
 
 const router = Router();
-const resend = new Resend(process.env.RESEND_API_KEY || "re_123456789");
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM_EMAIL = process.env.FROM_EMAIL || "Nightout <noreply@resend.dev>";
-const APP_URL = process.env.APP_URL || "http://localhost:8081"; // Deep link prefix or web url?
+const APP_URL = process.env.APP_URL || "http://localhost:8081"; // Deep link prefix or web url
+const GENERIC_MESSAGE = "If an account exists with this email, you will receive a reset link.";
 
 // Forgot Password
 router.post("/forgot", async (req: Request, res: Response) => {
     try {
         const validation = z.object({ email: z.string().email() }).safeParse(req.body);
-
         if (!validation.success) {
-            // Return 200 even on invalid email to prevent timing attacks? 
-            // Better to validate format at least.
-            return res.status(400).json({ error: "Invalid email format" });
+            return res.json({ message: GENERIC_MESSAGE });
         }
 
         const { email } = validation.data;
-
         const user = await prisma.user.findUnique({ where: { email } });
+
         if (!user) {
-            // Fake success to prevent enumeration
-            return res.json({ message: "If an account exists with this email, you will receive a reset link." });
+            return res.json({ message: GENERIC_MESSAGE });
         }
 
         const token = uuidv4();
@@ -45,7 +43,7 @@ router.post("/forgot", async (req: Request, res: Response) => {
         });
 
         // Send email
-        if (process.env.RESEND_API_KEY) {
+        if (resend) {
             await resend.emails.send({
                 from: FROM_EMAIL,
                 to: email,
@@ -56,27 +54,33 @@ router.post("/forgot", async (req: Request, res: Response) => {
             console.log(`[DEV] Password reset link for ${email}: ${APP_URL}/reset-password?token=${token}`);
         }
 
-        res.json({ message: "If an account exists with this email, you will receive a reset link." });
+        return res.json({ message: GENERIC_MESSAGE });
     } catch (error) {
-        console.error("Forgot password error:", error);
-        res.status(500).json({ error: "Failed to process request" });
+        logger.error("Forgot password error:", error);
+        return res.json({ message: GENERIC_MESSAGE });
     }
 });
 
 // Reset Password
 router.post("/reset", async (req: Request, res: Response) => {
     try {
-        const schema = z.object({
-            token: z.string(),
-            password: z.string().min(8),
-        });
+        const schema = z
+            .object({
+                token: z.string(),
+                newPassword: z.string().min(8).optional(),
+                password: z.string().min(8).optional(), // legacy
+            })
+            .refine((data) => data.newPassword || data.password, {
+                message: "newPassword is required",
+            });
 
         const validation = schema.safeParse(req.body);
         if (!validation.success) {
             return res.status(400).json({ error: "Invalid request data" });
         }
 
-        const { token, password } = validation.data;
+        const { token } = validation.data;
+        const newPassword = validation.data.newPassword || validation.data.password!;
 
         const resetToken = await prisma.passwordResetToken.findUnique({
             where: { token },
@@ -86,7 +90,7 @@ router.post("/reset", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Invalid or expired token" });
         }
 
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(newPassword, 10);
 
         await prisma.user.update({
             where: { email: resetToken.email },
@@ -96,9 +100,9 @@ router.post("/reset", async (req: Request, res: Response) => {
         // Cleanup used token
         await prisma.passwordResetToken.delete({ where: { token } });
 
-        res.json({ message: "Password updated successfully" });
+        return res.json({ message: "Password updated successfully" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to reset password" });
+        return res.status(500).json({ error: "Failed to reset password" });
     }
 });
 

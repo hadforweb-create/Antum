@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../index";
@@ -196,7 +197,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.status(201).json(formatted);
     } catch (error) {
-        console.error("Error creating conversation:", error);
+        logger.error("Error creating conversation:", error);
         return res.status(500).json({ error: "Failed to create conversation" });
     }
 });
@@ -269,7 +270,7 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json({ conversations: formatted });
     } catch (error) {
-        console.error("Error listing conversations:", error);
+        logger.error("Error listing conversations:", error);
         return res.status(500).json({ error: "Failed to list conversations" });
     }
 });
@@ -348,7 +349,7 @@ router.get("/:id", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json(formatted);
     } catch (error) {
-        console.error("Error getting conversation:", error);
+        logger.error("Error getting conversation:", error);
         return res.status(500).json({ error: "Failed to get conversation" });
     }
 });
@@ -430,7 +431,7 @@ router.get("/:id/messages", authenticate, async (req: AuthRequest, res: Response
             },
         });
     } catch (error) {
-        console.error("Error getting messages:", error);
+        logger.error("Error getting messages:", error);
         return res.status(500).json({ error: "Failed to get messages" });
     }
 });
@@ -506,7 +507,7 @@ router.post("/:id/messages", authenticate, async (req: AuthRequest, res: Respons
 
         return res.status(201).json(formatted);
     } catch (error) {
-        console.error("Error sending message:", error);
+        logger.error("Error sending message:", error);
         return res.status(500).json({ error: "Failed to send message" });
     }
 });

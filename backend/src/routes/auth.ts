@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "../index";
 import { generateToken, authenticate, AuthRequest } from "../middleware/auth";
+import { logger } from "../utils/logger";
 
 const router = Router();
 
@@ -26,36 +27,36 @@ const loginSchema = z.object({
  */
 router.post("/register", async (req, res: Response) => {
     const startTime = Date.now();
-    console.log("[REGISTER] === Request received ===");
-    console.log("[REGISTER] Body:", req.body ? { ...req.body, password: "[REDACTED]" } : "EMPTY");
+    logger.log("[REGISTER] === Request received ===");
+    logger.log("[REGISTER] Body:", req.body ? { ...req.body, password: "[REDACTED]" } : "EMPTY");
 
     try {
         // Validate input
-        console.log("[REGISTER] Validating input...");
+        logger.log("[REGISTER] Validating input...");
         const data = registerSchema.parse(req.body);
 
         // Get name from either displayName or name field
         const userName = data.displayName || data.name || null;
 
-        console.log("[REGISTER] Validated:", { email: data.email, role: data.role, name: userName });
+        logger.log("[REGISTER] Validated:", { email: data.email, role: data.role, name: userName });
 
         // Check if user exists
-        console.log("[REGISTER] Checking for existing user...");
+        logger.log("[REGISTER] Checking for existing user...");
         const existing = await prisma.user.findUnique({
             where: { email: data.email },
         });
 
         if (existing) {
-            console.log("[REGISTER] Email already exists:", data.email);
+            logger.log("[REGISTER] Email already exists:", data.email);
             return res.status(400).json({ error: "Email already registered" });
         }
 
         // Hash password
-        console.log("[REGISTER] Hashing password...");
+        logger.log("[REGISTER] Hashing password...");
         const passwordHash = await bcrypt.hash(data.password, 10);
 
         // Create user - using correct field names from schema
-        console.log("[REGISTER] Creating user...");
+        logger.log("[REGISTER] Creating user...");
         const user = await prisma.user.create({
             data: {
                 email: data.email,
@@ -65,7 +66,7 @@ router.post("/register", async (req, res: Response) => {
             },
         });
 
-        console.log("[REGISTER] User created:", user.id);
+        logger.log("[REGISTER] User created:", user.id);
 
         // Generate token
         const token = generateToken({
@@ -75,7 +76,7 @@ router.post("/register", async (req, res: Response) => {
         });
 
         const totalTime = Date.now() - startTime;
-        console.log("[REGISTER] SUCCESS in", totalTime, "ms for:", user.email);
+        logger.log("[REGISTER] SUCCESS in", totalTime, "ms for:", user.email);
 
         return res.status(201).json({
             token,
@@ -88,12 +89,12 @@ router.post("/register", async (req, res: Response) => {
         });
     } catch (error: any) {
         const totalTime = Date.now() - startTime;
-        console.error("[REGISTER] ERROR after", totalTime, "ms");
+        logger.error("[REGISTER] ERROR after", totalTime, "ms");
 
         // Zod validation error
         if (error instanceof z.ZodError) {
             const errors = error.errors.map(e => `${e.path.join(".")}: ${e.message}`);
-            console.error("[REGISTER] Validation errors:", errors);
+            logger.error("[REGISTER] Validation errors:", errors);
             return res.status(400).json({
                 error: error.errors[0].message,
                 details: errors,
@@ -102,7 +103,7 @@ router.post("/register", async (req, res: Response) => {
 
         // Prisma error - log full details
         if (error.code) {
-            console.error("[REGISTER] Prisma error:", {
+            logger.error("[REGISTER] Prisma error:", {
                 code: error.code,
                 meta: error.meta,
                 message: error.message,
@@ -134,7 +135,7 @@ router.post("/register", async (req, res: Response) => {
         }
 
         // Generic error
-        console.error("[REGISTER] Unknown error:", error.message, error.stack);
+        logger.error("[REGISTER] Unknown error:", error.message, error.stack);
         return res.status(500).json({
             error: "Registration failed",
             details: process.env.NODE_ENV !== "production" ? error.message : undefined,
@@ -146,8 +147,8 @@ router.post("/register", async (req, res: Response) => {
  * POST /api/auth/login
  */
 router.post("/login", async (req, res: Response) => {
-    console.log("[LOGIN] === Request received ===");
-    console.log("[LOGIN] Body:", req.body ? { email: req.body.email, password: "[REDACTED]" } : "EMPTY");
+    logger.log("[LOGIN] === Request received ===");
+    logger.log("[LOGIN] Body:", req.body ? { email: req.body.email, password: "[REDACTED]" } : "EMPTY");
 
     try {
         const data = loginSchema.parse(req.body);
@@ -158,14 +159,14 @@ router.post("/login", async (req, res: Response) => {
         });
 
         if (!user) {
-            console.log("[LOGIN] User not found:", data.email);
+            logger.log("[LOGIN] User not found:", data.email);
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
         // Verify password - using passwordHash field
         const valid = await bcrypt.compare(data.password, user.passwordHash);
         if (!valid) {
-            console.log("[LOGIN] Invalid password for:", data.email);
+            logger.log("[LOGIN] Invalid password for:", data.email);
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
@@ -176,7 +177,7 @@ router.post("/login", async (req, res: Response) => {
             role: user.role,
         });
 
-        console.log("[LOGIN] SUCCESS for:", user.email);
+        logger.log("[LOGIN] SUCCESS for:", user.email);
 
         return res.json({
             token,
@@ -190,13 +191,13 @@ router.post("/login", async (req, res: Response) => {
     } catch (error: any) {
         if (error instanceof z.ZodError) {
             const errors = error.errors.map(e => `${e.path.join(".")}: ${e.message}`);
-            console.error("[LOGIN] Validation errors:", errors);
+            logger.error("[LOGIN] Validation errors:", errors);
             return res.status(400).json({
                 error: error.errors[0].message,
                 details: errors,
             });
         }
-        console.error("[LOGIN] Error:", error.message);
+        logger.error("[LOGIN] Error:", error.message);
         return res.status(500).json({ error: "Login failed" });
     }
 });
@@ -221,7 +222,7 @@ router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
             name: user.name,
         });
     } catch (error: any) {
-        console.error("[ME] Error:", error.message);
+        logger.error("[ME] Error:", error.message);
         return res.status(500).json({ error: "Failed to get user" });
     }
 });

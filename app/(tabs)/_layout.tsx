@@ -30,7 +30,7 @@ export default function TabsLayout() {
 
     (async () => {
       try {
-        console.log("[Tabs] Auth init starting");
+        if (__DEV__) console.log("[Tabs] Auth init starting");
         const token = await getToken();
 
         if (token) {
@@ -45,20 +45,20 @@ export default function TabsLayout() {
               bio: user.bio,
               location: user.location,
             });
-            console.log("[Tabs] User loaded:", user.email);
+            if (__DEV__) console.log("[Tabs] User loaded:", user.email);
           } catch {
-            console.log("[Tabs] API error, redirecting to login");
+            if (__DEV__) console.log("[Tabs] API error, redirecting to login");
             await clearToken();
             setUser(null);
             router.replace("/(auth)/login");
           }
         } else {
-          console.log("[Tabs] No token, redirecting to login");
+          if (__DEV__) console.log("[Tabs] No token, redirecting to login");
           setUser(null);
           router.replace("/(auth)/login");
         }
       } catch (e) {
-        console.error("[Tabs] Auth error:", e);
+        if (__DEV__) console.error("[Tabs] Auth error:", e);
         setUser(null);
         router.replace("/(auth)/login");
       } finally {

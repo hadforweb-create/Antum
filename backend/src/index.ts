@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import { PrismaClient } from "@prisma/client";
+import { logger } from "./utils/logger";
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -28,10 +29,10 @@ if (process.env.SENTRY_DSN) {
         integrations: [
             nodeProfilingIntegration(),
         ],
-        // Performance Monitoring
-        tracesSampleRate: 1.0, //  Capture 100% of the transactions
+        // Performance Monitoring - 10% in prod, 100% in dev
+        tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
         // Set sampling rate for profiling - this is relative to tracesSampleRate
-        profilesSampleRate: 1.0,
+        profilesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
     });
 }
 
@@ -88,9 +89,34 @@ app.get("/health/live", (_req, res) => {
 });
 
 app.get("/health/ready", async (_req, res) => {
+    // Check required env vars
+    const requiredEnvVars = [
+        "DATABASE_URL",
+        "JWT_SECRET",
+    ];
+    const optionalButRecommended = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_BUCKET_NAME",
+    ];
+    const missing = requiredEnvVars.filter(v => !process.env[v]);
+    const missingOptional = optionalButRecommended.filter(v => !process.env[v]);
+
+    if (missing.length > 0) {
+        return res.status(503).json({
+            status: "not ready",
+            missing: missing,
+        });
+    }
+
     try {
         await prisma.$queryRaw`SELECT 1`;
-        res.json({ status: "ready", database: "connected" });
+        res.json({
+            status: "ready",
+            database: "connected",
+            env: "ok",
+            warnings: missingOptional.length > 0 ? `Missing optional: ${missingOptional.join(", ")}` : undefined,
+        });
     } catch (error) {
         res.status(503).json({ status: "not ready", database: "disconnected" });
     }
@@ -124,7 +150,7 @@ if (process.env.SENTRY_DSN) {
 
 // Central error handler
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error("Error:", err.message);
+    logger.error("Error:", err.message);
     res.status(500).json({
         error: process.env.NODE_ENV === "production"
             ? "Internal server error"
@@ -134,7 +160,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 // Graceful shutdown
 async function shutdown() {
-    console.log("\nShutting down...");
+    logger.log("\nShutting down...");
     await prisma.$disconnect();
     process.exit(0);
 }
@@ -165,7 +191,7 @@ async function main() {
   `);
         });
     } catch (error) {
-        console.error("[STARTUP] Failed to connect to database:", error);
+        logger.critical("[STARTUP] Failed to connect to database:", error);
         process.exit(1);
     }
 }

@@ -1,7 +1,9 @@
+import { logger } from "../utils/logger";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../index";
 import { authenticate, optionalAuth, AuthRequest } from "../middleware/auth";
+import { getBlockedUserIds } from "../utils/blocking";
 
 const router = Router();
 
@@ -24,7 +26,11 @@ router.get("/", optionalAuth, async (req: AuthRequest, res) => {
         const cursor = req.query.cursor as string | undefined;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
 
+        const blockedIds = req.user ? await getBlockedUserIds(prisma, req.user.userId) : [];
+        const where = blockedIds.length ? { userId: { notIn: blockedIds } } : {};
+
         const reels = await prisma.reel.findMany({
+            where,
             take: limit + 1, // Fetch one extra to check if there's more
             ...(cursor && {
                 cursor: { id: cursor },
@@ -52,7 +58,7 @@ router.get("/", optionalAuth, async (req: AuthRequest, res) => {
             hasMore,
         });
     } catch (error) {
-        console.error("Get reels error:", error);
+        logger.error("Get reels error:", error);
         res.status(500).json({ error: "Failed to get reels" });
     }
 });
@@ -83,7 +89,7 @@ router.get("/:id", async (req, res) => {
 
         res.json(reel);
     } catch (error) {
-        console.error("Get reel error:", error);
+        logger.error("Get reel error:", error);
         res.status(500).json({ error: "Failed to get reel" });
     }
 });
@@ -119,7 +125,7 @@ router.post("/", authenticate, async (req: AuthRequest, res) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: error.errors[0].message });
         }
-        console.error("Create reel error:", error);
+        logger.error("Create reel error:", error);
         res.status(500).json({ error: "Failed to create reel" });
     }
 });
@@ -168,7 +174,7 @@ router.patch("/:id", authenticate, async (req: AuthRequest, res) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: error.errors[0].message });
         }
-        console.error("Update reel error:", error);
+        logger.error("Update reel error:", error);
         res.status(500).json({ error: "Failed to update reel" });
     }
 });
@@ -199,7 +205,7 @@ router.delete("/:id", authenticate, async (req: AuthRequest, res) => {
 
         res.status(204).send();
     } catch (error) {
-        console.error("Delete reel error:", error);
+        logger.error("Delete reel error:", error);
         res.status(500).json({ error: "Failed to delete reel" });
     }
 });

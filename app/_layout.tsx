@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RefreshCw, AlertTriangle } from "lucide-react-native";
 import { useThemeStore } from "@/lib/store";
 import { GlobalToast } from "@/components/ui/GlobalToast";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import * as Sentry from "@sentry/react-native";
 import "../global.css";
 
@@ -72,6 +73,7 @@ export default function RootLayout() {
           <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#F2F2F7" }}>
             <Slot />
             <GlobalToast />
+            <OfflineBanner />
             <StatusBar style={isDark ? "light" : "dark"} />
           </View>
         </SafeAreaProvider>

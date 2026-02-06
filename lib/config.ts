@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
 // API Configuration
-// Backend runs on port 4001, API paths include /api prefix
+// Backend runs on port 3001, API paths include /api prefix
 
 const getBaseUrl = () => {
     // Use environment variable if set (production builds)
@@ -13,14 +13,14 @@ const getBaseUrl = () => {
     if (__DEV__) {
         // iOS simulator can access localhost/127.0.0.1
         if (Platform.OS === "ios") {
-            return "http://127.0.0.1:4001";
+            return "http://127.0.0.1:3001";
         }
         // Android emulator uses special IP for localhost
         if (Platform.OS === "android") {
-            return "http://10.0.2.2:4001";
+            return "http://10.0.2.2:3001";
         }
         // Web
-        return "http://localhost:4001";
+        return "http://localhost:3001";
     }
 
     // Production URL - MUST be set via EXPO_PUBLIC_API_URL

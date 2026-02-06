@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../index";
@@ -67,7 +68,7 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json({ shortlist: formatted });
     } catch (error) {
-        console.error("Error getting shortlist:", error);
+        logger.error("Error getting shortlist:", error);
         return res.status(500).json({ error: "Failed to get shortlist" });
     }
 });
@@ -154,7 +155,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("Error adding to shortlist:", error);
+        logger.error("Error adding to shortlist:", error);
         return res.status(500).json({ error: "Failed to add to shortlist" });
     }
 });
@@ -179,7 +180,7 @@ router.get("/:targetId/check", authenticate, async (req: AuthRequest, res: Respo
 
         return res.json({ shortlisted: !!existing });
     } catch (error) {
-        console.error("Error checking shortlist:", error);
+        logger.error("Error checking shortlist:", error);
         return res.status(500).json({ error: "Failed to check shortlist" });
     }
 });
@@ -219,7 +220,7 @@ router.delete("/:targetId", authenticate, async (req: AuthRequest, res: Response
 
         return res.json({ success: true, message: "Removed from shortlist" });
     } catch (error) {
-        console.error("Error removing from shortlist:", error);
+        logger.error("Error removing from shortlist:", error);
         return res.status(500).json({ error: "Failed to remove from shortlist" });
     }
 });

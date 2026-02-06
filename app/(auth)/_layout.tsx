@@ -21,7 +21,7 @@ export default function AuthLayout() {
 
     (async () => {
       try {
-        console.log("[Auth] Checking if already logged in");
+        if (__DEV__) console.log("[Auth] Checking if already logged in");
         const token = await getToken();
 
         if (token) {
@@ -36,19 +36,19 @@ export default function AuthLayout() {
               bio: user.bio,
               location: user.location,
             });
-            console.log("[Auth] Already logged in, redirecting to tabs");
+            if (__DEV__) console.log("[Auth] Already logged in, redirecting to tabs");
             router.replace("/(tabs)");
           } catch {
             // Token invalid, stay on auth screens
             setUser(null);
-            console.log("[Auth] Token invalid, staying on auth");
+            if (__DEV__) console.log("[Auth] Token invalid, staying on auth");
           }
         } else {
           setUser(null);
-          console.log("[Auth] No token, staying on auth");
+          if (__DEV__) console.log("[Auth] No token, staying on auth");
         }
       } catch (e) {
-        console.error("[Auth] Check error:", e);
+        if (__DEV__) console.error("[Auth] Check error:", e);
         setUser(null);
       } finally {
         setLoading(false);

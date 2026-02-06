@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { Router } from "express";
 import { prisma } from "../index";
 
@@ -19,7 +20,7 @@ router.get("/", async (_req, res) => {
 
         res.json(skills);
     } catch (error) {
-        console.error("Get skills error:", error);
+        logger.error("Get skills error:", error);
         res.status(500).json({ error: "Failed to get skills" });
     }
 });
@@ -69,7 +70,7 @@ router.post("/seed", async (_req, res) => {
 
         res.json({ created: skills.length, skills });
     } catch (error) {
-        console.error("Seed skills error:", error);
+        logger.error("Seed skills error:", error);
         res.status(500).json({ error: "Failed to seed skills" });
     }
 });

@@ -86,7 +86,7 @@ export default function ReelsFeedScreen() {
       setHasMore(response.hasMore);
       setCursor(response.nextCursor);
     } catch (err) {
-      console.error("Failed to load more reels:", err);
+      if (__DEV__) console.error("Failed to load more reels:", err);
     } finally {
       setLoadingMore(false);
     }

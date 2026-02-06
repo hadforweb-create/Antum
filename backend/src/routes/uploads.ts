@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
@@ -77,7 +78,7 @@ router.post(
                 mimeType: req.file.mimetype,
             });
         } catch (error) {
-            console.error("Upload error:", error);
+            logger.error("Upload error:", error);
             res.status(500).json({ error: "Upload failed" });
         }
     }

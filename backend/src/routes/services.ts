@@ -1,7 +1,9 @@
+import { logger } from "../utils/logger";
 import { Router, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../index";
-import { authenticate, AuthRequest } from "../middleware/auth";
+import { authenticate, optionalAuth, AuthRequest } from "../middleware/auth";
+import { getBlockedUserIds } from "../utils/blocking";
 
 const router = Router();
 
@@ -76,7 +78,7 @@ function formatServiceResponse(service: any) {
  * GET /api/services
  * List all active services (public, filterable)
  */
-router.get("/", async (req, res: Response) => {
+router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
     try {
         const validation = listServicesSchema.safeParse(req.query);
         if (!validation.success) {
@@ -114,6 +116,25 @@ router.get("/", async (req, res: Response) => {
             if (maxPrice !== undefined) where.price.lte = maxPrice;
         }
 
+        const blockedIds = req.user ? await getBlockedUserIds(prisma, req.user.userId) : [];
+        if (blockedIds.length) {
+            if (typeof where.userId === "string") {
+                if (blockedIds.includes(where.userId)) {
+                    return res.json({
+                        services: [],
+                        pagination: {
+                            page,
+                            limit,
+                            total: 0,
+                            totalPages: 0,
+                        },
+                    });
+                }
+            } else if (!where.userId) {
+                where.userId = { notIn: blockedIds };
+            }
+        }
+
         // Get total count
         const total = await prisma.service.count({ where });
 
@@ -146,7 +167,7 @@ router.get("/", async (req, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("Error listing services:", error);
+        logger.error("Error listing services:", error);
         return res.status(500).json({ error: "Failed to list services" });
     }
 });
@@ -171,7 +192,7 @@ router.get("/categories", async (_req, res: Response) => {
             })),
         });
     } catch (error) {
-        console.error("Error getting categories:", error);
+        logger.error("Error getting categories:", error);
         return res.status(500).json({ error: "Failed to get categories" });
     }
 });
@@ -219,7 +240,7 @@ router.get("/:id", async (req, res: Response) => {
 
         return res.json(response);
     } catch (error) {
-        console.error("Error getting service:", error);
+        logger.error("Error getting service:", error);
         return res.status(500).json({ error: "Failed to get service" });
     }
 });
@@ -273,7 +294,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.status(201).json(formatServiceResponse(service));
     } catch (error) {
-        console.error("Error creating service:", error);
+        logger.error("Error creating service:", error);
         return res.status(500).json({ error: "Failed to create service" });
     }
 });
@@ -327,7 +348,7 @@ router.patch("/:id", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json(formatServiceResponse(service));
     } catch (error) {
-        console.error("Error updating service:", error);
+        logger.error("Error updating service:", error);
         return res.status(500).json({ error: "Failed to update service" });
     }
 });
@@ -363,7 +384,7 @@ router.delete("/:id", authenticate, async (req: AuthRequest, res: Response) => {
 
         return res.json({ success: true, message: "Service deleted" });
     } catch (error) {
-        console.error("Error deleting service:", error);
+        logger.error("Error deleting service:", error);
         return res.status(500).json({ error: "Failed to delete service" });
     }
 });
@@ -396,7 +417,7 @@ router.get("/user/me", authenticate, async (req: AuthRequest, res: Response) => 
             services: services.map(formatServiceResponse),
         });
     } catch (error) {
-        console.error("Error getting user services:", error);
+        logger.error("Error getting user services:", error);
         return res.status(500).json({ error: "Failed to get services" });
     }
 });

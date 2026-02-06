@@ -5,18 +5,46 @@ import { authenticate, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
+const blockSchema = z
+    .object({
+        userId: z.string().optional(),
+        targetId: z.string().optional(), // legacy
+    })
+    .refine((data) => data.userId || data.targetId, {
+        message: "userId is required",
+    });
+
+const reportSchema = z
+    .object({
+        userId: z.string().optional(),
+        targetId: z.string().optional(), // legacy
+        reason: z.string().min(1),
+        details: z.string().optional(),
+        description: z.string().optional(), // legacy
+    })
+    .refine((data) => data.userId || data.targetId, {
+        message: "userId is required",
+    });
+
+function resolveTargetId(data: { userId?: string; targetId?: string }) {
+    return data.userId || data.targetId || "";
+}
+
 // Block a user
 router.post("/block", authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user!.userId;
-        const schema = z.object({ targetId: z.string() });
-        const validation = schema.safeParse(req.body);
+        const validation = blockSchema.safeParse(req.body);
 
         if (!validation.success) {
-            return res.status(400).json({ error: "Invalid target ID" });
+            return res.status(400).json({ error: validation.error.errors[0].message });
         }
 
-        const { targetId } = validation.data;
+        const targetId = resolveTargetId(validation.data);
+
+        if (!targetId) {
+            return res.status(400).json({ error: "userId is required" });
+        }
 
         if (userId === targetId) {
             return res.status(400).json({ error: "Cannot block yourself" });
@@ -29,25 +57,18 @@ router.post("/block", authenticate, async (req: AuthRequest, res: Response) => {
             },
         });
 
-        res.json({ success: true, message: "User blocked" });
+        return res.json({ success: true, message: "User blocked" });
     } catch (error) {
         // Unique constraint violation means already blocked
-        res.json({ success: true, message: "User blocked" });
+        return res.json({ success: true, message: "User blocked" });
     }
 });
 
-// Unblock a user
-router.post("/unblock", authenticate, async (req: AuthRequest, res: Response) => {
+// Unblock a user (required: DELETE /api/security/block/:userId)
+router.delete("/block/:userId", authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user!.userId;
-        const schema = z.object({ targetId: z.string() });
-        const validation = schema.safeParse(req.body);
-
-        if (!validation.success) {
-            return res.status(400).json({ error: "Invalid target ID" });
-        }
-
-        const { targetId } = validation.data;
+        const targetId = req.params.userId;
 
         await prisma.block.deleteMany({
             where: {
@@ -56,9 +77,34 @@ router.post("/unblock", authenticate, async (req: AuthRequest, res: Response) =>
             },
         });
 
-        res.json({ success: true, message: "User unblocked" });
+        return res.json({ success: true, message: "User unblocked" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to unblock user" });
+        return res.status(500).json({ error: "Failed to unblock user" });
+    }
+});
+
+// Legacy unblock endpoint (POST /api/security/unblock)
+router.post("/unblock", authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+        const validation = blockSchema.safeParse(req.body);
+
+        if (!validation.success) {
+            return res.status(400).json({ error: validation.error.errors[0].message });
+        }
+
+        const targetId = resolveTargetId(validation.data);
+
+        await prisma.block.deleteMany({
+            where: {
+                blockerId: userId,
+                blockedId: targetId,
+            },
+        });
+
+        return res.json({ success: true, message: "User unblocked" });
+    } catch (error) {
+        return res.status(500).json({ error: "Failed to unblock user" });
     }
 });
 
@@ -66,32 +112,31 @@ router.post("/unblock", authenticate, async (req: AuthRequest, res: Response) =>
 router.post("/report", authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user!.userId;
-        const schema = z.object({
-            targetId: z.string(),
-            reason: z.string().min(1),
-            description: z.string().optional(),
-        });
-
-        const validation = schema.safeParse(req.body);
+        const validation = reportSchema.safeParse(req.body);
 
         if (!validation.success) {
             return res.status(400).json({ error: validation.error.errors[0].message });
         }
 
-        const { targetId, reason, description } = validation.data;
+        const targetId = resolveTargetId(validation.data);
+        const details = validation.data.details || validation.data.description;
+
+        if (!targetId) {
+            return res.status(400).json({ error: "userId is required" });
+        }
 
         await prisma.report.create({
             data: {
                 reporterId: userId,
                 reportedId: targetId,
-                reason,
-                description,
+                reason: validation.data.reason,
+                description: details,
             },
         });
 
-        res.json({ success: true, message: "Report submitted" });
+        return res.json({ success: true, message: "Report submitted" });
     } catch (error) {
-        res.status(500).json({ error: "Failed to report user" });
+        return res.status(500).json({ error: "Failed to report user" });
     }
 });
 

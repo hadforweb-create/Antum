@@ -10,6 +10,8 @@ import {
     Platform,
     ActivityIndicator,
     Keyboard,
+    AppState,
+    AppStateStatus,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -45,6 +47,8 @@ export default function ChatScreen() {
 
     // Track last message ID to detect new messages
     const lastMessageIdRef = useRef<string | null>(null);
+    // Track app state to pause polling when backgrounded
+    const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
     const fetchConversation = useCallback(async () => {
         if (!id) return;
@@ -79,11 +83,15 @@ export default function ChatScreen() {
         fetchConversation();
     }, [fetchConversation]);
 
-    // Poll for new messages every 3 seconds
+    // Poll for new messages every 3 seconds (only when app is active)
     useEffect(() => {
         if (!id || loading || error) return;
 
         const pollMessages = async () => {
+            // Skip polling if app is backgrounded
+            if (appStateRef.current !== "active") {
+                return;
+            }
             try {
                 const msgData = await getMessages(id, 1, 50);
                 if (msgData.messages.length > 0) {
@@ -99,8 +107,16 @@ export default function ChatScreen() {
             }
         };
 
+        // Listen for app state changes
+        const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+            appStateRef.current = nextState;
+        });
+
         const interval = setInterval(pollMessages, 3000);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            appStateSubscription.remove();
+        };
     }, [id, loading, error]);
 
     const handleBack = () => {

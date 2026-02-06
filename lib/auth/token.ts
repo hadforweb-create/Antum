@@ -15,7 +15,9 @@ export async function setToken(token: string): Promise<void> {
     try {
         await SecureStore.setItemAsync(TOKEN_KEY, token);
     } catch (error) {
-        console.error("Failed to save token:", error);
+        if (__DEV__) {
+            console.error("Failed to save token:", error);
+        }
     }
 }
 
@@ -23,6 +25,8 @@ export async function clearToken(): Promise<void> {
     try {
         await SecureStore.deleteItemAsync(TOKEN_KEY);
     } catch (error) {
-        console.error("Failed to remove token:", error);
+        if (__DEV__) {
+            console.error("Failed to remove token:", error);
+        }
     }
 }

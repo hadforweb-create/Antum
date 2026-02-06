@@ -10,9 +10,9 @@ export function useAuth() {
         setLoading(true);
         setError(null);
         try {
-            console.log("[useAuth] Starting login for:", email);
+            if (__DEV__) console.log("[useAuth] Starting login for:", email);
             const response = await authClient.login({ email, password });
-            console.log("[useAuth] Login successful:", response.user.email);
+            if (__DEV__) console.log("[useAuth] Login successful:", response.user.email);
             setUser({
                 id: response.user.id,
                 email: response.user.email,
@@ -21,7 +21,7 @@ export function useAuth() {
             });
             return response;
         } catch (err: any) {
-            console.error("[useAuth] Login error:", err);
+            if (__DEV__) console.error("[useAuth] Login error:", err);
             const message = err?.message || "Login failed";
             setError({ message });
             throw err;
@@ -34,9 +34,9 @@ export function useAuth() {
         setLoading(true);
         setError(null);
         try {
-            console.log("[useAuth] Starting registration for:", email);
+            if (__DEV__) console.log("[useAuth] Starting registration for:", email);
             const response = await authClient.register({ email, password, name, role });
-            console.log("[useAuth] Registration successful:", response.user.email);
+            if (__DEV__) console.log("[useAuth] Registration successful:", response.user.email);
             setUser({
                 id: response.user.id,
                 email: response.user.email,
@@ -45,7 +45,7 @@ export function useAuth() {
             });
             return response;
         } catch (err: any) {
-            console.error("[useAuth] Registration error:", err);
+            if (__DEV__) console.error("[useAuth] Registration error:", err);
             const message = err?.message || "Registration failed";
             setError({ message });
             throw err;
