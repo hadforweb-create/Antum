@@ -1,4 +1,3 @@
-use_modular_headers!
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
@@ -6,7 +5,7 @@ require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
 ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
-ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
+ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSECTOR']
 
 use_autolinking_method_symbol = ('use' + '_native' + '_modules!').to_sym
 origin_autolinking_method = self.method(use_autolinking_method_symbol)
@@ -30,6 +29,8 @@ self.define_singleton_method(use_autolinking_method_symbol) do |*args|
 end
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '13.4'
+# use_modular_headers!
+
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -38,6 +39,20 @@ prepare_react_native_project!
 target 'Nightout' do
   use_expo_modules!
   config = use_native_modules!
+  pod 'Firebase', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseFirestoreInternal', :modular_headers => true
+  pod 'FirebaseAppCheckInterop', :modular_headers => true
+  pod 'FirebaseAuthInterop', :modular_headers => true
+  pod 'FirebaseAuth', :modular_headers => true
+  pod 'FirebaseStorage', :modular_headers => true
+  pod 'FirebaseFirestore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'GTMSessionFetcher', :modular_headers => true
+  pod 'gRPC-Core', :modular_headers => false
+  pod 'gRPC-C++', :modular_headers => false
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
   use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
@@ -45,7 +60,6 @@ target 'Nightout' do
   use_react_native!(
     :path => config[:reactNativePath],
     :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
@@ -58,22 +72,129 @@ target 'Nightout' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
-    # This is necessary for Xcode 14, because it signs resource bundles by default
-    # when building for devices.
-    installer.target_installation_results.pod_target_installation_results
-      .each do |pod_name, target_installation_result|
-      target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
-        resource_bundle_target.build_configurations.each do |config|
-          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+    # ---- Fix gRPC-Core / Xcode template warning treated as error ----
+    installer.pods_project.targets.each do |t|
+      next unless ['gRPC-Core', 'gRPC-C++', 'gRPC-ProtoRPC', 'gRPC-RxLibrary'].include?(t.name)
+
+      t.build_configurations.each do |config|
+        flags = config.build_settings['OTHER_CPLUSPLUSFLAGS'] || '$(inherited)'
+        flags = [flags] unless flags.is_a?(Array)
+        flags << '-Wno-error=missing-template-arg-list-after-template-kw'
+        flags << '-Wno-missing-template-arg-list-after-template-kw'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] = flags
+      end
+    end
+
+    # Fix for "unsupported option '-G'" in BoringSSL-GRPC (caused by -GCC_WARN_INHIBIT_ALL_WARNINGS being interpreted as -G)
+    installer.pods_project.targets.each do |target|
+      if target.name.include?('BoringSSL')
+        target.build_configurations.each do |config|
+          cflags = config.build_settings['OTHER_CFLAGS'] || '$(inherited)'
+          cflags = [cflags] unless cflags.is_a?(Array)
+          cflags = cflags.map do |flag|
+            if flag.is_a?(String)
+               flag.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '')
+            else
+               flag
+            end
+          end
+          config.build_settings['OTHER_CFLAGS'] = cflags
+
+          cxxflags = config.build_settings['OTHER_CPLUSPLUSFLAGS'] || '$(inherited)'
+          cxxflags = [cxxflags] unless cxxflags.is_a?(Array)
+          cxxflags = cxxflags.map do |flag|
+             if flag.is_a?(String)
+               flag.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '')
+             else
+               flag
+             end
+          end
+          config.build_settings['OTHER_CPLUSPLUSFLAGS'] = cxxflags
+        end
+        
+        target.source_build_phase.files.each do |file|
+            if file.settings && file.settings['COMPILER_FLAGS']
+              flags = file.settings['COMPILER_FLAGS']
+              if flags.is_a?(String)
+                 file.settings['COMPILER_FLAGS'] = flags.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '')
+              end
+            end
         end
       end
     end
 
+    # Fix gRPC-Core module map not found
+    folder_path = File.join(installer.sandbox.root, 'Headers/Private/grpc')
+    FileUtils.mkdir_p(folder_path)
+    module_map_source = File.join(installer.sandbox.root, 'Target Support Files/gRPC-Core/gRPC-Core.modulemap')
+    module_map_dest = File.join(folder_path, 'gRPC-Core.modulemap')
+    if File.exist?(module_map_source) && !File.exist?(module_map_dest)
+      FileUtils.cp(module_map_source, module_map_dest)
+    end
+
+    # Fix FirebaseStorage-Swift.h not found for RNFB* pods
+    # Create wrapper headers that redirect to the actual Swift compatibility headers
+    swift_pods = ['FirebaseStorage', 'FirebaseAuth', 'FirebaseFirestore']
+    ['Headers/Private', 'Headers/Public'].each do |header_base|
+      swift_pods.each do |pod_name|
+        header_dir = File.join(installer.sandbox.root, header_base, pod_name)
+        FileUtils.mkdir_p(header_dir)
+        wrapper_header = File.join(header_dir, "#{pod_name}-Swift.h")
+        wrapper_content = <<~HEADER
+          // Auto-generated wrapper header for #{pod_name} Swift compatibility
+          // This redirects to the generated Swift header in build products
+          #if __has_include("#{pod_name}/Swift Compatibility Header/#{pod_name}-Swift.h")
+          #import "#{pod_name}/Swift Compatibility Header/#{pod_name}-Swift.h"
+          #elif __has_include("Swift Compatibility Header/#{pod_name}-Swift.h")
+          #import "Swift Compatibility Header/#{pod_name}-Swift.h"
+          #else
+          // Placeholder when Swift header is not yet generated
+          #endif
+        HEADER
+        File.write(wrapper_header, wrapper_content)
+      end
+    end
+
+    # Add header search paths pointing to build products for Swift headers
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
-        config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-        config.build_settings['CLANG_WARN_NULLABILITY_COMPLETENESS'] = 'NO'
-        config.build_settings['CLANG_WARN_STRICT_PROTOTYPES'] = 'NO'
+        header_paths = config.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        header_paths = [header_paths] unless header_paths.is_a?(Array)
+        header_paths << '"${PODS_CONFIGURATION_BUILD_DIR}"'
+        config.build_settings['HEADER_SEARCH_PATHS'] = header_paths
+      end
+    end
+
+    # Fix expo-dev-menu Swift TARGET_IPHONE_SIMULATOR macro issue
+    dev_menu_file = File.join(Pod::Config.instance.installation_root, '..', 'node_modules', 'expo-dev-menu', 'ios', 'DevMenuViewController.swift')
+    if File.exist?(dev_menu_file)
+      content = File.read(dev_menu_file)
+      if content.include?('TARGET_IPHONE_SIMULATOR > 0')
+        content.gsub!('let isSimulator = TARGET_IPHONE_SIMULATOR > 0', "#if targetEnvironment(simulator)\n    let isSimulator = true\n    #else\n    let isSimulator = false\n    #endif")
+        File.write(dev_menu_file, content)
+      end
+    end
+
+    # Fix FirebaseFirestoreInternal being linked as framework instead of static library
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        ldflags = config.build_settings['OTHER_LDFLAGS']
+        if ldflags.is_a?(Array)
+          config.build_settings['OTHER_LDFLAGS'] = ldflags.reject { |f| f.include?('FirebaseFirestoreInternal') && f.include?('framework') }
+        elsif ldflags.is_a?(String) && ldflags.include?('-weak_framework') && ldflags.include?('FirebaseFirestoreInternal')
+          config.build_settings['OTHER_LDFLAGS'] = ldflags.gsub(/-weak_framework\s+FirebaseFirestoreInternal/, '')
+        end
+      end
+    end
+
+    # This is necessary for Xcode 14, because it signs resource bundles by default
+    # when building for devices.
+    installer.target_installation_results.pod_target_installation_results
+      .each do |_pod_name, target_installation_result|
+      target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
+        resource_bundle_target.build_configurations.each do |config|
+          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        end
       end
     end
   end
@@ -83,6 +204,19 @@ target 'Nightout' do
       expo_patch_react_imports!(installer)
     rescue => e
       Pod::UI.warn e
+    end
+
+    # Fix weak_framework FirebaseFirestoreInternal in xcconfig files
+    ['debug', 'release'].each do |config|
+      xcconfig_path = File.join(installer.sandbox.root, "Target Support Files/Pods-Nightout/Pods-Nightout.#{config}.xcconfig")
+      if File.exist?(xcconfig_path)
+        content = File.read(xcconfig_path)
+        if content.include?('-weak_framework "FirebaseFirestoreInternal"')
+          content.gsub!('-weak_framework "FirebaseFirestoreInternal"', '')
+          File.write(xcconfig_path, content)
+          Pod::UI.puts "Patched #{xcconfig_path} to remove weak_framework FirebaseFirestoreInternal"
+        end
+      end
     end
   end
 end

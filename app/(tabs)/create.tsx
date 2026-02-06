@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   Dimensions,
@@ -18,7 +17,6 @@ import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import Animated, {
   FadeIn,
-  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -29,22 +27,19 @@ import {
   Camera,
   Video as VideoIcon,
   X,
-  Check,
-  Hash,
-  Type,
   Film,
+  Type,
 } from "lucide-react-native";
-import { useSkillsStore, useAuthStore, useReelsStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
 import { createReel } from "@/lib/api/reels";
 import { uploadMedia, UploadProgress } from "@/lib/api/uploads";
-import { getSkills } from "@/lib/api/skills";
 import { colors } from "@/lib/theme";
-import { Toast } from "@/components/ui/Toast";
+import { toast } from "@/lib/ui/toast";
 import type { MediaType } from "@/types";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-type Step = "media" | "details" | "skills";
+type Step = "media" | "details";
 
 interface SelectedMedia {
   uri: string;
@@ -55,54 +50,22 @@ interface SelectedMedia {
 export default function CreateReelScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { skills, setSkills } = useSkillsStore();
-  const { clearReels } = useReelsStore();
 
   const [step, setStep] = useState<Step>("media");
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null);
   const [caption, setCaption] = useState("");
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [skillSearch, setSkillSearch] = useState("");
-
-  // Toast state
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error">("success");
 
   // Progress bar animation
   const progressWidth = useSharedValue(0);
-
-  const fetchSkills = useCallback(async () => {
-    if (skills.length === 0) {
-      try {
-        const data = await getSkills();
-        setSkills(data);
-      } catch { }
-    }
-  }, [skills.length, setSkills]);
-
-  useEffect(() => {
-    fetchSkills();
-  }, [fetchSkills]);
-
-  const filteredSkills = skills.filter((skill) =>
-    skill.name.toLowerCase().includes(skillSearch.toLowerCase())
-  );
-
-  const showToast = (message: string, type: "success" | "error") => {
-    setToastMessage(message);
-    setToastType(type);
-    setToastVisible(true);
-  };
 
   const pickFromGallery = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      showToast("Permission to access gallery is required", "error");
+      toast.error("Permission to access gallery is required");
       return;
     }
 
@@ -131,7 +94,7 @@ export default function CreateReelScreen() {
 
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      showToast("Permission to access camera is required", "error");
+      toast.error("Permission to access camera is required");
       return;
     }
 
@@ -157,7 +120,7 @@ export default function CreateReelScreen() {
 
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      showToast("Permission to access camera is required", "error");
+      toast.error("Permission to access camera is required");
       return;
     }
 
@@ -179,31 +142,17 @@ export default function CreateReelScreen() {
     }
   };
 
-  const toggleSkill = (skillId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedSkills((prev) =>
-      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
-    );
-  };
-
-  const handleNext = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (step === "details") setStep("skills");
-  };
-
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step === "details") {
       setStep("media");
       setSelectedMedia(null);
-    } else if (step === "skills") {
-      setStep("details");
     }
   };
 
   const handlePost = async () => {
-    if (!selectedMedia || selectedSkills.length === 0) {
-      showToast("Please select media and at least one skill", "error");
+    if (!selectedMedia) {
+      toast.error("Please select media");
       return;
     }
 
@@ -227,24 +176,18 @@ export default function CreateReelScreen() {
       await createReel({
         mediaType: uploadResult.mediaType,
         mediaUrl: uploadResult.url,
-        thumbnailUrl: uploadResult.thumbnailUrl,
         caption: caption || undefined,
-        skillIds: selectedSkills,
       });
 
       // Reset form
       setSelectedMedia(null);
       setCaption("");
-      setSelectedSkills([]);
       setStep("media");
       setUploadProgress(0);
       progressWidth.value = 0;
 
-      // Clear reels cache to refresh feed
-      clearReels();
-
       // Show success toast
-      showToast("Your reel is now live! 🎉", "success");
+      toast.success("Your reel is now live! 🎉");
 
       // Navigate after a short delay
       setTimeout(() => {
@@ -252,7 +195,7 @@ export default function CreateReelScreen() {
       }, 1500);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create reel";
-      showToast(message, "error");
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -267,7 +210,7 @@ export default function CreateReelScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.restrictedContainer}>
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.restrictedContent}>
+          <Animated.View entering={FadeIn.delay(100).duration(400)} style={styles.restrictedContent}>
             <View style={styles.restrictedIconOuter}>
               <View style={styles.restrictedIconInner}>
                 <Film size={36} color={colors.primary} strokeWidth={1.5} />
@@ -285,14 +228,6 @@ export default function CreateReelScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Toast notification */}
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        type={toastType}
-        onHide={() => setToastVisible(false)}
-      />
-
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
@@ -307,25 +242,16 @@ export default function CreateReelScreen() {
           <Text style={styles.headerTitle}>
             {step === "media" && "New Reel"}
             {step === "details" && "Add Details"}
-            {step === "skills" && "Add Skills"}
           </Text>
 
-          {step === "details" ? (
-            <Pressable onPress={handleNext} style={styles.nextButton}>
-              <Text style={styles.nextButtonText}>Next</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.backButton} />
-          )}
+          <View style={styles.backButton} />
         </View>
 
         {/* Progress indicator */}
         <View style={styles.progressContainer}>
           <View style={[styles.progressDot, step === "media" && styles.progressDotActive]} />
-          <View style={[styles.progressLine, step !== "media" && styles.progressLineActive]} />
+          <View style={[styles.progressLine, step === "details" && styles.progressLineActive]} />
           <View style={[styles.progressDot, step === "details" && styles.progressDotActive]} />
-          <View style={[styles.progressLine, step === "skills" && styles.progressLineActive]} />
-          <View style={[styles.progressDot, step === "skills" && styles.progressDotActive]} />
         </View>
 
         <KeyboardAvoidingView
@@ -336,7 +262,7 @@ export default function CreateReelScreen() {
           {step === "media" && (
             <Animated.View entering={FadeIn.duration(200)} style={styles.mediaStep}>
               <Text style={styles.mediaTitle}>Choose your media</Text>
-              <Text style={styles.mediaSubtitle}>Share a video or image to showcase your skills</Text>
+              <Text style={styles.mediaSubtitle}>Share a video or image to showcase your work</Text>
 
               <View style={styles.mediaOptions}>
                 <Pressable style={styles.mediaOption} onPress={pickFromGallery}>
@@ -408,72 +334,21 @@ export default function CreateReelScreen() {
               <Text style={styles.charCount}>{caption.length}/300</Text>
             </Animated.View>
           )}
-
-          {/* Step 3: Skills */}
-          {step === "skills" && (
-            <Animated.View entering={FadeIn.duration(200)} style={styles.skillsStep}>
-              <View style={styles.skillsHeader}>
-                <View style={styles.inputIconContainer}>
-                  <Hash size={20} color={colors.primary} strokeWidth={2} />
-                </View>
-                <Text style={styles.skillsTitle}>
-                  Select skills ({selectedSkills.length} selected)
-                </Text>
-              </View>
-
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search skills..."
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                value={skillSearch}
-                onChangeText={setSkillSearch}
-                autoCorrect={false}
-              />
-
-              <ScrollView
-                style={styles.skillsList}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-              >
-                {filteredSkills.map((skill, index) => {
-                  const isSelected = selectedSkills.includes(skill.id);
-                  return (
-                    <Animated.View key={skill.id} entering={FadeInDown.delay(index * 20).duration(200)}>
-                      <Pressable
-                        onPress={() => toggleSkill(skill.id)}
-                        style={[styles.skillItem, isSelected && styles.skillItemSelected]}
-                      >
-                        <Text style={[styles.skillName, isSelected && styles.skillNameSelected]}>
-                          {skill.name}
-                        </Text>
-                        {isSelected && (
-                          <View style={styles.checkContainer}>
-                            <Check size={16} color="#FFF" strokeWidth={3} />
-                          </View>
-                        )}
-                      </Pressable>
-                    </Animated.View>
-                  );
-                })}
-                <View style={{ height: 120 }} />
-              </ScrollView>
-            </Animated.View>
-          )}
         </KeyboardAvoidingView>
 
         {/* Post button with upload progress */}
-        {step === "skills" && (
+        {step === "details" && (
           <View style={styles.postButtonContainer}>
             {uploading && (
               <View style={styles.progressBarContainer}>
                 <Animated.View style={[styles.progressBar, progressAnimatedStyle]} />
-                <Text style={styles.progressText}>{uploadProgress}%</Text>
+                <Text style={styles.uploadProgressText}>{uploadProgress}%</Text>
               </View>
             )}
             <PostButton
               onPress={handlePost}
               loading={uploading}
-              disabled={selectedSkills.length === 0}
+              disabled={!selectedMedia}
             />
           </View>
         )}
@@ -556,17 +431,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-  nextButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-  },
-  nextButtonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -586,10 +450,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   progressLine: {
-    width: 40,
+    width: 60,
     height: 2,
     backgroundColor: "rgba(255,255,255,0.1)",
-    marginHorizontal: 4,
+    marginHorizontal: 8,
   },
   progressLineActive: {
     backgroundColor: colors.primary,
@@ -702,69 +566,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 8,
   },
-  // Skills step styles
-  skillsStep: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  skillsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
-  },
-  skillsTitle: {
-    color: "#FFF",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  searchInput: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    color: "#FFF",
-    fontSize: 15,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  skillsList: {
-    flex: 1,
-  },
-  skillItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    marginBottom: 10,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  skillItemSelected: {
-    backgroundColor: "rgba(80, 80, 240, 0.15)",
-    borderColor: "rgba(80, 80, 240, 0.3)",
-  },
-  skillName: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  skillNameSelected: {
-    color: colors.primary,
-    fontWeight: "600",
-  },
-  checkContainer: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   // Post button styles
   postButtonContainer: {
     paddingHorizontal: 24,
@@ -786,7 +587,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 16,
   },
-  progressText: {
+  uploadProgressText: {
     color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
@@ -799,7 +600,7 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: colors.primary,
     paddingVertical: 18,
-    borderRadius: 18,
+    borderRadius: 16,
   },
   postButtonDisabled: {
     opacity: 0.5,
@@ -809,7 +610,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
-  // Restricted styles
+  // Restricted screen
   restrictedContainer: {
     flex: 1,
     justifyContent: "center",
@@ -823,30 +624,29 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "rgba(80, 80, 240, 0.08)",
-    justifyContent: "center",
+    backgroundColor: "rgba(80, 80, 240, 0.1)",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 24,
   },
   restrictedIconInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: "rgba(80, 80, 240, 0.15)",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
   restrictedTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   restrictedText: {
     color: "rgba(255,255,255,0.5)",
-    fontSize: 15,
+    fontSize: 16,
     textAlign: "center",
-    lineHeight: 22,
-    maxWidth: 260,
+    lineHeight: 24,
   },
 });

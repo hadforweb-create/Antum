@@ -17,7 +17,11 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://nightout-backend.onrender.com",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://your-dsn@sentry.io/123"
+      }
     }
   },
   "submit": {

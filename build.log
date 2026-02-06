@@ -1,0 +1,207 @@
+› Planning build
+› Preparing expo-image Pods/libwebp » libwebp-Info.plist
+› Preparing Pods/ZXingObjC » ZXingObjC-Info.plist
+› Preparing @react-native-firebase/firestore Pods/nanopb » nanopb-Info.plist
+› Preparing expo-image Pods/libdav1d » libdav1d-Info.plist
+› Preparing Pods/leveldb-library-leveldb_Privacy » ResourceBundle-leveldb_Privacy-leveldb-library-Info.plist
+› Preparing react-native Pods/glog » glog-Info.plist
+› Preparing Pods/gRPC-Core-grpc » ResourceBundle-grpc-gRPC-Core-Info.plist
+› Preparing Pods/gRPC-C++-grpcpp » ResourceBundle-grpcpp-gRPC-C++-Info.plist
+› Executing react-native Pods/hermes-engine » [CP-User] [Hermes] Replace Hermes for the right configuration, if needed
+› Preparing Pods/gRPC-C++-gRPCCertificates-Cpp » ResourceBundle-gRPCCertificates-Cpp-gRPC-C++-Info.plist
+› Preparing react-native Pods/fmt » fmt-Info.plist
+› Preparing expo-dev-menu-interface Pods/expo-dev-menu-interface » expo-dev-menu-interface-Info.plist
+› Preparing Pods/expo-dev-menu-EXDevMenu » ResourceBundle-EXDevMenu-expo-dev-menu-Info.plist
+› Preparing Pods/expo-dev-launcher-EXDevLauncher » ResourceBundle-EXDevLauncher-expo-dev-launcher-Info.plist
+› Preparing Pods/abseil-xcprivacy » ResourceBundle-xcprivacy-abseil-Info.plist
+› Preparing react-native Pods/Yoga » Yoga-Info.plist
+› Preparing react-native Pods/SocketRocket » SocketRocket-Info.plist
+› Preparing expo-image Pods/SDWebImage-SDWebImage » ResourceBundle-SDWebImage-SDWebImage-Info.plist
+› Preparing @react-native-firebase/auth Pods/RecaptchaInterop » RecaptchaInterop-Info.plist
+› Preparing react-native Pods/React-perflogger » React-perflogger-Info.plist
+› Preparing react-native Pods/React-nativeconfig » React-nativeconfig-Info.plist
+› Preparing react-native Pods/React-featureflags » React-featureflags-Info.plist
+› Preparing react-native Pods/React-debug » React-debug-Info.plist
+› Preparing Pods/React-Core-RCTI18nStrings » ResourceBundle-RCTI18nStrings-React-Core-Info.plist
+› Preparing Pods/RNCAsyncStorage-RNCAsyncStorage_resources » ResourceBundle-RNCAsyncStorage_resources-RNCAsyncStorage-Info.plist
+› Preparing react-native Pods/RCTDeprecation » RCTDeprecation-Info.plist
+› Preparing Pods/PromisesObjC-FBLPromises_Privacy » ResourceBundle-FBLPromises_Privacy-PromisesObjC-Info.plist
+› Preparing Pods/GoogleUtilities-GoogleUtilities_Privacy » ResourceBundle-GoogleUtilities_Privacy-GoogleUtilities-Info.plist
+› Preparing Pods/GTMSessionFetcher-GTMSessionFetcher_Core_Privacy » ResourceBundle-GTMSessionFetcher_Core_Privacy-GTMSessionFetcher-Info.plist
+› Preparing @react-native-firebase/firestore Pods/FirebaseSharedSwift » FirebaseSharedSwift-Info.plist
+› Preparing Pods/FirebaseFirestoreInternal-FirebaseFirestoreInternal_Privacy » ResourceBundle-FirebaseFirestoreInternal_Privacy-FirebaseFirestoreInternal-Info.plist
+› Preparing Pods/FirebaseFirestore-FirebaseFirestore_Privacy » ResourceBundle-FirebaseFirestore_Privacy-FirebaseFirestore-Info.plist
+› Preparing Pods/FirebaseCoreInternal-FirebaseCoreInternal_Privacy » ResourceBundle-FirebaseCoreInternal_Privacy-FirebaseCoreInternal-Info.plist
+› Preparing Pods/FirebaseCoreExtension-FirebaseCoreExtension_Privacy » ResourceBundle-FirebaseCoreExtension_Privacy-FirebaseCoreExtension-Info.plist
+› Preparing Pods/FirebaseCore-FirebaseCore_Privacy » ResourceBundle-FirebaseCore_Privacy-FirebaseCore-Info.plist
+› Preparing @react-native-firebase/storage Pods/FirebaseAuthInterop » FirebaseAuthInterop-Info.plist
+› Preparing Pods/FirebaseAuth-FirebaseAuth_Privacy » ResourceBundle-FirebaseAuth_Privacy-FirebaseAuth-Info.plist
+› Preparing @react-native-firebase/auth Pods/FirebaseAppCheckInterop » FirebaseAppCheckInterop-Info.plist
+› Preparing Pods/ExpoSystemUI-ExpoSystemUI_privacy » ResourceBundle-ExpoSystemUI_privacy-ExpoSystemUI-Info.plist
+› Preparing Pods/ExpoMediaLibrary-ExpoMediaLibrary_privacy » ResourceBundle-ExpoMediaLibrary_privacy-ExpoMediaLibrary-Info.plist
+› Preparing Pods/ExpoFileSystem-ExpoFileSystem_privacy » ResourceBundle-ExpoFileSystem_privacy-ExpoFileSystem-Info.plist
+› Preparing expo-json-utils Pods/EXJSONUtils » EXJSONUtils-Info.plist
+› Preparing Pods/EXConstants-ExpoConstants_privacy » ResourceBundle-ExpoConstants_privacy-EXConstants-Info.plist
+› Preparing expo-constants Pods/EXConstants-EXConstants » ResourceBundle-EXConstants-EXConstants-Info.plist
+› Preparing react-native Pods/DoubleConversion » DoubleConversion-Info.plist
+› Preparing Pods/BoringSSL-GRPC-openssl_grpc » ResourceBundle-openssl_grpc-BoringSSL-GRPC-Info.plist
+› Executing react-native Pods/React-nativeconfig » Create Symlinks to Header Folders
+› Executing react-native Pods/React-featureflags » Create Symlinks to Header Folders
+› Executing react-native Pods/React-debug » Create Symlinks to Header Folders
+› Executing react-native Pods/fmt » Create Symlinks to Header Folders
+› Executing react-native Pods/Yoga » Create Symlinks to Header Folders
+› Preparing expo-image Pods/SDWebImage » SDWebImage-Info.plist
+› Preparing Pods/libavif » libavif-Info.plist
+› Preparing Pods/abseil » abseil-Info.plist
+› Preparing @react-native-firebase/auth Pods/PromisesObjC » PromisesObjC-Info.plist
+› Preparing @react-native-firebase/firestore Pods/leveldb-library » leveldb-library-Info.plist
+› Preparing react-native Pods/React-logger » React-logger-Info.plist
+› Preparing Pods/GTMSessionFetcher » GTMSessionFetcher-Info.plist
+› Preparing @react-native-firebase/firestore Pods/BoringSSL-GRPC » BoringSSL-GRPC-Info.plist
+› Executing Pods/abseil » Create Symlinks to Header Folders
+› Executing @react-native-firebase/firestore Pods/BoringSSL-GRPC » Create Symlinks to Header Folders
+› Preparing react-native Pods/React-Mapbuffer » React-Mapbuffer-Info.plist
+› Preparing react-native Pods/RCT-Folly » RCT-Folly-Info.plist
+› Executing react-native Pods/RCT-Folly » Create Symlinks to Header Folders
+› Executing react-native Pods/React-Mapbuffer » Create Symlinks to Header Folders
+› Preparing expo-image Pods/SDWebImageWebPCoder » SDWebImageWebPCoder-Info.plist
+› Preparing expo-image Pods/SDWebImageSVGCoder » SDWebImageSVGCoder-Info.plist
+› Preparing expo-image Pods/SDWebImageAVIFCoder » SDWebImageAVIFCoder-Info.plist
+› Preparing Pods/GoogleUtilities » GoogleUtilities-Info.plist
+› Preparing @react-native-firebase/auth Pods/FirebaseCoreInternal » FirebaseCoreInternal-Info.plist
+› Preparing react-native Pods/React-jsi » React-jsi-Info.plist
+› Preparing react-native Pods/React-rendererdebug » React-rendererdebug-Info.plist
+› Executing react-native Pods/React-rendererdebug » Create Symlinks to Header Folders
+› Preparing @react-native-firebase/auth Pods/FirebaseCore » FirebaseCore-Info.plist
+› Preparing @react-native-firebase/firestore Pods/gRPC-Core » gRPC-Core-Info.plist
+› Executing @react-native-firebase/firestore Pods/gRPC-Core » Create Symlinks to Header Folders
+› Preparing react-native Pods/React-utils » React-utils-Info.plist
+› Preparing react-native Pods/React-jsinspector » React-jsinspector-Info.plist
+› Preparing react-native Pods/React-jserrorhandler » React-jserrorhandler-Info.plist
+› Executing react-native Pods/React-utils » Create Symlinks to Header Folders
+› Executing react-native Pods/React-jserrorhandler » Create Symlinks to Header Folders
+› Preparing @react-native-firebase/auth Pods/FirebaseAuth » FirebaseAuth-Info.plist
+› Preparing @react-native-firebase/firestore Pods/FirebaseCoreExtension » FirebaseCoreExtension-Info.plist
+› Preparing react-native Pods/React-cxxreact » React-cxxreact-Info.plist
+› Preparing @react-native-firebase/storage Pods/FirebaseStorage » FirebaseStorage-Info.plist
+› Preparing react-native Pods/React-jsiexecutor » React-jsiexecutor-Info.plist
+› Preparing react-native Pods/React-runtimescheduler » React-runtimescheduler-Info.plist
+› Preparing react-native Pods/ReactCommon » ReactCommon-Info.plist
+› Executing react-native Pods/ReactCommon » Create Symlinks to Header Folders
+› Executing react-native Pods/React-runtimescheduler » Create Symlinks to Header Folders
+› Preparing @react-native-firebase/firestore Pods/gRPC-C++ » gRPC-C++-Info.plist
+› Executing @react-native-firebase/firestore Pods/gRPC-C++ » Create Symlinks to Header Folders
+› Preparing react-native Pods/React-hermes » React-hermes-Info.plist
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-RuntimeCore' from project 'Pods')
+› Preparing react-native Pods/React-RuntimeCore » React-RuntimeCore-Info.plist
+› Preparing react-native Pods/React-Core » React-Core-Info.plist
+› Executing react-native Pods/React-RuntimeCore » Create Symlinks to Header Folders
+› Preparing @react-native-firebase/firestore Pods/FirebaseFirestoreInternal » FirebaseFirestoreInternal-Info.plist
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-RuntimeHermes' from project 'Pods')
+› Preparing react-native Pods/React-RuntimeHermes » React-RuntimeHermes-Info.plist
+› Preparing react-native Pods/React-NativeModulesApple » React-NativeModulesApple-Info.plist
+› Executing react-native Pods/React-RuntimeHermes » Create Symlinks to Header Folders
+› Preparing react-native Pods/React-graphics » React-graphics-Info.plist
+› Preparing react-native-svg Pods/RNSVG » RNSVG-Info.plist
+› Preparing react-native-safe-area-context Pods/react-native-safe-area-context » react-native-safe-area-context-Info.plist
+› Preparing react-native Pods/React-RCTText » React-RCTText-Info.plist
+› Preparing @react-native-async-storage/async-storage Pods/RNCAsyncStorage » RNCAsyncStorage-Info.plist
+› Executing react-native Pods/React-graphics » Create Symlinks to Header Folders
+› Executing react-native Pods/React-NativeModulesApple » Create Symlinks to Header Folders
+› Preparing react-native Pods/RCTTypeSafety » RCTTypeSafety-Info.plist
+› Preparing @react-native-firebase/firestore Pods/FirebaseFirestore » FirebaseFirestore-Info.plist
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-Fabric' from project 'Pods')
+    Run script build phase '[CP-User] [RN]Check rncore' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-Fabric' from project 'Pods')
+› Preparing react-native Pods/React-Fabric » React-Fabric-Info.plist
+› Executing react-native Pods/React-Fabric » [CP-User] [RN]Check rncore
+› Preparing @react-native-firebase/app Pods/RNFBApp » RNFBApp-Info.plist
+› Preparing @react-native-firebase/firestore Pods/RNFBFirestore » RNFBFirestore-Info.plist
+› Preparing @react-native-firebase/storage Pods/RNFBStorage » RNFBStorage-Info.plist
+› Preparing @react-native-firebase/auth Pods/RNFBAuth » RNFBAuth-Info.plist
+› Executing react-native Pods/React-Fabric » Create Symlinks to Header Folders
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-ImageManager' from project 'Pods')
+› Preparing react-native Pods/React-ImageManager » React-ImageManager-Info.plist
+› Executing react-native Pods/React-ImageManager » Create Symlinks to Header Folders
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-FabricImage' from project 'Pods')
+› Executing react-native Pods/React-FabricImage » Create Symlinks to Header Folders
+› Preparing react-native Pods/React-FabricImage » React-FabricImage-Info.plist
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-Codegen' from project 'Pods')
+› Preparing nightout-app Pods/React-Codegen » React-Codegen-Info.plist
+› Executing nightout-app Pods/React-Codegen » Create Symlinks to Header Folders
+› Preparing react-native Pods/React-RCTSettings » React-RCTSettings-Info.plist
+› Preparing react-native Pods/React-RCTVibration » React-RCTVibration-Info.plist
+› Preparing react-native Pods/React-RCTLinking » React-RCTLinking-Info.plist
+› Preparing react-native Pods/React-RCTNetwork » React-RCTNetwork-Info.plist
+› Preparing react-native Pods/React-RCTAnimation » React-RCTAnimation-Info.plist
+› Preparing react-native Pods/React-RCTImage » React-RCTImage-Info.plist
+› Preparing react-native Pods/React-RCTBlob » React-RCTBlob-Info.plist
+› Preparing react-native Pods/React-RCTFabric » React-RCTFabric-Info.plist
+› Preparing react-native Pods/React-CoreModules » React-CoreModules-Info.plist
+› Preparing react-native-worklets-core Pods/react-native-worklets-core » react-native-worklets-core-Info.plist
+› Preparing react-native-reanimated Pods/RNReanimated » RNReanimated-Info.plist
+› Preparing react-native Pods/React-RuntimeApple » React-RuntimeApple-Info.plist
+› Preparing react-native-screens Pods/RNScreens » RNScreens-Info.plist
+› Executing react-native Pods/React-RuntimeApple » Create Symlinks to Header Folders
+› Preparing react-native-gesture-handler Pods/RNGestureHandler » RNGestureHandler-Info.plist
+› Preparing react-native Pods/React-RCTAppDelegate » React-RCTAppDelegate-Info.plist
+› Preparing expo-modules-core Pods/ExpoModulesCore » ExpoModulesCore-Info.plist
+› Preparing expo-system-ui Pods/ExpoSystemUI » ExpoSystemUI-Info.plist
+› Preparing expo-media-library Pods/ExpoMediaLibrary » ExpoMediaLibrary-Info.plist
+› Executing expo-constants Pods/EXConstants » [CP-User] Generate app.config for prebuilt Constants.manifest
+› Preparing expo-linear-gradient Pods/ExpoLinearGradient » ExpoLinearGradient-Info.plist
+› Preparing expo-keep-awake Pods/ExpoKeepAwake » ExpoKeepAwake-Info.plist
+› Preparing expo-image-picker Pods/ExpoImagePicker » ExpoImagePicker-Info.plist
+› Preparing expo-image Pods/ExpoImage » ExpoImage-Info.plist
+› Preparing expo-router Pods/ExpoHead » ExpoHead-Info.plist
+› Preparing expo-haptics Pods/ExpoHaptics » ExpoHaptics-Info.plist
+› Preparing expo-font Pods/ExpoFont » ExpoFont-Info.plist
+› Preparing expo-file-system Pods/ExpoFileSystem » ExpoFileSystem-Info.plist
+› Preparing expo-camera Pods/ExpoCamera » ExpoCamera-Info.plist
+› Preparing expo-blur Pods/ExpoBlur » ExpoBlur-Info.plist
+› Preparing expo-asset Pods/ExpoAsset » ExpoAsset-Info.plist
+› Preparing expo Pods/Expo » Expo-Info.plist
+› Preparing expo-updates-interface Pods/EXUpdatesInterface » EXUpdatesInterface-Info.plist
+› Preparing expo-splash-screen Pods/EXSplashScreen » EXSplashScreen-Info.plist
+› Preparing expo-manifests Pods/EXManifests » EXManifests-Info.plist
+› Preparing expo-image-loader Pods/EXImageLoader » EXImageLoader-Info.plist
+› Preparing expo-constants Pods/EXConstants » EXConstants-Info.plist
+› Preparing expo-av Pods/EXAV » EXAV-Info.plist
+› Preparing expo-image-manipulator Pods/ExpoImageManipulator » ExpoImageManipulator-Info.plist
+› Preparing expo-dev-menu Pods/expo-dev-menu » expo-dev-menu-Info.plist
+
+❌  (/Users/hadismainuk/Desktop/NightOut/nightout-app/node_modules/expo-dev-menu/ios/DevMenuViewController.swift:66:23)
+
+  64 | 
+  65 |   private func initialProps() -> [String: Any] {
+> 66 |     let isSimulator = TARGET_IPHONE_SIMULATOR > 0
+     |                       ^ cannot find 'TARGET_IPHONE_SIMULATOR' in scope
+  67 | 
+  68 |     return [
+  69 |       "showOnboardingView": manager.shouldShowOnboarding(),
+
+    Run script build phase '[CP-User] [RNFB] Core Configuration' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'Nightout' from project 'Nightout')
+    Run script build phase '[CP-User] [Hermes] Replace Hermes for the right configuration, if needed' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'hermes-engine' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'fmt' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'Yoga' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-nativeconfig' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-featureflags' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-debug' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'abseil' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'BoringSSL-GRPC' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-Mapbuffer' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'RCT-Folly' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-rendererdebug' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'gRPC-Core' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-utils' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-jserrorhandler' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-runtimescheduler' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'ReactCommon' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'gRPC-C++' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-NativeModulesApple' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-graphics' from project 'Pods')
+    Run script build phase 'Create Symlinks to Header Folders' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'React-RuntimeApple' from project 'Pods')
+    Run script build phase '[CP-User] Generate app.config for prebuilt Constants.manifest' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'EXConstants' from project 'Pods')
+
+› 1 error(s), and 29 warning(s)
+
+CommandError: Failed to build iOS project. "xcodebuild" exited with error code 65.

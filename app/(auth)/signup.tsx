@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   View,
   Text,
@@ -8,57 +7,61 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from "react-native";
+import { useState } from "react";
 import { useRouter, Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
-import { Mail, Lock, User, AtSign, Eye, EyeOff, ChevronLeft } from "lucide-react-native";
+import { Mail, Lock, User, Eye, EyeOff, ChevronLeft, Briefcase } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useThemeStore } from "@/lib/store";
-import { firebaseAuth, usersDb } from "@/lib/firebase";
-import { getFirebaseErrorMessage, isValidEmail, isValidPassword, isValidUsername } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/useAuth";
+import { isValidEmail, isValidPassword } from "@/lib/utils";
+import { toast } from "@/lib/ui/toast";
+
+type UserRole = "FREELANCER" | "EMPLOYER";
 
 export default function SignupScreen() {
   const router = useRouter();
   const { isDark } = useThemeStore();
+  const { register } = useAuth();
   const [displayName, setDisplayName] = useState("");
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<UserRole>("FREELANCER");
   const [loading, setLoading] = useState(false);
 
-  // Colors
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  // Colors - ANTUM Design System
+  const bgColor = isDark ? "#121214" : "#FAFAFC";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
+  const mutedColor = "#8E8E93";
   const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
-  const primaryColor = isDark ? "#FF453A" : "#FF3B30";
+  const accentColor = "#5050F0";
+  const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
+  const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
 
   const handleSignup = async () => {
     // Validation
-    if (!displayName || !username || !email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+    if (!displayName || !email || !password) {
+      toast.error("Please fill in all fields");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert("Error", "Please enter a valid email address");
-      return;
-    }
-
-    if (!isValidUsername(username)) {
-      Alert.alert("Error", "Username must be 3-20 characters, letters, numbers, and underscores only");
+      toast.error("Please enter a valid email address");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     if (!isValidPassword(password)) {
-      Alert.alert("Error", "Password must be at least 8 characters");
+      toast.error("Password must be at least 8 characters");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
@@ -66,27 +69,13 @@ export default function SignupScreen() {
     setLoading(true);
 
     try {
-      // Create auth user
-      const { user } = await firebaseAuth.signUp(email, password);
-
-      // Update display name
-      await firebaseAuth.updateProfile(displayName);
-
-      // Create user profile in Firestore
-      await usersDb.create(user.uid, {
-        email,
-        displayName,
-        username: username.toLowerCase(),
-        avatarUrl: null,
-        bio: "",
-        interests: [],
-      });
-
+      await register(email, password, displayName, role);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      toast.success("Account created successfully!");
       router.replace("/(tabs)");
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Error", getFirebaseErrorMessage(error.code));
+      toast.error(error.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
@@ -115,21 +104,84 @@ export default function SignupScreen() {
             <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
               <Text style={[styles.title, { color: textColor }]}>Create account</Text>
               <Text style={[styles.subtitle, { color: mutedColor }]}>
-                Join Nightout and start exploring activities
+                Join ANTUM and connect with talent
               </Text>
+            </Animated.View>
+
+            {/* Role Selection */}
+            <Animated.View entering={FadeInDown.delay(150)} style={styles.roleContainer}>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setRole("FREELANCER");
+                }}
+                style={[
+                  styles.roleButton,
+                  {
+                    backgroundColor: role === "FREELANCER" ? accentColor : inputBg,
+                    borderColor: role === "FREELANCER" ? accentColor : borderColor,
+                  },
+                ]}
+              >
+                <User
+                  size={20}
+                  color={role === "FREELANCER" ? "#FFF" : mutedColor}
+                  strokeWidth={2}
+                />
+                <Text
+                  style={[
+                    styles.roleText,
+                    { color: role === "FREELANCER" ? "#FFF" : textColor },
+                  ]}
+                >
+                  Freelancer
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setRole("EMPLOYER");
+                }}
+                style={[
+                  styles.roleButton,
+                  {
+                    backgroundColor: role === "EMPLOYER" ? accentColor : inputBg,
+                    borderColor: role === "EMPLOYER" ? accentColor : borderColor,
+                  },
+                ]}
+              >
+                <Briefcase
+                  size={20}
+                  color={role === "EMPLOYER" ? "#FFF" : mutedColor}
+                  strokeWidth={2}
+                />
+                <Text
+                  style={[
+                    styles.roleText,
+                    { color: role === "EMPLOYER" ? "#FFF" : textColor },
+                  ]}
+                >
+                  Employer
+                </Text>
+              </Pressable>
             </Animated.View>
 
             {/* Form */}
             <Animated.View entering={FadeInDown.delay(200)}>
               <BlurView intensity={60} tint={isDark ? "dark" : "light"} style={styles.cardBlur}>
                 <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
-                  {/* Display Name */}
+                  {/* Display Name / Company Name */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <User size={18} color={primaryColor} strokeWidth={2.5} />
+                      {role === "FREELANCER" ? (
+                        <User size={18} color={accentColor} strokeWidth={2.5} />
+                      ) : (
+                        <Briefcase size={18} color={accentColor} strokeWidth={2.5} />
+                      )}
                     </View>
                     <TextInput
-                      placeholder="Full name"
+                      placeholder={role === "FREELANCER" ? "Full name" : "Company name"}
                       placeholderTextColor={mutedColor}
                       value={displayName}
                       onChangeText={setDisplayName}
@@ -140,28 +192,10 @@ export default function SignupScreen() {
 
                   <View style={[styles.divider, { backgroundColor: borderColor }]} />
 
-                  {/* Username */}
-                  <View style={styles.inputRow}>
-                    <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <AtSign size={18} color={primaryColor} strokeWidth={2.5} />
-                    </View>
-                    <TextInput
-                      placeholder="Username"
-                      placeholderTextColor={mutedColor}
-                      value={username}
-                      onChangeText={setUsername}
-                      autoCapitalize="none"
-                      autoComplete="username"
-                      style={[styles.input, { color: textColor }]}
-                    />
-                  </View>
-
-                  <View style={[styles.divider, { backgroundColor: borderColor }]} />
-
                   {/* Email */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <Mail size={18} color={primaryColor} strokeWidth={2.5} />
+                      <Mail size={18} color={accentColor} strokeWidth={2.5} />
                     </View>
                     <TextInput
                       placeholder="Email"
@@ -180,7 +214,7 @@ export default function SignupScreen() {
                   {/* Password */}
                   <View style={styles.inputRow}>
                     <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                      <Lock size={18} color={primaryColor} strokeWidth={2.5} />
+                      <Lock size={18} color={accentColor} strokeWidth={2.5} />
                     </View>
                     <TextInput
                       placeholder="Password (8+ characters)"
@@ -210,8 +244,8 @@ export default function SignupScreen() {
             <Animated.View entering={FadeInDown.delay(300)} style={styles.termsRow}>
               <Text style={[styles.termsText, { color: mutedColor }]}>
                 By signing up, you agree to our{" "}
-                <Text style={{ color: primaryColor }}>Terms of Service</Text> and{" "}
-                <Text style={{ color: primaryColor }}>Privacy Policy</Text>
+                <Text style={{ color: accentColor }}>Terms of Service</Text> and{" "}
+                <Text style={{ color: accentColor }}>Privacy Policy</Text>
               </Text>
             </Animated.View>
 
@@ -222,10 +256,10 @@ export default function SignupScreen() {
                 disabled={loading}
                 style={[
                   styles.signupButton,
-                  { backgroundColor: primaryColor, opacity: loading ? 0.6 : 1 },
+                  { backgroundColor: primaryButtonBg, opacity: loading ? 0.6 : 1 },
                 ]}
               >
-                <Text style={styles.signupButtonText}>
+                <Text style={[styles.signupButtonText, { color: primaryButtonText }]}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Text>
               </Pressable>
@@ -238,7 +272,7 @@ export default function SignupScreen() {
               </Text>
               <Link href="/(auth)/login" asChild>
                 <Pressable>
-                  <Text style={[styles.loginLink, { color: primaryColor }]}>
+                  <Text style={[styles.loginLink, { color: accentColor }]}>
                     Sign in
                   </Text>
                 </Pressable>
@@ -267,7 +301,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   title: {
     fontSize: 34,
@@ -276,6 +310,25 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 17,
+  },
+  roleContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  roleText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   cardBlur: {
     borderRadius: 20,

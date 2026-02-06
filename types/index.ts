@@ -1,92 +1,120 @@
 export type UserRole = "FREELANCER" | "EMPLOYER";
 export type MediaType = "VIDEO" | "IMAGE";
+export type LoadingState = "idle" | "loading" | "success" | "error";
+
+export type ActivityCategory =
+  | "Outdoors"
+  | "Social"
+  | "Music"
+  | "Wellness"
+  | "Food & Drink"
+  | "Sports"
+  | "Culture"
+  | "Learning";
+
+export interface AppError {
+  code?: string;
+  message: string;
+}
+
+export interface CategoryConfig {
+  name: ActivityCategory;
+  icon: string;
+  color: string;
+  lightBg: string;
+  darkBg: string;
+}
+
+export interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  category: ActivityCategory;
+  location: string;
+  date: Date;
+  time: string;
+  maxAttendees: number;
+  attendeeCount: number;
+  images: string[];
+  organizerId: string;
+  organizer: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface Skill {
   id: string;
   name: string;
-  slug: string;
-  createdAt: string;
-}
-
-export interface FreelancerProfile {
-  id: string;
-  userId: string;
-  displayName: string;
-  bio: string | null;
-  location: string | null;
-  avatarUrl: string | null;
-  skills: Skill[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface EmployerProfile {
-  id: string;
-  userId: string;
-  companyName: string;
-  website: string | null;
-  industry: string | null;
-  avatarUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface User {
   id: string;
   email: string;
-  role: UserRole;
-  freelancerProfile: FreelancerProfile | null;
-  employerProfile: EmployerProfile | null;
+  role: UserRole | string;
+  name?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  createdAt?: string;
+  servicesCount?: number;
+  reelsCount?: number;
+  shortlistCount?: number;
 }
 
+// Simplified Reel type matching current schema
 export interface Reel {
   id: string;
-  freelancerId: string;
+  userId: string;
   mediaType: MediaType;
   mediaUrl: string;
-  thumbnailUrl: string | null;
   caption: string | null;
   createdAt: string;
-  updatedAt: string;
-  skills: Skill[];
-  freelancer: {
+  user: {
     id: string;
-    userId: string;
-    displayName: string;
+    name: string | null;
     avatarUrl: string | null;
-    location: string | null;
     bio?: string | null;
-    skills?: Skill[];
+    location?: string | null;
   };
 }
 
 export interface ReelsResponse {
-  reels: Reel[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  items: Reel[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
+export interface CreateReelInput {
+  mediaType: MediaType;
+  mediaUrl: string;
+  caption?: string;
+}
+
+export interface UpdateReelInput {
+  caption?: string;
+}
+
+// Conversation types (simplified for current schema)
 export interface Conversation {
   id: string;
-  employerId: string;
-  freelancerId: string;
   createdAt: string;
   updatedAt: string;
-  employer: {
-    id: string;
-    email: string;
-    employerProfile: { companyName: string; avatarUrl: string | null } | null;
-  };
-  freelancer: {
-    id: string;
-    email: string;
-    freelancerProfile: { displayName: string; avatarUrl: string | null } | null;
-  };
+  participants: ConversationParticipant[];
   lastMessage?: Message | null;
+}
+
+export interface ConversationParticipant {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 export interface Message {
@@ -97,40 +125,60 @@ export interface Message {
   createdAt: string;
   sender: {
     id: string;
-    role: UserRole;
-    freelancerProfile?: { displayName: string; avatarUrl: string | null } | null;
-    employerProfile?: { companyName: string; avatarUrl: string | null } | null;
+    name: string | null;
+    avatarUrl: string | null;
   };
 }
 
-export interface ShortlistItem {
+// Service types
+export interface Service {
   id: string;
-  freelancerId: string;
+  userId: string;
+  title: string;
+  description: string;
+  price: number;
+  currency: string;
+  category: string;
+  deliveryDays: number;
+  imageUrl: string | null;
+  isActive: boolean;
   createdAt: string;
-  freelancer: {
+  updatedAt: string;
+  user?: {
     id: string;
-    email: string;
-    profile: {
-      id: string;
-      displayName: string;
-      avatarUrl: string | null;
-      bio: string | null;
-      location: string | null;
-      skills: Skill[];
-      latestReel: Reel | null;
-    } | null;
-  } | null;
+    name: string | null;
+    avatarUrl: string | null;
+  };
 }
 
+export interface ServicesResponse {
+  items: Service[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+// Shortlist types
+export interface ShortlistItem {
+  id: string;
+  targetId: string;
+  createdAt: string;
+  target: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+    bio: string | null;
+    location: string | null;
+  };
+}
+
+export interface ShortlistResponse {
+  items: ShortlistItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+// Auth types
 export interface AuthResponse {
   token: string;
   user: User;
-}
-
-export interface CreateReelInput {
-  mediaType: MediaType;
-  mediaUrl: string;
-  thumbnailUrl?: string;
-  caption?: string;
-  skillIds: string[];
 }

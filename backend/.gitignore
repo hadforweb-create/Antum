@@ -1,2 +1,34 @@
-.vercel
-.env*.local
+
+# Node
+node_modules
+dist
+build
+coverage
+
+# Environment
+.env
+.env.production
+.env.development
+.env.local
+.env.*.local
+*.bak
+*.save
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database (SQLite)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+prisma/dev.db
+prisma/dev.db-journal
+
+# MacOS
+.DS_Store
+
+# Uploads
+uploads/

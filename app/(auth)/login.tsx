@@ -7,7 +7,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { useRouter, Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,46 +16,58 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useThemeStore } from "@/lib/store";
-import { firebaseAuth } from "@/lib/firebase";
-import { getFirebaseErrorMessage } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/useAuth";
+import { toast } from "@/lib/ui/toast";
 
 export default function LoginScreen() {
   const router = useRouter();
   const { isDark } = useThemeStore();
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Colors
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  // Colors - ANTUM Design System
+  const bgColor = isDark ? "#121214" : "#FAFAFC";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
+  const mutedColor = "#8E8E93";
   const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
-  const primaryColor = isDark ? "#FF453A" : "#FF3B30";
+  const accentColor = "#5050F0";
+  const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
+  const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      toast.error("Please fill in all fields");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLoading(true);
+    setSubmitting(true);
 
     try {
-      await firebaseAuth.signIn(email, password);
+      await login(email, password);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      toast.success("Welcome back!");
       router.replace("/(tabs)");
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Error", getFirebaseErrorMessage(error.code));
+      toast.error(error.message || "Failed to sign in");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  const handleForgotPassword = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push("/(auth)/forgot-password");
+  };
+
+  const isButtonDisabled = submitting || isLoading;
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
@@ -69,7 +80,7 @@ export default function LoginScreen() {
           <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
             <Text style={[styles.title, { color: textColor }]}>Welcome back</Text>
             <Text style={[styles.subtitle, { color: mutedColor }]}>
-              Sign in to continue to Nightout
+              Sign in to continue to ANTUM
             </Text>
           </Animated.View>
 
@@ -80,7 +91,7 @@ export default function LoginScreen() {
                 {/* Email */}
                 <View style={styles.inputRow}>
                   <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                    <Mail size={18} color={primaryColor} strokeWidth={2.5} />
+                    <Mail size={18} color={accentColor} strokeWidth={2.5} />
                   </View>
                   <TextInput
                     placeholder="Email"
@@ -90,6 +101,7 @@ export default function LoginScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
+                    editable={!isButtonDisabled}
                     style={[styles.input, { color: textColor }]}
                   />
                 </View>
@@ -99,7 +111,7 @@ export default function LoginScreen() {
                 {/* Password */}
                 <View style={styles.inputRow}>
                   <View style={[styles.inputIcon, { backgroundColor: inputBg }]}>
-                    <Lock size={18} color={primaryColor} strokeWidth={2.5} />
+                    <Lock size={18} color={accentColor} strokeWidth={2.5} />
                   </View>
                   <TextInput
                     placeholder="Password"
@@ -108,6 +120,7 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
                     autoComplete="password"
+                    editable={!isButtonDisabled}
                     style={[styles.input, { color: textColor, flex: 1 }]}
                   />
                   <Pressable
@@ -127,8 +140,8 @@ export default function LoginScreen() {
 
           {/* Forgot Password */}
           <Animated.View entering={FadeInDown.delay(300)}>
-            <Pressable style={styles.forgotButton}>
-              <Text style={[styles.forgotText, { color: primaryColor }]}>
+            <Pressable style={styles.forgotButton} onPress={handleForgotPassword}>
+              <Text style={[styles.forgotText, { color: accentColor }]}>
                 Forgot password?
               </Text>
             </Pressable>
@@ -138,14 +151,14 @@ export default function LoginScreen() {
           <Animated.View entering={FadeInDown.delay(400)}>
             <Pressable
               onPress={handleLogin}
-              disabled={loading}
+              disabled={isButtonDisabled}
               style={[
                 styles.loginButton,
-                { backgroundColor: primaryColor, opacity: loading ? 0.6 : 1 },
+                { backgroundColor: primaryButtonBg, opacity: isButtonDisabled ? 0.6 : 1 },
               ]}
             >
-              <Text style={styles.loginButtonText}>
-                {loading ? "Signing in..." : "Sign In"}
+              <Text style={[styles.loginButtonText, { color: primaryButtonText }]}>
+                {submitting ? "Signing in..." : "Sign In"}
               </Text>
             </Pressable>
           </Animated.View>
@@ -157,7 +170,7 @@ export default function LoginScreen() {
             </Text>
             <Link href="/(auth)/signup" asChild>
               <Pressable>
-                <Text style={[styles.signupLink, { color: primaryColor }]}>
+                <Text style={[styles.signupLink, { color: accentColor }]}>
                   Sign up
                 </Text>
               </Pressable>

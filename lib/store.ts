@@ -170,7 +170,7 @@ interface ReelsState {
   currentIndex: number;
   loadingState: LoadingState;
   error: AppError | null;
-  
+
   setReels: (reels: Reel[]) => void;
   addReel: (reel: Reel) => void;
   setCurrentIndex: (index: number) => void;
@@ -178,6 +178,7 @@ interface ReelsState {
   prevReel: () => void;
   setLoadingState: (state: LoadingState) => void;
   setError: (error: AppError | null) => void;
+  clearReels: () => void;
 }
 
 export const useReelsStore = create<ReelsState>()((set, get) => ({
@@ -201,10 +202,12 @@ export const useReelsStore = create<ReelsState>()((set, get) => ({
   prevReel: () => set((state) => ({
     currentIndex: Math.max(state.currentIndex - 1, 0),
   })),
-  
+
   setLoadingState: (loadingState) => set({ loadingState }),
-  
+
   setError: (error) => set({ error, loadingState: "error" }),
+
+  clearReels: () => set({ reels: [], currentIndex: 0, loadingState: "idle" }),
 }));
 
 // ============================================
@@ -267,19 +270,88 @@ export const useUIStore = create<UIState>()((set) => ({
   isCreateReelOpen: false,
   isActivityDetailOpen: false,
   selectedActivityId: null,
-  
+
   openCreateActivity: () => set({ isCreateActivityOpen: true }),
   closeCreateActivity: () => set({ isCreateActivityOpen: false }),
-  
+
   openCreateReel: () => set({ isCreateReelOpen: true }),
   closeCreateReel: () => set({ isCreateReelOpen: false }),
-  
-  openActivityDetail: (activityId) => set({ 
+
+  openActivityDetail: (activityId) => set({
     isActivityDetailOpen: true,
     selectedActivityId: activityId,
   }),
-  closeActivityDetail: () => set({ 
+  closeActivityDetail: () => set({
     isActivityDetailOpen: false,
     selectedActivityId: null,
   }),
+}));
+
+// ============================================
+// SKILLS STORE
+// ============================================
+
+interface Skill {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface SkillsState {
+  skills: Skill[];
+  loadingState: LoadingState;
+  error: AppError | null;
+
+  setSkills: (skills: Skill[]) => void;
+  setLoadingState: (state: LoadingState) => void;
+  setError: (error: AppError | null) => void;
+}
+
+export const useSkillsStore = create<SkillsState>()((set) => ({
+  skills: [],
+  loadingState: "idle",
+  error: null,
+
+  setSkills: (skills) => set({ skills, loadingState: "success" }),
+  setLoadingState: (loadingState) => set({ loadingState }),
+  setError: (error) => set({ error, loadingState: "error" }),
+}));
+
+// ============================================
+// SHORTLIST STORE
+// ============================================
+
+interface ShortlistState {
+  shortlistIds: Set<string>;
+  loadingState: LoadingState;
+  error: AppError | null;
+
+  addToShortlist: (freelancerId: string) => void;
+  removeFromShortlist: (freelancerId: string) => void;
+  isShortlisted: (freelancerId: string) => boolean;
+  setLoadingState: (state: LoadingState) => void;
+  setError: (error: AppError | null) => void;
+}
+
+export const useShortlistStore = create<ShortlistState>()((set, get) => ({
+  shortlistIds: new Set(),
+  loadingState: "idle",
+  error: null,
+
+  addToShortlist: (freelancerId) => set((state) => {
+    const newSet = new Set(state.shortlistIds);
+    newSet.add(freelancerId);
+    return { shortlistIds: newSet };
+  }),
+
+  removeFromShortlist: (freelancerId) => set((state) => {
+    const newSet = new Set(state.shortlistIds);
+    newSet.delete(freelancerId);
+    return { shortlistIds: newSet };
+  }),
+
+  isShortlisted: (freelancerId) => get().shortlistIds.has(freelancerId),
+
+  setLoadingState: (loadingState) => set({ loadingState }),
+  setError: (error) => set({ error, loadingState: "error" }),
 }));

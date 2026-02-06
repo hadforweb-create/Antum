@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // iOS System Colors - Light Mode
+        // ANTUM Design System Colors
         background: "rgb(var(--color-background) / <alpha-value>)",
         foreground: "rgb(var(--color-foreground) / <alpha-value>)",
         card: "rgb(var(--color-card) / <alpha-value>)",
@@ -19,10 +19,15 @@ module.exports = {
         "primary-foreground": "rgb(var(--color-primary-foreground) / <alpha-value>)",
         secondary: "rgb(var(--color-secondary) / <alpha-value>)",
         "secondary-foreground": "rgb(var(--color-secondary-foreground) / <alpha-value>)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
+        "accent-foreground": "rgb(var(--color-accent-foreground) / <alpha-value>)",
         destructive: "rgb(var(--color-destructive) / <alpha-value>)",
         border: "rgb(var(--color-border) / <alpha-value>)",
-        
-        // Static colors
+
+        // Static accent color for direct use
+        "antum-purple": "#5050F0",
+
+        // iOS System Colors (kept for compatibility)
         "ios-red": "#FF3B30",
         "ios-red-dark": "#FF453A",
         "ios-blue": "#007AFF",
@@ -38,8 +43,8 @@ module.exports = {
       fontSize: {
         "ios-largetitle": ["34px", { lineHeight: "41px", letterSpacing: "-0.02em", fontWeight: "700" }],
         "ios-title1": ["28px", { lineHeight: "34px", letterSpacing: "-0.015em", fontWeight: "700" }],
-        "ios-title2": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
-        "ios-title3": ["20px", { lineHeight: "25px", fontWeight: "600" }],
+        "ios-title2": ["22px", { lineHeight: "28px", letterSpacing: "-0.015em", fontWeight: "600" }],
+        "ios-title3": ["20px", { lineHeight: "25px", letterSpacing: "-0.015em", fontWeight: "600" }],
         "ios-headline": ["17px", { lineHeight: "22px", fontWeight: "600" }],
         "ios-body": ["17px", { lineHeight: "22px", fontWeight: "400" }],
         "ios-callout": ["16px", { lineHeight: "21px", fontWeight: "400" }],
@@ -52,22 +57,31 @@ module.exports = {
         "ios-sm": "8px",
         "ios-md": "12px",
         "ios-lg": "14px",
-        "ios-xl": "20px",
-        "ios-2xl": "24px",
+        "ios-xl": "18px",
+        "ios-2xl": "20px",
+        "ios-3xl": "24px",
       },
       spacing: {
         "safe-top": "env(safe-area-inset-top)",
         "safe-bottom": "env(safe-area-inset-bottom)",
         "safe-left": "env(safe-area-inset-left)",
         "safe-right": "env(safe-area-inset-right)",
+        // Thumbnail size
+        "thumb": "96px",
+      },
+      maxWidth: {
+        // iPad responsive containers
+        "content": "600px",
+        "feed": "800px",
       },
       animation: {
         "shimmer": "shimmer 1.5s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
-        "slide-up": "slide-up 0.3s ease-out",
-        "slide-down": "slide-down 0.3s ease-out",
-        "fade-in": "fade-in 0.2s ease-out",
-        "scale-in": "scale-in 0.15s ease-out",
+        "slide-up": "slide-up 0.15s ease-out",
+        "slide-down": "slide-down 0.15s ease-out",
+        "fade-in": "fade-in 0.12s ease-out",
+        "scale-in": "scale-in 0.12s ease-out",
+        "press": "press 0.12s ease-out",
       },
       keyframes: {
         shimmer: {
@@ -94,8 +108,16 @@ module.exports = {
           "0%": { transform: "scale(0.95)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        "press": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(0.98)" },
+          "100%": { transform: "scale(1)" },
+        },
       },
     },
   },
   plugins: [],
+  corePlugins: {
+    aspectRatio: false,
+  },
 };
