@@ -56,7 +56,7 @@ export function Toast({
                 return { bg: "rgba(255, 59, 48, 0.95)", icon: X };
             case "info":
             default:
-                return { bg: "rgba(80, 80, 240, 0.95)", icon: AlertCircle };
+                return { bg: "rgba(17, 17, 17, 0.92)", icon: AlertCircle };
         }
     };
 

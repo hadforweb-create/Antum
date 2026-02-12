@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { useAuthStore } from "@/lib/store";
 import * as authClient from "@/lib/api/authClient";
-import { getToken, clearToken } from "@/lib/auth/token";
+import { supabase } from "@/lib/supabase";
+import { getToken, setToken, clearToken } from "@/lib/auth/token";
 
 export function useAuth() {
     const { user, isAuthenticated, isLoading, error, setUser, setLoading, setError, logout: storeLogout } = useAuthStore();
@@ -17,7 +18,8 @@ export function useAuth() {
                 id: response.user.id,
                 email: response.user.email,
                 role: response.user.role,
-                name: response.user.name || null,
+                displayName: response.user.displayName || null,
+                name: response.user.displayName || null,
             });
             return response;
         } catch (err: any) {
@@ -41,7 +43,8 @@ export function useAuth() {
                 id: response.user.id,
                 email: response.user.email,
                 role: response.user.role,
-                name: response.user.name || null,
+                displayName: response.user.displayName || name || null,
+                name: response.user.displayName || name || null,
             });
             return response;
         } catch (err: any) {
@@ -62,17 +65,24 @@ export function useAuth() {
     const loadUser = useCallback(async () => {
         setLoading(true);
         try {
-            const token = await getToken();
-            if (!token) {
+            // Try to restore session from Supabase
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
                 setUser(null);
                 return null;
             }
+
+            // Store the access token so httpClient can use it
+            await setToken(session.access_token);
+
+            // Fetch full user from backend
             const userData = await authClient.getMe();
             setUser({
                 id: userData.id,
                 email: userData.email,
                 role: userData.role,
-                name: userData.name || null,
+                displayName: userData.displayName || null,
+                name: userData.displayName || null,
             });
             return userData;
         } catch {

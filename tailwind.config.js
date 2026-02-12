@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ANTUM Design System Colors
+        // BAYSIS Design System Colors
         background: "rgb(var(--color-background) / <alpha-value>)",
         foreground: "rgb(var(--color-foreground) / <alpha-value>)",
         card: "rgb(var(--color-card) / <alpha-value>)",
@@ -25,17 +25,13 @@ module.exports = {
         border: "rgb(var(--color-border) / <alpha-value>)",
 
         // Static accent color for direct use
-        "antum-purple": "#5050F0",
+        "baysis-black": "#111111",
 
-        // iOS System Colors (kept for compatibility)
-        "ios-red": "#FF3B30",
-        "ios-red-dark": "#FF453A",
-        "ios-blue": "#007AFF",
+        // System Colors (kept for compatibility)
+        "ios-red": "#D64040",
+        "ios-red-dark": "#E05050",
         "ios-green": "#34C759",
-        "ios-orange": "#FF9500",
-        "ios-yellow": "#FFCC00",
-        "ios-purple": "#AF52DE",
-        "ios-pink": "#FF2D55",
+        "ios-orange": "#CC7A00",
       },
       fontFamily: {
         "sf-pro": ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "SF Pro Text", "system-ui", "sans-serif"],
@@ -54,12 +50,12 @@ module.exports = {
         "ios-caption2": ["11px", { lineHeight: "13px", fontWeight: "400" }],
       },
       borderRadius: {
-        "ios-sm": "8px",
-        "ios-md": "12px",
-        "ios-lg": "14px",
-        "ios-xl": "18px",
-        "ios-2xl": "20px",
-        "ios-3xl": "24px",
+        "ios-sm": "10px",
+        "ios-md": "14px",
+        "ios-lg": "18px",
+        "ios-xl": "20px",
+        "ios-2xl": "22px",
+        "ios-3xl": "26px",
       },
       spacing: {
         "safe-top": "env(safe-area-inset-top)",

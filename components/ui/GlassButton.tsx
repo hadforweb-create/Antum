@@ -68,7 +68,7 @@ export function GlassButton({
 
     const getContainerStyle = (): ViewStyle => {
         const baseStyle: ViewStyle = {
-            borderRadius: 14,
+            borderRadius: 18,
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "row",
@@ -87,18 +87,18 @@ export function GlassButton({
         // Variant styles
         const variantStyles: Record<GlassButtonVariant, ViewStyle> = {
             primary: {
-                backgroundColor: isDark ? "#FFFFFF" : "#000000",
+                backgroundColor: isDark ? "#F5F3EE" : "#111111",
             },
             secondary: {
-                backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+                backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
                 borderWidth: 1,
-                borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.04)",
+                borderColor: isDark ? "rgba(255,255,255,0.1)" : "#D6D2C8",
             },
             ghost: {
                 backgroundColor: "transparent",
             },
             destructive: {
-                backgroundColor: isDark ? "#FF453A" : "#FF3B30",
+                backgroundColor: isDark ? "#E05050" : "#D64040",
             },
         };
 
@@ -124,13 +124,13 @@ export function GlassButton({
 
         const variantStyles: Record<GlassButtonVariant, TextStyle> = {
             primary: {
-                color: isDark ? "#000000" : "#FFFFFF",
+                color: isDark ? "#111111" : "#FFFFFF",
             },
             secondary: {
-                color: isDark ? "#FFFFFF" : "#000000",
+                color: isDark ? "#F5F3EE" : "#2A2A2A",
             },
             ghost: {
-                color: "#5050F0",
+                color: isDark ? "#F5F3EE" : "#111111",
             },
             destructive: {
                 color: "#FFFFFF",
@@ -148,7 +148,7 @@ export function GlassButton({
         <>
             {loading ? (
                 <ActivityIndicator
-                    color={variant === "primary" ? (isDark ? "#000" : "#FFF") : "#5050F0"}
+                    color={variant === "primary" ? (isDark ? "#111" : "#FFF") : (isDark ? "#F5F3EE" : "#111111")}
                     size="small"
                 />
             ) : (

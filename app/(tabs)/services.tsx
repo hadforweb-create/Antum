@@ -37,12 +37,12 @@ export default function ServicesScreen() {
 
     const isFreelancer = user?.role === "FREELANCER";
 
-    // ANTUM Design System Colors
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    // Baysis Design System Colors
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
-    const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
+    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
     const inputBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
     const accentColor = colors.primary;
 
@@ -126,7 +126,7 @@ export default function ServicesScreen() {
                             styles.header,
                             {
                                 backgroundColor: isDark
-                                    ? "rgba(28,28,30,0.92)"
+                                    ? "rgba(28,28,26,0.92)"
                                     : "rgba(255,255,255,0.92)",
                                 borderBottomColor: borderColor,
                             },
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 6,
-        backgroundColor: "rgba(80,80,240,0.1)",
+        backgroundColor: "rgba(17,17,17,0.06)",
     },
     categoryBadgeText: {
         fontSize: 12,

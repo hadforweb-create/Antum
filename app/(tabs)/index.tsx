@@ -181,7 +181,7 @@ export default function ReelsFeedScreen() {
         <View style={styles.loadingContainer}>
           <Shimmer style={styles.loadingShimmer} />
           <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color="#5050F0" />
+            <ActivityIndicator size="large" color="#FFF" />
             <Text style={styles.loadingText}>Loading reels...</Text>
           </View>
         </View>
@@ -261,7 +261,7 @@ export default function ReelsFeedScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.loadingMoreContainer}>
-              <ActivityIndicator size="small" color="#5050F0" />
+              <ActivityIndicator size="small" color="#FFF" />
             </View>
           ) : null
         }
@@ -283,9 +283,9 @@ export default function ReelsFeedScreen() {
         )}
       </View>
 
-      {/* ANTUM branding */}
+      {/* BAYSIS branding */}
       <View style={styles.brandingContainer}>
-        <Text style={styles.brandingText}>ANTUM</Text>
+        <Text style={styles.brandingText}>BAYSIS</Text>
       </View>
 
       {/* Instructions (first reel only) */}
@@ -380,8 +380,8 @@ function ReelItem({
         <Pressable onPress={onLike} style={styles.actionButton}>
           <Heart
             size={28}
-            color={isLiked ? "#FF3B5C" : "#FFF"}
-            fill={isLiked ? "#FF3B5C" : "transparent"}
+            color={isLiked ? "#D64040" : "#FFF"}
+            fill={isLiked ? "#D64040" : "transparent"}
             strokeWidth={2}
           />
         </Pressable>
@@ -395,8 +395,8 @@ function ReelItem({
         <Pressable onPress={onSave} style={styles.actionButton}>
           <Bookmark
             size={28}
-            color={isSaved ? "#5050F0" : "#FFF"}
-            fill={isSaved ? "#5050F0" : "transparent"}
+            color={isSaved ? "#FFF" : "#FFF"}
+            fill={isSaved ? "#FFF" : "transparent"}
             strokeWidth={2}
           />
         </Pressable>
@@ -499,11 +499,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "flex-start",
     gap: 8,
-    backgroundColor: "#5050F0",
+    backgroundColor: "rgba(255,255,255,0.2)",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
   },
   hireButtonText: {
     color: "#FFF",
@@ -537,7 +539,7 @@ const styles = StyleSheet.create({
   avatarPlaceholder: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#5050F0",
+    backgroundColor: "#111111",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -650,7 +652,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#5050F0",
+    backgroundColor: "#111111",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 25,
@@ -693,7 +695,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   createButton: {
-    backgroundColor: "#5050F0",
+    backgroundColor: "#111111",
     paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 25,

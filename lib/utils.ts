@@ -226,19 +226,19 @@ export const glassStyles = {
 
 export const glassStylesDark = {
   ultraThin: {
-    backgroundColor: "rgba(28, 28, 30, 0.4)",
+    backgroundColor: "rgba(28, 28, 26, 0.4)",
   },
   thin: {
-    backgroundColor: "rgba(28, 28, 30, 0.6)",
+    backgroundColor: "rgba(28, 28, 26, 0.6)",
   },
   regular: {
-    backgroundColor: "rgba(28, 28, 30, 0.75)",
+    backgroundColor: "rgba(28, 28, 26, 0.75)",
   },
   thick: {
-    backgroundColor: "rgba(28, 28, 30, 0.88)",
+    backgroundColor: "rgba(28, 28, 26, 0.88)",
   },
   ultraThick: {
-    backgroundColor: "rgba(28, 28, 30, 0.94)",
+    backgroundColor: "rgba(28, 28, 26, 0.94)",
   },
 };
 

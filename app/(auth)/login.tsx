@@ -28,14 +28,14 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Colors - ANTUM Design System
-  const bgColor = isDark ? "#121214" : "#FAFAFC";
+  // Colors - Baysis Design System
+  const bgColor = isDark ? "#121210" : "#F5F3EE";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = "#8E8E93";
-  const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
+  const mutedColor = "#8E8E8A";
+  const cardBg = isDark ? "rgba(28,28,26,0.85)" : "rgba(255,255,255,0.85)";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
-  const accentColor = "#5050F0";
+  const accentColor = isDark ? "#F5F3EE" : "#111111";
   const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
   const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
 
@@ -80,7 +80,7 @@ export default function LoginScreen() {
           <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
             <Text style={[styles.title, { color: textColor }]}>Welcome back</Text>
             <Text style={[styles.subtitle, { color: mutedColor }]}>
-              Sign in to continue to ANTUM
+              Sign in to continue to Baysis
             </Text>
           </Animated.View>
 

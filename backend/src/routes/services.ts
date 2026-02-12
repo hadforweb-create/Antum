@@ -62,7 +62,8 @@ function formatServiceResponse(service: any) {
         updatedAt: service.updatedAt.toISOString(),
         user: service.user ? {
             id: service.user.id,
-            name: service.user.name,
+            displayName: service.user.displayName,
+            name: service.user.displayName,  // backward compat
             email: service.user.email,
             avatarUrl: service.user.avatarUrl,
             location: service.user.location,
@@ -145,7 +146,7 @@ router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         location: true,
@@ -211,7 +212,7 @@ router.get("/:id", async (req, res: Response) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         location: true,
@@ -283,7 +284,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         location: true,
@@ -337,7 +338,7 @@ router.patch("/:id", authenticate, async (req: AuthRequest, res: Response) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         location: true,
@@ -403,7 +404,7 @@ router.get("/user/me", authenticate, async (req: AuthRequest, res: Response) => 
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         location: true,

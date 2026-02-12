@@ -63,17 +63,17 @@ export function Button({
   };
 
   const getVariantStyles = (): { container: ViewStyle; text: TextStyle } => {
-    const primary = isDark ? "#FF453A" : "#FF3B30";
-    const primaryForeground = "#FFFFFF";
-    const cardBg = isDark ? "rgba(44, 44, 46, 0.8)" : "rgba(255, 255, 255, 0.8)";
-    const textColor = isDark ? "#FFFFFF" : "#000000";
-    const mutedText = isDark ? "#8E8E93" : "#3C3C43";
+    const primary = isDark ? "#F5F3EE" : "#111111";
+    const primaryForeground = isDark ? "#111111" : "#FFFFFF";
+    const cardBg = isDark ? "rgba(44, 44, 42, 0.8)" : "rgba(255, 255, 255, 0.8)";
+    const textColor = isDark ? "#F5F3EE" : "#111111";
+    const mutedText = "#8E8E8A";
 
     switch (variant) {
       case "filled":
         return {
           container: {
-            backgroundColor: disabled ? (isDark ? "#3A3A3C" : "#E5E5EA") : primary,
+            backgroundColor: disabled ? (isDark ? "#3A3A3C" : "#E8E6E1") : primary,
           },
           text: {
             color: disabled ? mutedText : primaryForeground,
@@ -82,7 +82,7 @@ export function Button({
       case "tinted":
         return {
           container: {
-            backgroundColor: isDark ? "rgba(255, 69, 58, 0.2)" : "rgba(255, 59, 48, 0.15)",
+            backgroundColor: isDark ? "rgba(245, 243, 238, 0.1)" : "rgba(17, 17, 17, 0.06)",
           },
           text: {
             color: disabled ? mutedText : primary,
@@ -93,7 +93,7 @@ export function Button({
           container: {
             backgroundColor: cardBg,
             borderWidth: 1,
-            borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
+            borderColor: isDark ? "rgba(255,255,255,0.1)" : "#D6D2C8",
           },
           text: {
             color: disabled ? mutedText : textColor,
@@ -131,17 +131,17 @@ export function Button({
     switch (size) {
       case "small":
         return {
-          container: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+          container: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
           text: { fontSize: 14, fontWeight: "600" },
         };
       case "medium":
         return {
-          container: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+          container: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16 },
           text: { fontSize: 16, fontWeight: "600" },
         };
       case "large":
         return {
-          container: { paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14 },
+          container: { paddingHorizontal: 24, paddingVertical: 16, borderRadius: 18 },
           text: { fontSize: 17, fontWeight: "600" },
         };
       default:
@@ -239,9 +239,9 @@ export function IconButton({
   };
 
   const getBackgroundColor = () => {
-    const primary = isDark ? "#FF453A" : "#FF3B30";
-    const glass = isDark ? "rgba(44, 44, 46, 0.8)" : "rgba(255, 255, 255, 0.8)";
-    const tinted = isDark ? "rgba(255, 69, 58, 0.2)" : "rgba(255, 59, 48, 0.15)";
+    const primary = isDark ? "#F5F3EE" : "#111111";
+    const glass = isDark ? "rgba(44, 44, 42, 0.8)" : "rgba(255, 255, 255, 0.8)";
+    const tinted = isDark ? "rgba(245, 243, 238, 0.1)" : "rgba(17, 17, 17, 0.06)";
 
     switch (variant) {
       case "filled": return primary;

@@ -307,7 +307,7 @@ export default function ChatScreen() {
                     <View style={styles.headerSpacer} />
                 </View>
                 <View style={styles.errorContainer}>
-                    <AlertCircle size={48} color="#FF3B30" strokeWidth={1.5} />
+                    <AlertCircle size={48} color="#D64040" strokeWidth={1.5} />
                     <Text style={[styles.errorTitle, isDark && styles.textDark]}>
                         Failed to load chat
                     </Text>
@@ -391,7 +391,7 @@ export default function ChatScreen() {
                     <TextInput
                         style={[styles.input, isDark && styles.inputDark]}
                         placeholder="Type a message..."
-                        placeholderTextColor={isDark ? "#8E8E93" : "#C7C7CC"}
+                        placeholderTextColor={isDark ? "#8E8E8A" : "#C7C7CC"}
                         value={inputText}
                         onChangeText={setInputText}
                         multiline
@@ -422,10 +422,10 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F2F2F7",
+        backgroundColor: "#F5F3EE",
     },
     containerDark: {
-        backgroundColor: "#000",
+        backgroundColor: "#121210",
     },
     header: {
         flexDirection: "row",
@@ -435,10 +435,10 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderBottomWidth: 0.5,
         borderBottomColor: "rgba(0,0,0,0.1)",
-        backgroundColor: "#F2F2F7",
+        backgroundColor: "#F5F3EE",
     },
     headerDark: {
-        backgroundColor: "#000",
+        backgroundColor: "#121210",
         borderBottomColor: "rgba(255,255,255,0.1)",
     },
     backButton: {
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
         color: "#FFF",
     },
     subtitleDark: {
-        color: "#8E8E93",
+        color: "#8E8E8A",
     },
     loadingTitle: {
         width: 120,
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     },
     errorText: {
         fontSize: 15,
-        color: "#3C3C43",
+        color: "#2A2A2A",
         textAlign: "center",
     },
     retryButton: {
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     errorToast: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#FF3B30",
+        backgroundColor: "#D64040",
         paddingHorizontal: 16,
         paddingVertical: 10,
         marginHorizontal: 16,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     },
     loadMoreText: {
         fontSize: 14,
-        color: "#5050F0",
+        color: "#111111",
         fontWeight: "500",
     },
     emptyMessages: {
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 15,
-        color: "#8E8E93",
+        color: "#8E8E8A",
     },
     dateSeparator: {
         alignItems: "center",
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     },
     dateSeparatorText: {
         fontSize: 12,
-        color: "#8E8E93",
+        color: "#8E8E8A",
         backgroundColor: "rgba(142,142,147,0.12)",
         paddingHorizontal: 12,
         paddingVertical: 4,
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
         borderRadius: 18,
     },
     ownMessageBubble: {
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         borderBottomRightRadius: 4,
     },
     otherMessageBubble: {
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 4,
     },
     otherMessageBubbleDark: {
-        backgroundColor: "#2C2C2E",
+        backgroundColor: "#2C2C2A",
     },
     messageText: {
         fontSize: 16,
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
         textAlign: "right",
     },
     otherMessageTime: {
-        color: "#8E8E93",
+        color: "#8E8E8A",
     },
     inputContainer: {
         flexDirection: "row",
@@ -623,13 +623,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         paddingBottom: Platform.OS === "ios" ? 34 : 12,
-        backgroundColor: "#F2F2F7",
+        backgroundColor: "#F5F3EE",
         borderTopWidth: 0.5,
         borderTopColor: "rgba(0,0,0,0.1)",
         gap: 12,
     },
     inputContainerDark: {
-        backgroundColor: "#000",
+        backgroundColor: "#121210",
         borderTopColor: "rgba(255,255,255,0.1)",
     },
     input: {
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
         color: "#000",
     },
     inputDark: {
-        backgroundColor: "#1C1C1E",
+        backgroundColor: "#1C1C1A",
         color: "#FFF",
     },
     sendButton: {

@@ -45,12 +45,12 @@ export default function ProfileScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // ANTUM Design System
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    // Baysis Design System
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
-    const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
+    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
     const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
     const accentColor = colors.primary;
 
@@ -139,7 +139,7 @@ export default function ProfileScreen() {
                             styles.header,
                             {
                                 backgroundColor: isDark
-                                    ? "rgba(28,28,30,0.92)"
+                                    ? "rgba(28,28,26,0.92)"
                                     : "rgba(255,255,255,0.92)",
                                 borderBottomColor: borderColor,
                             },
@@ -396,10 +396,10 @@ export default function ProfileScreen() {
                 {/* Logout Button */}
                 <Pressable
                     onPress={handleLogout}
-                    style={[styles.logoutButton, { backgroundColor: "rgba(255,59,48,0.1)" }]}
+                    style={[styles.logoutButton, { backgroundColor: "rgba(214,64,64,0.1)" }]}
                 >
-                    <LogOut size={18} color="#FF3B30" strokeWidth={2} />
-                    <Text style={[styles.logoutText, { color: "#FF3B30" }]}>
+                    <LogOut size={18} color="#D64040" strokeWidth={2} />
+                    <Text style={[styles.logoutText, { color: "#D64040" }]}>
                         Sign Out
                     </Text>
                 </Pressable>
@@ -445,14 +445,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     errorBanner: {
-        backgroundColor: "rgba(255,59,48,0.1)",
+        backgroundColor: "rgba(214,64,64,0.1)",
         padding: 16,
         borderRadius: 12,
         marginBottom: 16,
         alignItems: "center",
     },
     errorText: {
-        color: "#FF3B30",
+        color: "#D64040",
         fontSize: 14,
         textAlign: "center",
     },
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     retryLinkText: {
-        color: "#FF3B30",
+        color: "#D64040",
         fontSize: 14,
         fontWeight: "600",
         textDecorationLine: "underline",
@@ -491,14 +491,14 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         overflow: "hidden",
         borderWidth: 2,
-        borderColor: "#5050F0",
+        borderColor: "#111111",
     },
     avatar: {
         width: "100%",
         height: "100%",
     },
     avatarPlaceholder: {
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     servicePrice: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#5050F0",
+        color: "#111111",
     },
     emptySection: {
         borderRadius: 16,

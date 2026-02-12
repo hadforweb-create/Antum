@@ -48,13 +48,14 @@ async function isParticipant(conversationId: string, userId: string): Promise<bo
 function formatUserForResponse(user: {
     id: string;
     email: string;
-    name: string | null;
+    displayName: string | null;
     role: string;
 }) {
     return {
         id: user.id,
         email: user.email,
-        name: user.name,
+        displayName: user.displayName,
+        name: user.displayName,  // backward compat
         role: user.role,
     };
 }
@@ -110,7 +111,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -124,7 +125,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -147,12 +148,12 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                 })),
                 lastMessage: existingConversation.messages[0]
                     ? {
-                          id: existingConversation.messages[0].id,
-                          text: existingConversation.messages[0].text,
-                          senderId: existingConversation.messages[0].senderId,
-                          createdAt: existingConversation.messages[0].createdAt.toISOString(),
-                          sender: formatUserForResponse(existingConversation.messages[0].sender),
-                      }
+                        id: existingConversation.messages[0].id,
+                        text: existingConversation.messages[0].text,
+                        senderId: existingConversation.messages[0].senderId,
+                        createdAt: existingConversation.messages[0].createdAt.toISOString(),
+                        sender: formatUserForResponse(existingConversation.messages[0].sender),
+                    }
                     : null,
             };
 
@@ -173,7 +174,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -223,7 +224,7 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -237,7 +238,7 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -259,12 +260,12 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
             })),
             lastMessage: conv.messages[0]
                 ? {
-                      id: conv.messages[0].id,
-                      text: conv.messages[0].text,
-                      senderId: conv.messages[0].senderId,
-                      createdAt: conv.messages[0].createdAt.toISOString(),
-                      sender: formatUserForResponse(conv.messages[0].sender),
-                  }
+                    id: conv.messages[0].id,
+                    text: conv.messages[0].text,
+                    senderId: conv.messages[0].senderId,
+                    createdAt: conv.messages[0].createdAt.toISOString(),
+                    sender: formatUserForResponse(conv.messages[0].sender),
+                }
                 : null,
         }));
 
@@ -299,7 +300,7 @@ router.get("/:id", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -313,7 +314,7 @@ router.get("/:id", authenticate, async (req: AuthRequest, res: Response) => {
                             select: {
                                 id: true,
                                 email: true,
-                                name: true,
+                                displayName: true,
                                 role: true,
                             },
                         },
@@ -338,12 +339,12 @@ router.get("/:id", authenticate, async (req: AuthRequest, res: Response) => {
             })),
             lastMessage: conversation.messages[0]
                 ? {
-                      id: conversation.messages[0].id,
-                      text: conversation.messages[0].text,
-                      senderId: conversation.messages[0].senderId,
-                      createdAt: conversation.messages[0].createdAt.toISOString(),
-                      sender: formatUserForResponse(conversation.messages[0].sender),
-                  }
+                    id: conversation.messages[0].id,
+                    text: conversation.messages[0].text,
+                    senderId: conversation.messages[0].senderId,
+                    createdAt: conversation.messages[0].createdAt.toISOString(),
+                    sender: formatUserForResponse(conversation.messages[0].sender),
+                }
                 : null,
         };
 
@@ -402,7 +403,7 @@ router.get("/:id/messages", authenticate, async (req: AuthRequest, res: Response
                     select: {
                         id: true,
                         email: true,
-                        name: true,
+                        displayName: true,
                         role: true,
                     },
                 },
@@ -484,7 +485,7 @@ router.post("/:id/messages", authenticate, async (req: AuthRequest, res: Respons
                         select: {
                             id: true,
                             email: true,
-                            name: true,
+                            displayName: true,
                             role: true,
                         },
                     },

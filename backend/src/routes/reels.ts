@@ -41,7 +41,7 @@ router.get("/", optionalAuth, async (req: AuthRequest, res) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         avatarUrl: true,
                     },
                 },
@@ -74,7 +74,7 @@ router.get("/:id", async (req, res) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         avatarUrl: true,
                         bio: true,
                         location: true,
@@ -113,7 +113,7 @@ router.post("/", authenticate, async (req: AuthRequest, res) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         avatarUrl: true,
                     },
                 },
@@ -162,7 +162,7 @@ router.patch("/:id", authenticate, async (req: AuthRequest, res) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         avatarUrl: true,
                     },
                 },

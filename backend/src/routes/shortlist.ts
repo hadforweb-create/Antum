@@ -32,7 +32,7 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
                 target: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         bio: true,
@@ -50,12 +50,13 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response) => {
             orderBy: { createdAt: "desc" },
         });
 
-        const formatted = shortlist.map((item) => ({
+        const formatted = shortlist.map((item: any) => ({
             id: item.id,
             createdAt: item.createdAt.toISOString(),
             user: {
                 id: item.target.id,
-                name: item.target.name,
+                displayName: item.target.displayName,
+                name: item.target.displayName,  // backward compat
                 email: item.target.email,
                 avatarUrl: item.target.avatarUrl,
                 bio: item.target.bio,
@@ -130,7 +131,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                 target: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         email: true,
                         avatarUrl: true,
                         bio: true,
@@ -141,17 +142,19 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
             },
         });
 
+        const entry = shortlistEntry as any;
         return res.status(201).json({
             id: shortlistEntry.id,
             createdAt: shortlistEntry.createdAt.toISOString(),
             user: {
-                id: shortlistEntry.target.id,
-                name: shortlistEntry.target.name,
-                email: shortlistEntry.target.email,
-                avatarUrl: shortlistEntry.target.avatarUrl,
-                bio: shortlistEntry.target.bio,
-                location: shortlistEntry.target.location,
-                role: shortlistEntry.target.role,
+                id: entry.target.id,
+                displayName: entry.target.displayName,
+                name: entry.target.displayName,  // backward compat
+                email: entry.target.email,
+                avatarUrl: entry.target.avatarUrl,
+                bio: entry.target.bio,
+                location: entry.target.location,
+                role: entry.target.role,
             },
         });
     } catch (error) {

@@ -46,9 +46,9 @@ export default function EditProfileScreen() {
     const [saving, setSaving] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
+    const mutedColor = "#8E8E8A";
     const inputBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
     const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)";
 
@@ -441,10 +441,10 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 60,
         borderWidth: 3,
-        borderColor: "#5050F0",
+        borderColor: "#111111",
     },
     avatarPlaceholder: {
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 3,

@@ -78,12 +78,12 @@ export function GlassCard({
 
   const opacityMap = isDark ? OPACITY_MAP_DARK : OPACITY_MAP_LIGHT;
   const bgColor = isDark
-    ? `rgba(28, 28, 30, ${opacityMap[intensity]})`
+    ? `rgba(28, 28, 26, ${opacityMap[intensity]})`
     : `rgba(255, 255, 255, ${opacityMap[intensity]})`;
 
   const borderColor = isDark
     ? "rgba(255, 255, 255, 0.08)"
-    : "rgba(0, 0, 0, 0.05)";
+    : "rgba(214, 210, 200, 0.6)";
 
   const content = (
     <View style={[styles.container, { backgroundColor: bgColor, borderColor }, style]}>
@@ -119,15 +119,15 @@ export function GlassView({
   style,
 }: Omit<GlassCardProps, "onPress" | "activeScale" | "haptic">) {
   const { isDark } = useThemeStore();
-  
+
   const opacityMap = isDark ? OPACITY_MAP_DARK : OPACITY_MAP_LIGHT;
   const bgColor = isDark
-    ? `rgba(28, 28, 30, ${opacityMap[intensity]})`
+    ? `rgba(28, 28, 26, ${opacityMap[intensity]})`
     : `rgba(255, 255, 255, ${opacityMap[intensity]})`;
 
   const borderColor = isDark
     ? "rgba(255, 255, 255, 0.08)"
-    : "rgba(0, 0, 0, 0.05)";
+    : "rgba(214, 210, 200, 0.6)";
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor, borderColor }, style]}>
@@ -143,14 +143,14 @@ export function GlassView({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 3,
   },
   content: {
     position: "relative",

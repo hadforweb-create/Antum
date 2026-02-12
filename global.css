@@ -2,92 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ANTUM Design System - iOS 26 Glass UI */
+/* BAYSIS Design System - Premium Marketplace */
 
 /* Light Mode Colors */
 :root {
-  --color-background: 250 250 252;
-  --color-foreground: 0 0 0;
+  --color-background: 245 243 238;
+  --color-foreground: 17 17 17;
   --color-card: 255 255 255;
-  --color-card-foreground: 0 0 0;
-  --color-muted: 242 242 247;
-  --color-muted-foreground: 142 142 147;
-  --color-primary: 0 0 0;
+  --color-card-foreground: 17 17 17;
+  --color-muted: 238 236 231;
+  --color-muted-foreground: 142 142 138;
+  --color-primary: 17 17 17;
   --color-primary-foreground: 255 255 255;
-  --color-secondary: 242 242 247;
-  --color-secondary-foreground: 0 0 0;
-  --color-accent: 80 80 240;
+  --color-secondary: 238 236 231;
+  --color-secondary-foreground: 42 42 42;
+  --color-accent: 17 17 17;
   --color-accent-foreground: 255 255 255;
-  --color-destructive: 255 59 48;
-  --color-border: 0 0 0;
+  --color-destructive: 214 64 64;
+  --color-border: 214 210 200;
 }
 
 /* Dark Mode Colors */
 .dark {
-  --color-background: 18 18 20;
-  --color-foreground: 255 255 255;
-  --color-card: 28 28 30;
-  --color-card-foreground: 255 255 255;
-  --color-muted: 44 44 46;
-  --color-muted-foreground: 142 142 147;
-  --color-primary: 255 255 255;
-  --color-primary-foreground: 0 0 0;
-  --color-secondary: 44 44 46;
-  --color-secondary-foreground: 255 255 255;
-  --color-accent: 80 80 240;
-  --color-accent-foreground: 255 255 255;
-  --color-destructive: 255 69 58;
+  --color-background: 18 18 16;
+  --color-foreground: 245 243 238;
+  --color-card: 28 28 26;
+  --color-card-foreground: 245 243 238;
+  --color-muted: 44 44 42;
+  --color-muted-foreground: 142 142 138;
+  --color-primary: 245 243 238;
+  --color-primary-foreground: 17 17 17;
+  --color-secondary: 44 44 42;
+  --color-secondary-foreground: 245 243 238;
+  --color-accent: 245 243 238;
+  --color-accent-foreground: 17 17 17;
+  --color-destructive: 224 80 80;
   --color-border: 255 255 255;
 }
 
 /* Glass Effect Utilities */
 @layer utilities {
   .glass-light {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
-  
+
   .glass-regular {
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
-  
+
   .glass-heavy {
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
   }
-  
+
   .glass-ultra {
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: rgba(255, 255, 255, 0.94);
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
   }
-  
+
   .dark .glass-light {
-    background-color: rgba(28, 28, 30, 0.3);
+    background-color: rgba(28, 28, 26, 0.35);
   }
-  
+
   .dark .glass-regular {
-    background-color: rgba(28, 28, 30, 0.7);
+    background-color: rgba(28, 28, 26, 0.75);
   }
-  
+
   .dark .glass-heavy {
-    background-color: rgba(28, 28, 30, 0.85);
+    background-color: rgba(28, 28, 26, 0.88);
   }
-  
+
   .dark .glass-ultra {
-    background-color: rgba(28, 28, 30, 0.92);
+    background-color: rgba(28, 28, 26, 0.94);
   }
-  
+
   /* Soft shadow utilities */
   .shadow-soft {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03), 0 2px 12px rgba(0, 0, 0, 0.02);
   }
-  
+
   .dark .shadow-soft {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 }

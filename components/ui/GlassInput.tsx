@@ -28,13 +28,13 @@ export function GlassInput({
 
     const borderColor = error
         ? isDark
-            ? "#FF453A"
-            : "#FF3B30"
+            ? "#E05050"
+            : "#D64040"
         : isFocused
-            ? "#5050F0"
+            ? isDark ? "#F5F3EE" : "#111111"
             : isDark
                 ? "rgba(255, 255, 255, 0.1)"
-                : "rgba(0, 0, 0, 0.04)";
+                : "#D6D2C8";
 
     return (
         <View style={[styles.container, containerStyle]}>
@@ -42,7 +42,7 @@ export function GlassInput({
                 <Text
                     style={[
                         styles.label,
-                        { color: isDark ? "#8E8E93" : "#3C3C43" },
+                        { color: isDark ? "#8E8E8A" : "#2A2A2A" },
                     ]}
                 >
                     {label}
@@ -67,7 +67,7 @@ export function GlassInput({
                         StyleSheet.absoluteFill,
                         {
                             backgroundColor: isDark
-                                ? "rgba(28, 28, 30, 0.7)"
+                                ? "rgba(28, 28, 26, 0.7)"
                                 : "rgba(255, 255, 255, 0.7)",
                         },
                     ]}
@@ -76,11 +76,11 @@ export function GlassInput({
                     style={[
                         styles.input,
                         {
-                            color: isDark ? "#FFFFFF" : "#000000",
+                            color: isDark ? "#F5F3EE" : "#111111",
                         },
                         style,
                     ]}
-                    placeholderTextColor={isDark ? "#8E8E93" : "#8E8E93"}
+                    placeholderTextColor="#8E8E8A"
                     onFocus={(e) => {
                         setIsFocused(true);
                         props.onFocus?.(e);
@@ -96,7 +96,7 @@ export function GlassInput({
                 <Text
                     style={[
                         styles.error,
-                        { color: isDark ? "#FF453A" : "#FF3B30" },
+                        { color: isDark ? "#E05050" : "#D64040" },
                     ]}
                 >
                     {error}
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
     inputContainer: {
-        borderRadius: 18,
+        borderRadius: 20,
         overflow: "hidden",
         minHeight: 52,
     },

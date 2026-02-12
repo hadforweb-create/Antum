@@ -169,12 +169,12 @@ export default function ActivityDetailScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Colors
-  const bgColor = isDark ? "#000" : "#F2F2F7";
+  const bgColor = isDark ? "#121210" : "#F5F3EE";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
-  const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
-  const primaryColor = isDark ? "#FF453A" : "#FF3B30";
+  const mutedColor = isDark ? "#8E8E8A" : "#2A2A2A";
+  const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.85)";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
+  const primaryColor = isDark ? "#E05050" : "#D64040";
 
   useEffect(() => {
     // Find activity from mock data
@@ -395,7 +395,7 @@ export default function ActivityDetailScreen() {
             style={[
               styles.footerContent,
               {
-                backgroundColor: isDark ? "rgba(28,28,30,0.92)" : "rgba(255,255,255,0.92)",
+                backgroundColor: isDark ? "rgba(28,28,26,0.92)" : "rgba(255,255,255,0.92)",
                 borderTopColor: borderColor,
               },
             ]}
@@ -407,8 +407,8 @@ export default function ActivityDetailScreen() {
                 {
                   backgroundColor: joined
                     ? isDark
-                      ? "rgba(255,69,58,0.2)"
-                      : "rgba(255,59,48,0.15)"
+                      ? "rgba(224,80,80,0.2)"
+                      : "rgba(214,64,64,0.15)"
                     : primaryColor,
                 },
               ]}
@@ -441,7 +441,7 @@ function DetailRow({
   isDark: boolean;
 }) {
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = isDark ? "#8E8E93" : "#3C3C43";
+  const mutedColor = isDark ? "#8E8E8A" : "#2A2A2A";
   const inputBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
 
   return (
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "#E8E6E1",
   },
   organizerName: {
     fontSize: 17,

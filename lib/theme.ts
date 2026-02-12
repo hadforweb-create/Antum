@@ -1,46 +1,43 @@
 /**
- * ANTUM Design System - Theme Colors
+ * BAYSIS Design System - Premium Marketplace
  */
 
 export const colors = {
-    // Primary actions - black/white
-    primary: "#000000",
+    // Primary actions - matte black / white
+    primary: "#111111",
     primaryDark: "#FFFFFF",
 
-    // Accent - purple
-    accent: "#5050F0",
+    // Accent - matte black (no purple)
+    accent: "#111111",
 
-    // Backgrounds
-    background: "#FAFAFC",
-    backgroundDark: "#121214",
+    // Backgrounds - warm off-white / dark
+    background: "#F5F3EE",
+    backgroundDark: "#121210",
 
     // Cards
     card: "#FFFFFF",
-    cardDark: "#1C1C1E",
+    cardDark: "#1C1C1A",
 
     // Text
-    foreground: "#000000",
-    foregroundDark: "#FFFFFF",
-    muted: "#8E8E93",
+    foreground: "#111111",
+    foregroundDark: "#F5F3EE",
+    secondary: "#2A2A2A",
+    muted: "#8E8E8A",
 
     // Destructive
-    destructive: "#FF3B30",
-    destructiveDark: "#FF453A",
+    destructive: "#D64040",
+    destructiveDark: "#E05050",
 
-    // Borders
-    border: "rgba(0,0,0,0.04)",
-    borderDark: "rgba(255,255,255,0.08)",
+    // Borders - warm stone
+    border: "#D6D2C8",
+    borderDark: "rgba(255,255,255,0.1)",
 
-    // iOS System Colors
+    // System Colors (kept for compatibility)
     ios: {
-        red: "#FF3B30",
-        redDark: "#FF453A",
-        blue: "#007AFF",
+        red: "#D64040",
+        redDark: "#E05050",
         green: "#34C759",
-        orange: "#FF9500",
-        yellow: "#FFCC00",
-        purple: "#AF52DE",
-        pink: "#FF2D55",
+        orange: "#CC7A00",
     },
 };
 
@@ -53,12 +50,12 @@ export const spacing = {
 };
 
 export const radii = {
-    sm: 8,
-    md: 12,
-    lg: 14,
-    xl: 18,
-    "2xl": 20,
-    "3xl": 24,
+    sm: 10,
+    md: 14,
+    lg: 18,
+    xl: 20,
+    "2xl": 22,
+    "3xl": 26,
     full: 9999,
 };
 

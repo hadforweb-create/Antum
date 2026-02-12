@@ -143,7 +143,7 @@ export default function ConversationsScreen() {
     const renderEmptyState = () => (
         <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
             <View style={[styles.emptyIconContainer, isDark && styles.emptyIconContainerDark]}>
-                <MessageCircle size={48} color={isDark ? "#8E8E93" : "#C7C7CC"} strokeWidth={1.5} />
+                <MessageCircle size={48} color={isDark ? "#8E8E8A" : "#C7C7CC"} strokeWidth={1.5} />
             </View>
             <Text style={[styles.emptyTitle, isDark && styles.textDark]}>Start chatting</Text>
             <Text style={[styles.emptySubtitle, isDark && styles.subtitleDark]}>
@@ -224,10 +224,10 @@ export default function ConversationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F2F2F7",
+        backgroundColor: "#F5F3EE",
     },
     containerDark: {
-        backgroundColor: "#000",
+        backgroundColor: "#121210",
     },
     header: {
         flexDirection: "row",
@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderBottomWidth: 0.5,
         borderBottomColor: "rgba(0,0,0,0.1)",
-        backgroundColor: "#F2F2F7",
+        backgroundColor: "#F5F3EE",
     },
     headerDark: {
-        backgroundColor: "#000",
+        backgroundColor: "#121210",
         borderBottomColor: "rgba(255,255,255,0.1)",
     },
     backButton: {
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#000",
+        color: "#121210",
     },
     headerSpacer: {
         width: 40,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
     },
     conversationItemDark: {
-        backgroundColor: "#1C1C1E",
+        backgroundColor: "#1C1C1A",
     },
     conversationItemPressed: {
         opacity: 0.7,
@@ -313,17 +313,17 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#000",
+        color: "#121210",
         flex: 1,
         marginRight: 8,
     },
     timeText: {
         fontSize: 13,
-        color: "#8E8E93",
+        color: "#8E8E8A",
     },
     lastMessage: {
         fontSize: 14,
-        color: "#3C3C43",
+        color: "#2A2A2A",
         lineHeight: 20,
     },
     lastMessageDark: {
@@ -331,10 +331,10 @@ const styles = StyleSheet.create({
     },
     noMessages: {
         fontStyle: "italic",
-        color: "#8E8E93",
+        color: "#8E8E8A",
     },
     subtitleDark: {
-        color: "#8E8E93",
+        color: "#8E8E8A",
     },
     emptyContainer: {
         flex: 1,
@@ -357,13 +357,13 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 20,
         fontWeight: "700",
-        color: "#000",
+        color: "#121210",
         textAlign: "center",
         marginBottom: 8,
     },
     emptySubtitle: {
         fontSize: 15,
-        color: "#3C3C43",
+        color: "#2A2A2A",
         textAlign: "center",
         lineHeight: 22,
     },

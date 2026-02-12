@@ -55,7 +55,9 @@ export interface User {
   id: string;
   email: string;
   role: UserRole | string;
-  name?: string | null;
+  displayName?: string | null;
+  username?: string | null;
+  name?: string | null;         // Kept for backward compat
   avatarUrl?: string | null;
   bio?: string | null;
   location?: string | null;
@@ -75,7 +77,8 @@ export interface Reel {
   createdAt: string;
   user: {
     id: string;
-    name: string | null;
+    displayName: string | null;
+    name?: string | null;
     avatarUrl: string | null;
     bio?: string | null;
     location?: string | null;
@@ -179,6 +182,6 @@ export interface ShortlistResponse {
 
 // Auth types
 export interface AuthResponse {
-  token: string;
+  token?: string;  // Legacy — Supabase Auth issues tokens now
   user: User;
 }

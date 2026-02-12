@@ -98,7 +98,7 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: "#121210",
     },
     backButton: {
         position: "absolute",
@@ -120,20 +120,20 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: "#888",
+        color: "#8E8E8A",
         marginBottom: 32,
         lineHeight: 24,
     },
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#1C1C1E",
-        borderRadius: 12,
+        backgroundColor: "#1C1C1A",
+        borderRadius: 16,
         marginBottom: 20,
         paddingHorizontal: 16,
         height: 56,
         borderWidth: 1,
-        borderColor: "#333",
+        borderColor: "rgba(255,255,255,0.1)",
     },
     inputIcon: {
         marginRight: 12,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     button: {
         backgroundColor: colors.primary,
         height: 56,
-        borderRadius: 12,
+        borderRadius: 18,
         alignItems: "center",
         justifyContent: "center",
         marginTop: 8,
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
     },
     successContainer: {
         alignItems: "center",
-        backgroundColor: "#1C1C1E",
+        backgroundColor: "#1C1C1A",
         padding: 24,
-        borderRadius: 16,
+        borderRadius: 22,
     },
     successIcon: {
         width: 64,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     },
     successText: {
         fontSize: 15,
-        color: "#888",
+        color: "#8E8E8A",
         textAlign: "center",
         marginBottom: 24,
         lineHeight: 22,

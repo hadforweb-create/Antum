@@ -7,7 +7,7 @@ import { authenticate, AuthRequest } from "../middleware/auth";
 const router = Router();
 
 const updateProfileSchema = z.object({
-    name: z.string().min(1, "Name is required").max(100).optional(),
+    displayName: z.string().min(1, "Name is required").max(100).optional(),
     bio: z.string().max(500).optional().nullable(),
     location: z.string().max(100).optional().nullable(),
     avatarUrl: z.string().url().optional().nullable(),
@@ -20,7 +20,8 @@ const updateProfileSchema = z.object({
 function formatUserResponse(user: any) {
     return {
         id: user.id,
-        name: user.name,
+        displayName: user.displayName,
+        name: user.displayName,  // backward compat
         email: user.email,
         avatarUrl: user.avatarUrl,
         bio: user.bio,
@@ -45,7 +46,7 @@ router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
             where: { id: req.user!.userId },
             select: {
                 id: true,
-                name: true,
+                displayName: true,
                 email: true,
                 avatarUrl: true,
                 bio: true,
@@ -97,7 +98,7 @@ router.patch("/me", authenticate, async (req: AuthRequest, res: Response) => {
             data: validation.data,
             select: {
                 id: true,
-                name: true,
+
                 email: true,
                 avatarUrl: true,
                 bio: true,
@@ -124,7 +125,7 @@ router.get("/:id", async (req, res: Response) => {
             where: { id: req.params.id },
             select: {
                 id: true,
-                name: true,
+                displayName: true,
                 email: true,
                 avatarUrl: true,
                 bio: true,
@@ -186,7 +187,7 @@ router.get("/:id/reels", async (req, res: Response) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
+                        displayName: true,
                         avatarUrl: true,
                     },
                 },
@@ -232,7 +233,7 @@ router.put("/:id", authenticate, async (req: AuthRequest, res: Response) => {
             data: validation.data,
             select: {
                 id: true,
-                name: true,
+
                 email: true,
                 avatarUrl: true,
                 bio: true,

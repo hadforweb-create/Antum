@@ -37,11 +37,11 @@ export default function ServiceDetailScreen() {
     const [messagingLoading, setMessagingLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
-    const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
+    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
 
     const isOwner = service?.user?.id === user?.id;
 
@@ -220,7 +220,7 @@ export default function ServiceDetailScreen() {
                                     {deleteLoading ? (
                                         <ActivityIndicator size="small" color="#FFF" />
                                     ) : (
-                                        <Trash2 size={20} color="#FF3B30" strokeWidth={2} />
+                                        <Trash2 size={20} color="#D64040" strokeWidth={2} />
                                     )}
                                 </Pressable>
                             </>
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
         width: 52,
         height: 52,
         borderRadius: 14,
-        backgroundColor: "rgba(80, 80, 240, 0.1)",
+        backgroundColor: "rgba(17, 17, 17, 0.06)",
         alignItems: "center",
         justifyContent: "center",
     },

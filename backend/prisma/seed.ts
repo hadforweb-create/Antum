@@ -2,11 +2,14 @@
  * Database Seed Script
  * Creates demo data for testing the app
  * 
+ * NOTE: With Supabase Auth, real users are created via signup.
+ * This seed creates Prisma user records with placeholder IDs.
+ * For real testing, sign up via the app and they'll get proper Supabase UUIDs.
+ * 
  * Usage: npm run prisma:seed
  */
 
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -39,15 +42,14 @@ async function main() {
     ]);
     console.log(`  Created ${skills.length} skills`);
 
-    // Create demo users
+    // Create demo users (placeholder IDs — real users come from Supabase Auth signup)
     console.log("👥 Creating demo users...");
-    const passwordHash = await bcrypt.hash("password123", 10);
 
     const freelancer = await prisma.user.create({
         data: {
+            id: "demo-freelancer-001",
             email: "freelancer@demo.com",
-            passwordHash,
-            name: "Alex Martinez",
+            displayName: "Alex Martinez",
             bio: "Professional event photographer with 8+ years of experience. Specializing in nightlife, concerts, and private events.",
             location: "Los Angeles, CA",
             role: "FREELANCER",
@@ -57,9 +59,9 @@ async function main() {
 
     const freelancer2 = await prisma.user.create({
         data: {
+            id: "demo-freelancer-002",
             email: "dj@demo.com",
-            passwordHash,
-            name: "Sarah Chen",
+            displayName: "Sarah Chen",
             bio: "DJ and music producer. Playing at clubs and festivals across the west coast. Available for private events.",
             location: "San Francisco, CA",
             role: "FREELANCER",
@@ -69,9 +71,9 @@ async function main() {
 
     const employer = await prisma.user.create({
         data: {
+            id: "demo-employer-001",
             email: "employer@demo.com",
-            passwordHash,
-            name: "Jordan Blake",
+            displayName: "Jordan Blake",
             bio: "Event manager at Skyline Events. Always looking for talented professionals to work with.",
             location: "New York, NY",
             role: "EMPLOYER",
@@ -79,7 +81,7 @@ async function main() {
         },
     });
 
-    console.log(`  Created users: ${freelancer.name}, ${freelancer2.name}, ${employer.name}`);
+    console.log(`  Created users: ${freelancer.displayName}, ${freelancer2.displayName}, ${employer.displayName}`);
 
     // Assign skills to freelancers
     console.log("🔗 Assigning skills...");
@@ -230,10 +232,7 @@ async function main() {
     console.log("  Created conversation with 4 messages");
 
     console.log("\n✅ Seed completed successfully!");
-    console.log("\n📋 Demo Accounts:");
-    console.log("  Freelancer: freelancer@demo.com / password123");
-    console.log("  DJ/Freelancer: dj@demo.com / password123");
-    console.log("  Employer: employer@demo.com / password123");
+    console.log("\n📋 Demo users created (use Supabase Auth to sign up real accounts)");
 }
 
 main()

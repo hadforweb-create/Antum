@@ -35,15 +35,15 @@ export default function SavedScreen() {
     const [error, setError] = useState<string | null>(null);
     const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-    // ANTUM Design System
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    // Baysis Design System
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
-    const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
+    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
     const accentColor = colors.primary;
-    const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
-    const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
+    const primaryButtonBg = isDark ? "#F5F3EE" : "#111111";
+    const primaryButtonText = isDark ? "#111111" : "#F5F3EE";
 
     const fetchShortlist = useCallback(async (isRefresh = false) => {
         try {
@@ -107,7 +107,7 @@ export default function SavedScreen() {
                             styles.header,
                             {
                                 backgroundColor: isDark
-                                    ? "rgba(28,28,30,0.92)"
+                                    ? "rgba(28,28,26,0.92)"
                                     : "rgba(255,255,255,0.92)",
                                 borderBottomColor: borderColor,
                             },
@@ -254,9 +254,9 @@ export default function SavedScreen() {
                                                 ]}
                                             >
                                                 {removingIds.has(item.user.id) ? (
-                                                    <ActivityIndicator size="small" color="#FF3B30" />
+                                                    <ActivityIndicator size="small" color="#D64040" />
                                                 ) : (
-                                                    <Trash2 size={18} color="#FF3B30" strokeWidth={2} />
+                                                    <Trash2 size={18} color="#D64040" strokeWidth={2} />
                                                 )}
                                             </Pressable>
                                             <View style={styles.viewButton}>
@@ -276,7 +276,7 @@ export default function SavedScreen() {
                         <View
                             style={[
                                 styles.emptyIcon,
-                                { backgroundColor: isDark ? "rgba(80,80,240,0.1)" : "rgba(80,80,240,0.08)" },
+                                { backgroundColor: isDark ? "rgba(17,17,17,0.06)" : "rgba(17,17,17,0.05)" },
                             ]}
                         >
                             <Bookmark size={32} color={accentColor} strokeWidth={1.5} />
@@ -443,10 +443,10 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(255,59,48,0.1)",
+        backgroundColor: "rgba(214,64,64,0.1)",
     },
     viewButton: {
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,

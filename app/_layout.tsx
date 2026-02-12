@@ -41,7 +41,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
       return (
         <View style={styles.errorContainer}>
           <View style={styles.errorIconContainer}>
-            <AlertTriangle size={48} color="#FF3B30" strokeWidth={1.5} />
+            <AlertTriangle size={48} color="#D64040" strokeWidth={1.5} />
           </View>
           <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
           <Text style={styles.errorMessage}>
@@ -70,7 +70,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <View style={{ flex: 1, backgroundColor: isDark ? "#000" : "#F2F2F7" }}>
+          <View style={{ flex: 1, backgroundColor: isDark ? "#121210" : "#F5F3EE" }}>
             <Slot />
             <GlobalToast />
             <OfflineBanner />
@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 32,
-    backgroundColor: "#121214",
+    backgroundColor: "#121210",
   },
   errorIconContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "rgba(255, 59, 48, 0.1)",
+    backgroundColor: "rgba(214, 64, 64, 0.1)",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   errorMessage: {
     fontSize: 15,
-    color: "#8E8E93",
+    color: "#8E8E8A",
     textAlign: "center",
     marginBottom: 32,
     lineHeight: 22,
@@ -118,10 +118,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "#5050F0",
+    backgroundColor: "#111111",
     paddingHorizontal: 28,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   retryText: {
     color: "#FFF",

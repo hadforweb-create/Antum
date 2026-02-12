@@ -68,8 +68,8 @@ export default function TabsLayout() {
     })();
   }, []);
 
-  const activeColor = "#5050F0";
-  const inactiveColor = "#8E8E93";
+  const activeColor = "#111111";
+  const inactiveColor = "#8E8E8A";
 
   return (
     <Tabs
@@ -93,7 +93,7 @@ export default function TabsLayout() {
               style={[
                 StyleSheet.absoluteFill,
                 {
-                  backgroundColor: isDark ? "rgba(28, 28, 30, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                  backgroundColor: isDark ? "rgba(28, 28, 26, 0.9)" : "rgba(255, 255, 255, 0.9)",
                   borderTopWidth: 0.5,
                   borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
                 },

@@ -60,12 +60,12 @@ export default function CreateServiceScreen() {
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
-    const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.85)";
     const inputBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
-    const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)";
+    const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(214,210,200,0.6)";
 
     // Check if user is a freelancer
     const isFreelancer = user?.role === "FREELANCER";
@@ -458,10 +458,10 @@ const styles = StyleSheet.create({
         paddingTop: 14,
     },
     inputError: {
-        borderColor: "#FF3B30",
+        borderColor: "#D64040",
     },
     errorText: {
-        color: "#FF3B30",
+        color: "#D64040",
         fontSize: 13,
         marginTop: 4,
     },

@@ -62,11 +62,11 @@ export default function ProfileDetailScreen() {
     const [isShortlisted, setIsShortlisted] = useState(false);
     const [shortlistLoading, setShortlistLoading] = useState(false);
 
-    const bgColor = isDark ? "#121214" : "#FAFAFC";
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E93";
-    const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
+    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
     const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
 
     const isOwnProfile = currentUser?.id === id;
@@ -583,10 +583,10 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         borderWidth: 4,
-        borderColor: "#5050F0",
+        borderColor: "#111111",
     },
     avatarPlaceholder: {
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: "#5050F0",
+        backgroundColor: "#111111",
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,

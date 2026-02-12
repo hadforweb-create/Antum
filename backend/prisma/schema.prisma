@@ -8,10 +8,10 @@ datasource db {
 }
 
 model User {
-  id           String      @id @default(cuid())
+  id           String      @id            // Supabase auth user id (sub)
   email        String      @unique
-  passwordHash String
-  name         String?
+  displayName  String?
+  username     String?     @unique
   bio          String?
   avatarUrl    String?
   location     String?
@@ -181,15 +181,4 @@ model Report {
 
   @@index([reportedId])
   @@index([status])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  email     String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([email])
-  @@index([token])
 }

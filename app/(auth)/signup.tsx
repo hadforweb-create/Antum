@@ -34,16 +34,16 @@ export default function SignupScreen() {
   const [role, setRole] = useState<UserRole>("FREELANCER");
   const [loading, setLoading] = useState(false);
 
-  // Colors - ANTUM Design System
-  const bgColor = isDark ? "#121214" : "#FAFAFC";
+  // Colors - Baysis Design System
+  const bgColor = isDark ? "#121210" : "#F5F3EE";
   const textColor = isDark ? "#FFF" : "#000";
-  const mutedColor = "#8E8E93";
-  const cardBg = isDark ? "rgba(28,28,30,0.85)" : "rgba(255,255,255,0.85)";
+  const mutedColor = "#8E8E8A";
+  const cardBg = isDark ? "rgba(28,28,26,0.85)" : "rgba(255,255,255,0.85)";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
   const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
-  const accentColor = "#5050F0";
-  const primaryButtonBg = isDark ? "#FFFFFF" : "#000000";
-  const primaryButtonText = isDark ? "#000000" : "#FFFFFF";
+  const accentColor = isDark ? "#F5F3EE" : "#111111";
+  const primaryButtonBg = isDark ? "#F5F3EE" : "#111111";
+  const primaryButtonText = isDark ? "#111111" : "#F5F3EE";
 
   const handleSignup = async () => {
     // Validation
@@ -104,7 +104,7 @@ export default function SignupScreen() {
             <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
               <Text style={[styles.title, { color: textColor }]}>Create account</Text>
               <Text style={[styles.subtitle, { color: mutedColor }]}>
-                Join ANTUM and connect with talent
+                Join Baysis and connect with talent
               </Text>
             </Animated.View>
 

@@ -33,13 +33,13 @@ export function LoadingState({
         <View style={[styles.container, style]}>
             <ActivityIndicator
                 size={size}
-                color="#5050F0"
+                color={isDark ? "#F5F3EE" : "#111111"}
             />
             {message && (
                 <Text
                     style={[
                         styles.message,
-                        { color: isDark ? "#8E8E93" : "#8E8E93" },
+                        { color: "#8E8E8A" },
                     ]}
                 >
                     {message}
@@ -84,7 +84,7 @@ export function Skeleton({
                     width: width as DimensionValue,
                     height,
                     borderRadius,
-                    backgroundColor: isDark ? "#3C3C43" : "#E5E5EA",
+                    backgroundColor: isDark ? "#2A2A2A" : "#E8E6E1",
                 },
                 animatedStyle,
                 style,
@@ -105,10 +105,10 @@ export function SkeletonCard({ style }: SkeletonCardProps) {
             style={[
                 styles.skeletonCard,
                 {
-                    backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF",
+                    backgroundColor: isDark ? "#1C1C1A" : "#FFFFFF",
                     borderColor: isDark
                         ? "rgba(255, 255, 255, 0.08)"
-                        : "rgba(0, 0, 0, 0.04)",
+                        : "rgba(214, 210, 200, 0.6)",
                 },
                 style,
             ]}

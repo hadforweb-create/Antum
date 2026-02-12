@@ -28,7 +28,7 @@ export function EmptyState({
             <Text
                 style={[
                     styles.title,
-                    { color: isDark ? "#FFFFFF" : "#000000" },
+                    { color: isDark ? "#F5F3EE" : "#111111" },
                 ]}
             >
                 {title}
@@ -37,7 +37,7 @@ export function EmptyState({
                 <Text
                     style={[
                         styles.subtitle,
-                        { color: isDark ? "#8E8E93" : "#8E8E93" },
+                        { color: "#8E8E8A" },
                     ]}
                 >
                     {subtitle}
