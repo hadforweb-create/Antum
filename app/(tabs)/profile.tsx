@@ -21,6 +21,7 @@ import {
     Briefcase,
     Bookmark,
     MessageCircle,
+    Bell,
     Plus,
     Edit2,
 } from "lucide-react-native";
@@ -150,6 +151,15 @@ export default function ProfileScreen() {
                             <Pressable
                                 onPress={() => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    router.push("/notifications" as any);
+                                }}
+                                style={styles.themeButton}
+                            >
+                                <Bell size={22} color={textColor} strokeWidth={2} />
+                            </Pressable>
+                            <Pressable
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     router.push("/conversations");
                                 }}
                                 style={styles.themeButton}
@@ -159,15 +169,11 @@ export default function ProfileScreen() {
                             <Pressable
                                 onPress={() => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    toggleTheme();
+                                    router.push("/settings" as any);
                                 }}
                                 style={styles.themeButton}
                             >
-                                {isDark ? (
-                                    <Sun size={22} color={textColor} strokeWidth={2} />
-                                ) : (
-                                    <Moon size={22} color={textColor} strokeWidth={2} />
-                                )}
+                                <Settings size={22} color={textColor} strokeWidth={2} />
                             </Pressable>
                         </View>
                     </View>

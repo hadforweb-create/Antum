@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toggleFollow, checkIsFollowing, getFollowerCount, getFollowingCount } from "@/lib/api/social";
 import {
     View,
     Text,
@@ -22,6 +23,8 @@ import {
     Check,
     Bookmark,
     MoreHorizontal,
+    UserPlus,
+    UserCheck,
 } from "lucide-react-native";
 import { httpClient } from "@/lib/api/http";
 import * as Haptics from "expo-haptics";
@@ -61,6 +64,10 @@ export default function ProfileDetailScreen() {
     const [messagingLoading, setMessagingLoading] = useState(false);
     const [isShortlisted, setIsShortlisted] = useState(false);
     const [shortlistLoading, setShortlistLoading] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
+    const [followerCount, setFollowerCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
 
     const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
@@ -89,13 +96,25 @@ export default function ProfileDetailScreen() {
                 setProfile(userResponse);
                 setServices(servicesResponse.services);
 
-                // Check shortlist status (only if not own profile)
+                // Fetch follow counts
+                const [followers, following] = await Promise.all([
+                    getFollowerCount(id),
+                    getFollowingCount(id),
+                ]);
+                setFollowerCount(followers);
+                setFollowingCount(following);
+
+                // Check shortlist + follow status (only if not own profile)
                 if (!isOwnProfile) {
                     try {
-                        const shortlistStatus = await checkShortlist(id);
+                        const [shortlistStatus, followStatus] = await Promise.all([
+                            checkShortlist(id),
+                            checkIsFollowing(id),
+                        ]);
                         setIsShortlisted(shortlistStatus.shortlisted);
+                        setIsFollowing(followStatus);
                     } catch {
-                        // Ignore shortlist check errors
+                        // Ignore check errors
                     }
                 }
             } catch (err) {
@@ -158,6 +177,22 @@ export default function ProfileDetailScreen() {
     const handleServicePress = (serviceId: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.push(`/service/${serviceId}`);
+    };
+
+    const handleToggleFollow = async () => {
+        if (!id || followLoading) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setFollowLoading(true);
+        try {
+            const nowFollowing = await toggleFollow(id);
+            setIsFollowing(nowFollowing);
+            setFollowerCount((c) => nowFollowing ? c + 1 : Math.max(0, c - 1));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            toast.error("Failed to update follow status");
+        } finally {
+            setFollowLoading(false);
+        }
     };
 
     const handleBlock = async () => {
@@ -351,21 +386,51 @@ export default function ProfileDetailScreen() {
                     <View style={styles.statsRow}>
                         <View style={[styles.statItem, { backgroundColor: inputBg }]}>
                             <Text style={[styles.statValue, { color: textColor }]}>
-                                {services.length}
+                                {followerCount}
                             </Text>
-                            <Text style={[styles.statLabel, { color: mutedColor }]}>Services</Text>
+                            <Text style={[styles.statLabel, { color: mutedColor }]}>Followers</Text>
                         </View>
                         <View style={[styles.statItem, { backgroundColor: inputBg }]}>
                             <Text style={[styles.statValue, { color: textColor }]}>
-                                {profile.role === "FREELANCER" ? "Freelancer" : "Client"}
+                                {followingCount}
                             </Text>
-                            <Text style={[styles.statLabel, { color: mutedColor }]}>Account</Text>
+                            <Text style={[styles.statLabel, { color: mutedColor }]}>Following</Text>
+                        </View>
+                        <View style={[styles.statItem, { backgroundColor: inputBg }]}>
+                            <Text style={[styles.statValue, { color: textColor }]}>
+                                {services.length}
+                            </Text>
+                            <Text style={[styles.statLabel, { color: mutedColor }]}>Services</Text>
                         </View>
                     </View>
 
                     {/* Actions - only for other profiles */}
                     {!isOwnProfile && (
                         <View style={styles.actionsRow}>
+                            <Pressable
+                                onPress={handleToggleFollow}
+                                disabled={followLoading}
+                                style={[
+                                    styles.followButton,
+                                    isFollowing && styles.followingButton,
+                                    followLoading && { opacity: 0.6 },
+                                ]}
+                            >
+                                {followLoading ? (
+                                    <ActivityIndicator size="small" color={isFollowing ? "#FFF" : colors.primary} />
+                                ) : (
+                                    <>
+                                        {isFollowing ? (
+                                            <UserCheck size={18} color="#FFF" strokeWidth={2} />
+                                        ) : (
+                                            <UserPlus size={18} color={colors.primary} strokeWidth={2} />
+                                        )}
+                                        <Text style={[styles.followButtonText, { color: isFollowing ? "#FFF" : colors.primary }]}>
+                                            {isFollowing ? "Following" : "Follow"}
+                                        </Text>
+                                    </>
+                                )}
+                            </Pressable>
                             <Pressable
                                 onPress={handleMessage}
                                 disabled={messagingLoading}
@@ -695,6 +760,25 @@ const styles = StyleSheet.create({
     savedButton: {
         backgroundColor: colors.primary,
         borderColor: colors.primary,
+    },
+    followButton: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: colors.primary,
+    },
+    followingButton: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+    },
+    followButtonText: {
+        fontSize: 15,
+        fontWeight: "600",
     },
     saveButtonText: {
         fontSize: 16,

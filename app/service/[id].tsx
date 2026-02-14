@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { X, Star, Clock, MessageCircle, Share2, Edit2, Trash2 } from "lucide-react-native";
+import { X, Star, Clock, MessageCircle, Share2, Edit2, Trash2, Heart } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 
@@ -21,6 +21,8 @@ import { useThemeStore, useAuthStore } from "@/lib/store";
 import { colors } from "@/lib/theme";
 import { getService, deleteService, Service } from "@/lib/api/services";
 import { createConversation } from "@/lib/api/conversations";
+import { toggleLike, checkIsLiked, getLikeCount, getCommentCount, createServiceRequest } from "@/lib/api/social";
+import { CommentsSheet } from "@/components/CommentsSheet";
 import { toast } from "@/lib/ui/toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -36,6 +38,11 @@ export default function ServiceDetailScreen() {
     const [error, setError] = useState<string | null>(null);
     const [messagingLoading, setMessagingLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+    const [commentCount, setCommentCount] = useState(0);
+    const [showComments, setShowComments] = useState(false);
+    const [hireLoading, setHireLoading] = useState(false);
 
     const bgColor = isDark ? "#121210" : "#F5F3EE";
     const textColor = isDark ? "#FFF" : "#000";
@@ -54,6 +61,16 @@ export default function ServiceDetailScreen() {
                 setError(null);
                 const data = await getService(id);
                 setService(data);
+
+                // Fetch social data
+                const [liked, likes, comments] = await Promise.all([
+                    checkIsLiked("service", id),
+                    getLikeCount("service", id),
+                    getCommentCount("service", id),
+                ]);
+                setIsLiked(liked);
+                setLikeCount(likes);
+                setCommentCount(comments);
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Failed to load service";
                 setError(message);
@@ -93,10 +110,38 @@ export default function ServiceDetailScreen() {
         }
     };
 
-    const handleHire = () => {
+    const handleToggleLike = async () => {
+        if (!id) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            const nowLiked = await toggleLike("service", id);
+            setIsLiked(nowLiked);
+            setLikeCount((c) => nowLiked ? c + 1 : Math.max(0, c - 1));
+        } catch {
+            toast.error("Failed to update like");
+        }
+    };
+
+    const handleHire = async () => {
+        if (!service?.user?.id || hireLoading) return;
+        if (service.user.id === user?.id) {
+            toast.info("You can't hire yourself");
+            return;
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // For now, start a conversation - full checkout flow can be Phase 2D
-        handleMessage();
+        setHireLoading(true);
+        try {
+            // Create service request
+            await createServiceRequest(service.id, service.user.id, `I'd like to hire you for: ${service.title}`);
+            // Then open/create conversation
+            const conversation = await createConversation(service.user.id);
+            toast.success("Request sent!");
+            router.push(`/conversation/${conversation.id}`);
+        } catch {
+            toast.error("Failed to send hire request");
+        } finally {
+            setHireLoading(false);
+        }
     };
 
     const handleEdit = () => {
@@ -301,6 +346,32 @@ export default function ServiceDetailScreen() {
                     </Animated.View>
                 )}
 
+                {/* Social Actions */}
+                <Animated.View entering={FadeInDown.delay(250).duration(300)}>
+                    <View style={styles.socialRow}>
+                        <Pressable onPress={handleToggleLike} style={styles.socialButton}>
+                            <Heart
+                                size={22}
+                                color={isLiked ? "#EF4444" : mutedColor}
+                                fill={isLiked ? "#EF4444" : "transparent"}
+                                strokeWidth={2}
+                            />
+                            <Text style={[styles.socialCount, { color: isLiked ? "#EF4444" : mutedColor }]}>
+                                {likeCount}
+                            </Text>
+                        </Pressable>
+                        <Pressable onPress={() => setShowComments(true)} style={styles.socialButton}>
+                            <MessageCircle size={22} color={mutedColor} strokeWidth={2} />
+                            <Text style={[styles.socialCount, { color: mutedColor }]}>
+                                {commentCount}
+                            </Text>
+                        </Pressable>
+                        <Pressable onPress={handleShare} style={styles.socialButton}>
+                            <Share2 size={20} color={mutedColor} strokeWidth={2} />
+                        </Pressable>
+                    </View>
+                </Animated.View>
+
                 {/* Description */}
                 <Animated.View entering={FadeInDown.delay(300).duration(300)}>
                     <Text style={[styles.sectionTitle, { color: textColor }]}>About this service</Text>
@@ -325,13 +396,27 @@ export default function ServiceDetailScreen() {
                                 <MessageCircle size={22} color={textColor} strokeWidth={2} />
                             )}
                         </Pressable>
-                        <Pressable onPress={handleHire} style={styles.hireButton}>
-                            <Text style={styles.hireButtonText}>
-                                Contact to Hire - {service.priceFormatted}
-                            </Text>
+                        <Pressable onPress={handleHire} disabled={hireLoading} style={[styles.hireButton, hireLoading && { opacity: 0.7 }]}>
+                            {hireLoading ? (
+                                <ActivityIndicator size="small" color="#FFF" />
+                            ) : (
+                                <Text style={styles.hireButtonText}>
+                                    Hire - {service.priceFormatted}
+                                </Text>
+                            )}
                         </Pressable>
                     </View>
                 </SafeAreaView>
+            )}
+
+            {/* Comments Sheet */}
+            {id && (
+                <CommentsSheet
+                    visible={showComments}
+                    onClose={() => setShowComments(false)}
+                    targetType="service"
+                    targetId={id}
+                />
             )}
         </View>
     );
@@ -537,6 +622,22 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: "700",
         marginBottom: 14,
+    },
+    socialRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 24,
+        marginBottom: 24,
+        paddingVertical: 8,
+    },
+    socialButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    socialCount: {
+        fontSize: 15,
+        fontWeight: "600",
     },
     description: {
         fontSize: 16,

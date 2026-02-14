@@ -68,37 +68,46 @@ export function GlassButton({
 
     const getContainerStyle = (): ViewStyle => {
         const baseStyle: ViewStyle = {
-            borderRadius: 20,
+            borderRadius: 22,
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "row",
             gap: 10,
-            minHeight: 48,
+            minHeight: 52,
             opacity: disabled ? 0.5 : 1,
         };
 
-        // Size styles
+        // Size styles - generous padding for premium feel
         const sizeStyles: Record<GlassButtonSize, ViewStyle> = {
-            sm: { paddingHorizontal: 18, paddingVertical: 10, minHeight: 40 },
-            md: { paddingHorizontal: 24, paddingVertical: 14, minHeight: 48 },
-            lg: { paddingHorizontal: 28, paddingVertical: 18, minHeight: 56 },
+            sm: { paddingHorizontal: 20, paddingVertical: 12, minHeight: 42 },
+            md: { paddingHorizontal: 28, paddingVertical: 16, minHeight: 52 },
+            lg: { paddingHorizontal: 32, paddingVertical: 18, minHeight: 58 },
         };
 
-        // Variant styles
+        // Variant styles - no borders on secondary, use shadows instead
         const variantStyles: Record<GlassButtonVariant, ViewStyle> = {
             primary: {
                 backgroundColor: isDark ? "#F5F3EE" : "#111111",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 16,
+                elevation: 4,
             },
             secondary: {
                 backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)",
-                borderWidth: 1,
-                borderColor: isDark ? "rgba(255,255,255,0.1)" : "#D6D2C8",
+                borderWidth: 0,
             },
             ghost: {
                 backgroundColor: "transparent",
             },
             destructive: {
                 backgroundColor: isDark ? "#E05050" : "#D64040",
+                shadowColor: isDark ? "#E05050" : "#D64040",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 12,
+                elevation: 4,
             },
         };
 
@@ -112,13 +121,14 @@ export function GlassButton({
 
     const getTextStyle = (): TextStyle => {
         const baseStyle: TextStyle = {
-            fontWeight: "600",
+            fontWeight: "700",
             textAlign: "center",
+            letterSpacing: -0.1,
         };
 
         const sizeStyles: Record<GlassButtonSize, TextStyle> = {
             sm: { fontSize: 14 },
-            md: { fontSize: 17 },
+            md: { fontSize: 16 },
             lg: { fontSize: 17 },
         };
 
@@ -168,7 +178,7 @@ export function GlassButton({
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 disabled={disabled || loading}
-                style={[animatedStyle, { borderRadius: 20, overflow: "hidden" }, fullWidth && { width: "100%" }, style]}
+                style={[animatedStyle, { borderRadius: 22, overflow: "hidden" }, fullWidth && { width: "100%" }, style]}
             >
                 <BlurView
                     intensity={20}

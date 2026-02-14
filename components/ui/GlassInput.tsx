@@ -32,9 +32,7 @@ export function GlassInput({
             : "#D64040"
         : isFocused
             ? isDark ? "#F5F3EE" : "#111111"
-            : isDark
-                ? "rgba(255, 255, 255, 0.1)"
-                : "#D6D2C8";
+            : "transparent";
 
     return (
         <View style={[styles.container, containerStyle]}>
@@ -42,7 +40,7 @@ export function GlassInput({
                 <Text
                     style={[
                         styles.label,
-                        { color: isDark ? "#8E8E8A" : "#2A2A2A" },
+                        { color: isDark ? "#C8C6C0" : "#2A2A2A" },
                     ]}
                 >
                     {label}
@@ -53,7 +51,7 @@ export function GlassInput({
                     styles.inputContainer,
                     {
                         borderColor,
-                        borderWidth: isFocused || error ? 2 : 1,
+                        borderWidth: isFocused || error ? 2 : 0,
                     },
                 ]}
             >
@@ -108,25 +106,31 @@ export function GlassInput({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 20,
+        marginBottom: 22,
     },
     label: {
         fontSize: 14,
         fontWeight: "600",
         marginBottom: 10,
         marginLeft: 4,
+        letterSpacing: 0.1,
     },
     inputContainer: {
-        borderRadius: 20,
+        borderRadius: 22,
         overflow: "hidden",
-        minHeight: 56,
+        minHeight: 58,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
     },
     input: {
         flex: 1,
         fontSize: 17,
-        paddingHorizontal: 18,
-        paddingVertical: 16,
-        minHeight: 56,
+        paddingHorizontal: 20,
+        paddingVertical: 17,
+        minHeight: 58,
     },
     error: {
         fontSize: 13,
