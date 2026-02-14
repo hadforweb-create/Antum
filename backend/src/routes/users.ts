@@ -98,7 +98,7 @@ router.patch("/me", authenticate, async (req: AuthRequest, res: Response) => {
             data: validation.data,
             select: {
                 id: true,
-
+                displayName: true,
                 email: true,
                 avatarUrl: true,
                 bio: true,
@@ -233,7 +233,7 @@ router.put("/:id", authenticate, async (req: AuthRequest, res: Response) => {
             data: validation.data,
             select: {
                 id: true,
-
+                displayName: true,
                 email: true,
                 avatarUrl: true,
                 bio: true,

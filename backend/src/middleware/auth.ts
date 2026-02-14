@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { createRemoteJWKSet, jwtVerify, JWTPayload } from "jose";
+import { logger } from "../utils/logger";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || "";
 
@@ -70,7 +71,7 @@ export async function authenticate(
 
         next();
     } catch (error) {
-        console.error("[AUTH] JWT verification failed:", error);
+        logger.error("[AUTH] JWT verification failed:", error);
         return res.status(401).json({ error: "Invalid or expired token" });
     }
 }

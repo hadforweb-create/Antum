@@ -26,7 +26,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Only log in development
+    // Report to Sentry in all environments
+    Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+    // Only log to console in development
     if (__DEV__) {
       console.error("App Error:", error, errorInfo);
     }

@@ -64,8 +64,10 @@ export default function AuthLayout() {
         contentStyle: {
           backgroundColor: isDark ? "#121210" : "#F5F3EE",
         },
+        animation: "fade",
       }}
     >
+      <Stack.Screen name="onboarding" />
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
     </Stack>

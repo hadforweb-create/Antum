@@ -68,20 +68,20 @@ export function GlassButton({
 
     const getContainerStyle = (): ViewStyle => {
         const baseStyle: ViewStyle = {
-            borderRadius: 18,
+            borderRadius: 20,
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "row",
-            gap: 8,
-            minHeight: 44, // iOS touch target
+            gap: 10,
+            minHeight: 48,
             opacity: disabled ? 0.5 : 1,
         };
 
         // Size styles
         const sizeStyles: Record<GlassButtonSize, ViewStyle> = {
-            sm: { paddingHorizontal: 16, paddingVertical: 8, minHeight: 36 },
-            md: { paddingHorizontal: 20, paddingVertical: 12, minHeight: 44 },
-            lg: { paddingHorizontal: 24, paddingVertical: 16, minHeight: 52 },
+            sm: { paddingHorizontal: 18, paddingVertical: 10, minHeight: 40 },
+            md: { paddingHorizontal: 24, paddingVertical: 14, minHeight: 48 },
+            lg: { paddingHorizontal: 28, paddingVertical: 18, minHeight: 56 },
         };
 
         // Variant styles
@@ -168,7 +168,7 @@ export function GlassButton({
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 disabled={disabled || loading}
-                style={[animatedStyle, { borderRadius: 14, overflow: "hidden" }, fullWidth && { width: "100%" }, style]}
+                style={[animatedStyle, { borderRadius: 20, overflow: "hidden" }, fullWidth && { width: "100%" }, style]}
             >
                 <BlurView
                     intensity={20}

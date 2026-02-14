@@ -18,7 +18,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.antum.app",
-      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture photos and videos for activities.",
         "NSPhotoLibraryUsageDescription": "This app accesses your photos to select images for activities.",
@@ -39,7 +38,6 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-firebase/app",
       [
         "expo-image-picker",
         {
@@ -73,7 +71,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "TODO-set-your-eas-project-id"
       }
     }
   }

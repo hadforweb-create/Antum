@@ -171,16 +171,16 @@ process.on("SIGTERM", shutdown);
 // Start server with explicit prisma connection
 async function main() {
     try {
-        console.log("[STARTUP] Connecting to database...");
+        logger.log("[STARTUP] Connecting to database...");
         await prisma.$connect();
-        console.log("[STARTUP] Database connected successfully");
+        logger.log("[STARTUP] Database connected successfully");
 
         // Verify connection works
         await prisma.$queryRaw`SELECT 1`;
-        console.log("[STARTUP] Database query test passed");
+        logger.log("[STARTUP] Database query test passed");
 
         app.listen(PORT, () => {
-            console.log(`
+            logger.log(`
   🚀 ANTUM Backend running!
   
   Local:   http://localhost:${PORT}
@@ -195,5 +195,6 @@ async function main() {
         process.exit(1);
     }
 }
+
 
 main();

@@ -108,29 +108,29 @@ export function GlassInput({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 16,
+        marginBottom: 20,
     },
     label: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "600",
-        marginBottom: 8,
+        marginBottom: 10,
         marginLeft: 4,
     },
     inputContainer: {
         borderRadius: 20,
         overflow: "hidden",
-        minHeight: 52,
+        minHeight: 56,
     },
     input: {
         flex: 1,
         fontSize: 17,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        minHeight: 52,
+        paddingHorizontal: 18,
+        paddingVertical: 16,
+        minHeight: 56,
     },
     error: {
         fontSize: 13,
-        marginTop: 6,
+        marginTop: 8,
         marginLeft: 4,
     },
 });

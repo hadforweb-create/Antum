@@ -181,25 +181,7 @@ export const HapticPatterns = {
   error: "notificationError" as const,
 };
 
-// ============================================
-// ERROR UTILITIES
-// ============================================
 
-export function getFirebaseErrorMessage(code: string): string {
-  const errorMessages: Record<string, string> = {
-    "auth/email-already-in-use": "This email is already registered.",
-    "auth/invalid-email": "Please enter a valid email address.",
-    "auth/operation-not-allowed": "This operation is not allowed.",
-    "auth/weak-password": "Password should be at least 8 characters.",
-    "auth/user-disabled": "This account has been disabled.",
-    "auth/user-not-found": "No account found with this email.",
-    "auth/wrong-password": "Incorrect password.",
-    "auth/too-many-requests": "Too many attempts. Please try again later.",
-    "auth/network-request-failed": "Network error. Please check your connection.",
-  };
-  
-  return errorMessages[code] || "An error occurred. Please try again.";
-}
 
 // ============================================
 // GLASSMORPHISM STYLES

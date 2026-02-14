@@ -3,15 +3,26 @@ import { View, Text, TextInput, StyleSheet, Pressable, KeyboardAvoidingView, Pla
 import { useRouter } from "expo-router";
 import { ArrowLeft, Mail } from "lucide-react-native";
 import { colors } from "@/lib/theme";
+import { useThemeStore } from "@/lib/store";
 import { toast } from "@/lib/ui/toast";
 import { httpClient } from "@/lib/api/http";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 export default function ForgotPassword() {
     const router = useRouter();
+    const { isDark } = useThemeStore();
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
+
+    const bgColor = isDark ? "#121210" : "#F5F3EE";
+    const textColor = isDark ? "#F5F3EE" : "#111111";
+    const mutedColor = "#8E8E8A";
+    const cardBg = isDark ? "#1C1C1A" : "#FFFFFF";
+    const inputBorderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
+    const iconColor = isDark ? "#8E8E8A" : "#8E8E8A";
+    const primaryBg = isDark ? "#F5F3EE" : "#111111";
+    const primaryText = isDark ? "#111111" : "#F5F3EE";
 
     const handleSubmit = async () => {
         if (!email.includes("@")) {
@@ -34,27 +45,27 @@ export default function ForgotPassword() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: bgColor }]}
         >
             <Pressable style={styles.backButton} onPress={() => router.back()}>
-                <ArrowLeft size={24} color="#FFF" />
+                <ArrowLeft size={24} color={textColor} />
             </Pressable>
 
             <ScrollView contentContainerStyle={styles.content}>
                 <Animated.View entering={FadeInDown.duration(600).springify()}>
-                    <Text style={styles.title}>Reset Password</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, { color: textColor }]}>Reset Password</Text>
+                    <Text style={[styles.subtitle, { color: mutedColor }]}>
                         Enter your email address and we'll send you a link to reset your password.
                     </Text>
 
                     {!sent ? (
                         <>
-                            <View style={styles.inputContainer}>
-                                <Mail size={20} color="#666" style={styles.inputIcon} />
+                            <View style={[styles.inputContainer, { backgroundColor: cardBg, borderColor: inputBorderColor }]}>
+                                <Mail size={20} color={iconColor} style={styles.inputIcon} />
                                 <TextInput
-                                    style={styles.input}
+                                    style={[styles.input, { color: textColor }]}
                                     placeholder="Email"
-                                    placeholderTextColor="#666"
+                                    placeholderTextColor={mutedColor}
                                     value={email}
                                     onChangeText={setEmail}
                                     autoCapitalize="none"
@@ -63,29 +74,29 @@ export default function ForgotPassword() {
                             </View>
 
                             <Pressable
-                                style={[styles.button, loading && styles.buttonDisabled]}
+                                style={[styles.button, { backgroundColor: primaryBg }, loading && styles.buttonDisabled]}
                                 onPress={handleSubmit}
                                 disabled={loading}
                             >
-                                <Text style={styles.buttonText}>
+                                <Text style={[styles.buttonText, { color: primaryText }]}>
                                     {loading ? "Sending..." : "Send Reset Link"}
                                 </Text>
                             </Pressable>
                         </>
                     ) : (
-                        <View style={styles.successContainer}>
-                            <View style={styles.successIcon}>
-                                <Mail size={32} color="#FFF" />
+                        <View style={[styles.successContainer, { backgroundColor: cardBg }]}>
+                            <View style={[styles.successIcon, { backgroundColor: primaryBg }]}>
+                                <Mail size={32} color={primaryText} />
                             </View>
-                            <Text style={styles.successTitle}>Check your email</Text>
-                            <Text style={styles.successText}>
+                            <Text style={[styles.successTitle, { color: textColor }]}>Check your email</Text>
+                            <Text style={[styles.successText, { color: mutedColor }]}>
                                 We've sent password reset instructions to {email}
                             </Text>
                             <Pressable
-                                style={styles.button}
+                                style={[styles.button, { backgroundColor: primaryBg }]}
                                 onPress={() => router.push("/(auth)/login")}
                             >
-                                <Text style={styles.buttonText}>Back to Login</Text>
+                                <Text style={[styles.buttonText, { color: primaryText }]}>Back to Login</Text>
                             </Pressable>
                         </View>
                     )}
@@ -98,93 +109,97 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#121210",
     },
     backButton: {
         position: "absolute",
         top: 60,
         left: 20,
         zIndex: 10,
-        padding: 8,
+        padding: 10,
     },
     content: {
         flexGrow: 1,
         justifyContent: "center",
-        padding: 24,
+        padding: 28,
     },
     title: {
-        fontSize: 32,
-        fontWeight: "bold",
-        color: "#FFF",
+        fontSize: 36,
+        fontWeight: "700",
         marginBottom: 12,
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 16,
-        color: "#8E8E8A",
-        marginBottom: 32,
-        lineHeight: 24,
+        fontSize: 17,
+        marginBottom: 36,
+        lineHeight: 26,
     },
     inputContainer: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#1C1C1A",
-        borderRadius: 16,
-        marginBottom: 20,
-        paddingHorizontal: 16,
-        height: 56,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
+        borderRadius: 20,
+        marginBottom: 24,
+        paddingHorizontal: 18,
+        height: 60,
+        borderWidth: 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 16,
+        elevation: 4,
     },
     inputIcon: {
-        marginRight: 12,
+        marginRight: 14,
     },
     input: {
         flex: 1,
-        color: "#FFF",
-        fontSize: 16,
+        fontSize: 17,
     },
     button: {
-        backgroundColor: colors.primary,
-        height: 56,
-        borderRadius: 18,
+        height: 58,
+        borderRadius: 20,
         alignItems: "center",
         justifyContent: "center",
         marginTop: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 4,
     },
     buttonDisabled: {
         opacity: 0.7,
     },
     buttonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "bold",
+        fontSize: 17,
+        fontWeight: "700",
     },
     successContainer: {
         alignItems: "center",
-        backgroundColor: "#1C1C1A",
-        padding: 24,
-        borderRadius: 22,
+        padding: 32,
+        borderRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 20,
+        elevation: 4,
     },
     successIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: colors.primary,
+        width: 72,
+        height: 72,
+        borderRadius: 36,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 16,
+        marginBottom: 20,
     },
     successTitle: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#FFF",
-        marginBottom: 8,
+        fontSize: 22,
+        fontWeight: "700",
+        marginBottom: 10,
     },
     successText: {
-        fontSize: 15,
-        color: "#8E8E8A",
+        fontSize: 16,
         textAlign: "center",
-        marginBottom: 24,
-        lineHeight: 22,
+        marginBottom: 28,
+        lineHeight: 24,
     },
 });

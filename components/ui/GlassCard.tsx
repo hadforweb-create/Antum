@@ -143,14 +143,14 @@ export function GlassView({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 22,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 16,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 4,
   },
   content: {
     position: "relative",

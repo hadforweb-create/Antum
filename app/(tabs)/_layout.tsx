@@ -47,20 +47,20 @@ export default function TabsLayout() {
             });
             if (__DEV__) console.log("[Tabs] User loaded:", user.email);
           } catch {
-            if (__DEV__) console.log("[Tabs] API error, redirecting to login");
+            if (__DEV__) console.log("[Tabs] API error, redirecting to onboarding");
             await clearToken();
             setUser(null);
-            router.replace("/(auth)/login");
+            router.replace("/(auth)/onboarding" as any);
           }
         } else {
-          if (__DEV__) console.log("[Tabs] No token, redirecting to login");
+          if (__DEV__) console.log("[Tabs] No token, redirecting to onboarding");
           setUser(null);
-          router.replace("/(auth)/login");
+          router.replace("/(auth)/onboarding" as any);
         }
       } catch (e) {
         if (__DEV__) console.error("[Tabs] Auth error:", e);
         setUser(null);
-        router.replace("/(auth)/login");
+        router.replace("/(auth)/onboarding" as any);
       } finally {
         setLoading(false);
         SplashScreen.hideAsync().catch(() => { });
@@ -68,7 +68,7 @@ export default function TabsLayout() {
     })();
   }, []);
 
-  const activeColor = "#111111";
+  const activeColor = isDark ? "#F5F3EE" : "#111111";
   const inactiveColor = "#8E8E8A";
 
   return (
@@ -80,12 +80,12 @@ export default function TabsLayout() {
           backgroundColor: "transparent",
           borderTopWidth: 0,
           elevation: 0,
-          height: 85,
-          paddingBottom: 30,
+          height: 88,
+          paddingBottom: 32,
         },
         tabBarBackground: () => (
           <BlurView
-            intensity={80}
+            intensity={90}
             tint={isDark ? "dark" : "light"}
             style={StyleSheet.absoluteFill}
           >
@@ -93,9 +93,8 @@ export default function TabsLayout() {
               style={[
                 StyleSheet.absoluteFill,
                 {
-                  backgroundColor: isDark ? "rgba(28, 28, 26, 0.9)" : "rgba(255, 255, 255, 0.9)",
-                  borderTopWidth: 0.5,
-                  borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+                  backgroundColor: isDark ? "rgba(18, 18, 16, 0.92)" : "rgba(245, 243, 238, 0.92)",
+                  borderTopWidth: 0,
                 },
               ]}
             />
@@ -106,7 +105,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: "600",
-          marginTop: 2,
+          marginTop: 4,
         },
       }}
     >
