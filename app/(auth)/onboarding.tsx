@@ -213,6 +213,7 @@ const styles = StyleSheet.create({
     skipText: {
         fontSize: 16,
         fontWeight: "500",
+        letterSpacing: 0.5,
     },
     slide: {
         flex: 1,
@@ -224,17 +225,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 40,
     },
     iconContainer: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
+        width: 180,
+        height: 180,
+        borderRadius: 90,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 48,
+        marginBottom: 56,
     },
     iconInner: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -248,7 +249,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     headlineBold: {
-        fontSize: 40,
+        fontSize: 44,
         fontWeight: "800",
         textAlign: "center",
         letterSpacing: -1,
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     },
     bottomArea: {
         paddingHorizontal: 24,
-        paddingBottom: 16,
+        paddingBottom: 28,
     },
     dotsContainer: {
         flexDirection: "row",
@@ -272,7 +273,7 @@ const styles = StyleSheet.create({
         marginBottom: 28,
     },
     dot: {
-        height: 8,
+        height: 7,
         borderRadius: 4,
     },
     ctaButton: {
@@ -280,13 +281,19 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        paddingVertical: 18,
-        borderRadius: 20,
+        paddingVertical: 20,
+        borderRadius: 22,
         marginBottom: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.10,
+        shadowRadius: 16,
+        elevation: 4,
     },
     ctaText: {
         fontSize: 18,
         fontWeight: "700",
+        letterSpacing: 0.2,
     },
     loginRow: {
         flexDirection: "row",

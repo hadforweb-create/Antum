@@ -426,8 +426,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 18,
-        paddingVertical: 14,
-        borderRadius: 20,
+        paddingVertical: 16,
+        borderRadius: 22,
         gap: 14,
         marginBottom: 20,
     },
@@ -446,8 +446,8 @@ const styles = StyleSheet.create({
     },
     categoryChip: {
         paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 22,
+        paddingVertical: 11,
+        borderRadius: 20,
         borderWidth: 0,
     },
     categoryText: {
@@ -483,21 +483,21 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     servicesGrid: {
-        gap: 20,
+        gap: 24,
     },
     serviceCard: {
-        borderRadius: 24,
+        borderRadius: 26,
         borderWidth: 0,
         overflow: "hidden",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 20,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 24,
+        elevation: 5,
     },
     serviceImage: {
         width: "100%",
-        height: 200,
+        height: 220,
     },
     servicePlaceholder: {
         alignItems: "center",
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.7)",
         paddingHorizontal: 14,
         paddingVertical: 7,
-        borderRadius: 12,
+        borderRadius: 14,
     },
     priceText: {
         color: "#FFF",
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     serviceContent: {
-        padding: 18,
+        padding: 20,
         gap: 10,
     },
     serviceTitle: {
@@ -537,9 +537,9 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     creatorAvatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
     },
     creatorName: {
         fontSize: 14,
