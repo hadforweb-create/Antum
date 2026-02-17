@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BAYSIS Design System - Premium Marketplace */
+/* BAYSIS Design System — Synced from Figma (BAYSIS LAST DESIGN) */
 
 /* Light Mode Colors */
 :root {
@@ -12,31 +12,31 @@
   --color-card-foreground: 17 17 17;
   --color-muted: 238 236 231;
   --color-muted-foreground: 142 142 138;
-  --color-primary: 17 17 17;
-  --color-primary-foreground: 255 255 255;
+  --color-primary: 163 255 63;
+  --color-primary-foreground: 17 17 17;
   --color-secondary: 238 236 231;
   --color-secondary-foreground: 42 42 42;
-  --color-accent: 17 17 17;
-  --color-accent-foreground: 255 255 255;
-  --color-destructive: 214 64 64;
+  --color-accent: 163 255 63;
+  --color-accent-foreground: 17 17 17;
+  --color-destructive: 255 100 103;
   --color-border: 214 210 200;
 }
 
 /* Dark Mode Colors */
 .dark {
-  --color-background: 18 18 16;
-  --color-foreground: 245 243 238;
-  --color-card: 28 28 26;
-  --color-card-foreground: 245 243 238;
-  --color-muted: 44 44 42;
-  --color-muted-foreground: 142 142 138;
-  --color-primary: 245 243 238;
-  --color-primary-foreground: 17 17 17;
-  --color-secondary: 44 44 42;
-  --color-secondary-foreground: 245 243 238;
-  --color-accent: 245 243 238;
-  --color-accent-foreground: 17 17 17;
-  --color-destructive: 224 80 80;
+  --color-background: 11 11 15;
+  --color-foreground: 255 255 255;
+  --color-card: 19 19 22;
+  --color-card-foreground: 255 255 255;
+  --color-muted: 21 21 24;
+  --color-muted-foreground: 255 255 255;
+  --color-primary: 163 255 63;
+  --color-primary-foreground: 11 11 15;
+  --color-secondary: 21 21 24;
+  --color-secondary-foreground: 255 255 255;
+  --color-accent: 163 255 63;
+  --color-accent-foreground: 11 11 15;
+  --color-destructive: 255 100 103;
   --color-border: 255 255 255;
 }
 
@@ -67,19 +67,28 @@
   }
 
   .dark .glass-light {
-    background-color: rgba(28, 28, 26, 0.35);
+    background-color: rgba(19, 19, 22, 0.35);
   }
 
   .dark .glass-regular {
-    background-color: rgba(28, 28, 26, 0.75);
+    background-color: rgba(19, 19, 22, 0.75);
   }
 
   .dark .glass-heavy {
-    background-color: rgba(28, 28, 26, 0.88);
+    background-color: rgba(19, 19, 22, 0.88);
   }
 
   .dark .glass-ultra {
-    background-color: rgba(28, 28, 26, 0.94);
+    background-color: rgba(19, 19, 22, 0.94);
+  }
+
+  /* Accent glow */
+  .glow-accent {
+    box-shadow: 0 0 12px rgba(163, 255, 63, 0.3);
+  }
+
+  .glow-accent-strong {
+    box-shadow: 0 0 16px rgba(163, 255, 63, 0.5), 0 4px 12px rgba(163, 255, 63, 0.25);
   }
 
   /* Soft shadow utilities */

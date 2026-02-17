@@ -1,61 +1,91 @@
 /**
- * BAYSIS Design System - Premium Marketplace
- * Warm minimal + glass aesthetic
+ * BAYSIS Design System — Powered by Figma Tokens
+ *
+ * This theme imports from figma-tokens.ts (auto-generated via `npm run figma:sync`)
+ * and provides the same API surface used throughout the app.
  */
 
+import {
+    figmaColors,
+    figmaTypography,
+    figmaRadii,
+    figmaShadows,
+    figmaGradients,
+} from "./figma-tokens";
+
+// ── Colors ──────────────────────────────────────────────────────────
+
 export const colors = {
-    // Primary actions - matte black / white
-    primary: "#111111",
-    primaryDark: "#FFFFFF",
+    // Primary accent — lime green from Figma
+    primary: figmaColors.accent,
+    primaryDark: figmaColors.accent,
 
-    // Accent - matte black (no purple)
-    accent: "#111111",
+    // Accent
+    accent: figmaColors.accent,
 
-    // Backgrounds - warm off-white / dark
+    // Backgrounds
     background: "#F5F3EE",
-    backgroundDark: "#121210",
+    backgroundDark: figmaColors.background,
 
-    // Surface - softer stone for sections / inputs
+    // Surface
     surface: "#ECE8E1",
-    surfaceDark: "#1A1A18",
+    surfaceDark: figmaColors.backgroundElevated,
 
     // Cards
     card: "#FFFFFF",
-    cardDark: "#1C1C1A",
+    cardDark: figmaColors.backgroundElevated,
 
-    // Elevated cards - slightly lifted from card
+    // Elevated cards
     cardElevated: "#FAFAF7",
-    cardElevatedDark: "#242422",
+    cardElevatedDark: figmaColors.surface,
 
     // Text
     foreground: "#111111",
     foregroundDark: "#F5F3EE",
     secondary: "#2A2A2A",
-    secondaryDark: "#C8C6C0",
-    muted: "#8E8E8A",
+    secondaryDark: figmaColors.foregroundSecondary,
+    muted: figmaColors.foregroundMuted,
 
     // Destructive
-    destructive: "#D64040",
-    destructiveDark: "#E05050",
+    destructive: figmaColors.destructive,
+    destructiveDark: figmaColors.destructive,
 
     // Success
-    success: "#34C759",
-    successDark: "#30D158",
+    success: figmaColors.success,
+    successDark: figmaColors.success,
 
-    // Borders - warm stone
+    // Warning
+    warning: figmaColors.warning,
+    warningDark: figmaColors.warning,
+
+    // Info
+    info: figmaColors.info,
+    infoDark: figmaColors.info,
+
+    // Purple
+    purple: figmaColors.purple,
+
+    // Borders
     border: "#D6D2C8",
-    borderDark: "rgba(255,255,255,0.08)",
+    borderDark: figmaColors.border,
     borderSubtle: "rgba(0,0,0,0.04)",
-    borderSubtleDark: "rgba(255,255,255,0.05)",
+    borderSubtleDark: figmaColors.borderSubtle,
+
+    // Overlays
+    overlayLight: figmaColors.overlayLight,
+    overlayMedium: figmaColors.overlayMedium,
+    overlayHeavy: figmaColors.overlayHeavy,
 
     // System Colors (kept for compatibility)
     ios: {
-        red: "#D64040",
-        redDark: "#E05050",
-        green: "#34C759",
-        orange: "#CC7A00",
+        red: figmaColors.destructive,
+        redDark: figmaColors.destructive,
+        green: figmaColors.success,
+        orange: figmaColors.warning,
     },
 };
+
+// ── Spacing ─────────────────────────────────────────────────────────
 
 export const spacing = {
     xs: 4,
@@ -67,25 +97,23 @@ export const spacing = {
     "3xl": 48,
 };
 
+// ── Border Radii ────────────────────────────────────────────────────
+
 export const radii = {
-    sm: 12,
-    md: 16,
-    lg: 20,
-    xl: 22,
-    "2xl": 24,
-    "3xl": 28,
+    xs: figmaRadii.xs,
+    sm: figmaRadii.sm,
+    md: figmaRadii.md,
+    lg: figmaRadii.lg,
+    xl: figmaRadii.xl,
+    "2xl": figmaRadii["2xl"],
+    "3xl": figmaRadii["3xl"],
     full: 9999,
 };
 
-// Soft premium shadows - warm, diffuse, never harsh
+// ── Shadows ─────────────────────────────────────────────────────────
+
 export const shadows = {
-    sm: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
-    },
+    sm: figmaShadows.sm,
     md: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
@@ -93,20 +121,9 @@ export const shadows = {
         shadowRadius: 16,
         elevation: 4,
     },
-    lg: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 24,
-        elevation: 6,
-    },
-    xl: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.12,
-        shadowRadius: 32,
-        elevation: 8,
-    },
+    lg: figmaShadows.lg,
+    xl: figmaShadows.xl,
+    glow: figmaShadows.glow,
     // Upward shadow for sticky bottom bars
     top: {
         shadowColor: "#000",
@@ -117,12 +134,14 @@ export const shadows = {
     },
 };
 
+// ── Typography ──────────────────────────────────────────────────────
+
 export const typography = {
-    hero: { fontSize: 42, lineHeight: 48, fontWeight: "800" as const, letterSpacing: -1 },
-    largeTitle: { fontSize: 36, lineHeight: 44, fontWeight: "700" as const, letterSpacing: -0.5 },
-    title1: { fontSize: 30, lineHeight: 38, fontWeight: "700" as const, letterSpacing: -0.3 },
-    title2: { fontSize: 24, lineHeight: 32, fontWeight: "700" as const, letterSpacing: -0.2 },
-    title3: { fontSize: 20, lineHeight: 28, fontWeight: "600" as const, letterSpacing: -0.1 },
+    hero: figmaTypography.hero,
+    largeTitle: figmaTypography.largeTitle,
+    title1: figmaTypography.title1,
+    title2: figmaTypography.title2,
+    title3: figmaTypography.title3,
     headline: { fontSize: 17, lineHeight: 24, fontWeight: "600" as const },
     body: { fontSize: 17, lineHeight: 26, fontWeight: "400" as const },
     callout: { fontSize: 16, lineHeight: 24, fontWeight: "400" as const },
@@ -132,7 +151,12 @@ export const typography = {
     caption2: { fontSize: 11, lineHeight: 14, fontWeight: "400" as const },
 };
 
-// Standard component heights for consistency
+// ── Gradients ───────────────────────────────────────────────────────
+
+export const gradients = figmaGradients;
+
+// ── Standard component heights for consistency ──────────────────────
+
 export const componentSizes = {
     buttonSm: 42,
     buttonMd: 52,

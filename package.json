@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "figma:sync": "node scripts/sync-figma-tokens.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
