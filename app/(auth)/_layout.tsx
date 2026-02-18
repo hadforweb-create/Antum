@@ -62,14 +62,19 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: {
-          backgroundColor: isDark ? "#121210" : "#F5F3EE",
+          backgroundColor: "#0b0b0f",
         },
         animation: "fade",
       }}
+      initialRouteName="onboarding"
     >
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
+      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="SignInScreen" />
+      <Stack.Screen name="OnboardingScreen" />
+      <Stack.Screen name="setup" />
     </Stack>
   );
 }
