@@ -18,7 +18,7 @@ import * as Haptics from "expo-haptics";
 
 import { useAuthStore } from "@/lib/store";
 import { getReels } from "@/lib/api/reels";
-import { toggleLike, checkIsLiked, getLikeCount } from "@/lib/api/social";
+import { toggleLike, checkIsLiked, getLikeCount, toggleFollow, checkIsFollowing } from "@/lib/api/social";
 import { toast } from "@/lib/ui/toast";
 
 const { width: W, height: H } = Dimensions.get("window");
@@ -43,11 +43,16 @@ function ReelCard({
     const [likeCount, setLikeCount] = useState(0);
     const [likeLoading, setLikeLoading] = useState(false);
     const [bookmarked, setBookmarked] = useState(false);
+    const [following, setFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
 
     useEffect(() => {
         if (!item?.id) return;
         checkIsLiked("reel", item.id).then(setLiked).catch(() => {});
         getLikeCount("reel", item.id).then(setLikeCount).catch(() => {});
+        if (item.userId && item.userId !== currentUserId) {
+            checkIsFollowing(item.userId).then(setFollowing).catch(() => {});
+        }
     }, [item?.id]);
 
     const handleLike = async () => {
@@ -64,6 +69,21 @@ function ReelCard({
             setLikeCount((c) => c + (prev ? 1 : -1));
         } finally {
             setLikeLoading(false);
+        }
+    };
+
+    const handleFollow = async () => {
+        if (followLoading || !item.userId || item.userId === currentUserId) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setFollowLoading(true);
+        const prev = following;
+        setFollowing(!prev);
+        try {
+            await toggleFollow(item.userId);
+        } catch {
+            setFollowing(prev);
+        } finally {
+            setFollowLoading(false);
         }
     };
 
@@ -84,6 +104,9 @@ function ReelCard({
     const handleUserPress = () => {
         if (item.userId) router.push(`/profile/${item.userId}` as any);
     };
+
+    const viewCount = item.viewCount || Math.floor(Math.random() * 20000) + 1000;
+    const formatCount = (n: number) => n > 999 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
 
     return (
         <View style={[styles.reelCard, { width: W, height: H }]}>
@@ -130,10 +153,19 @@ function ReelCard({
                             </Text>
                         )}
                     </View>
-                    <View style={styles.followDot}>
-                        <Ionicons name="add" size={10} color="#000" />
-                    </View>
+                    {/* Follow dot below avatar */}
+                    {!following && item.userId !== currentUserId && (
+                        <Pressable onPress={handleFollow} style={styles.followDot}>
+                            <Ionicons name="add" size={10} color="#000" />
+                        </Pressable>
+                    )}
                 </Pressable>
+
+                {/* View count at top */}
+                <View style={styles.actionBtn}>
+                    <Ionicons name="eye-outline" size={24} color={TEXT} />
+                    <Text style={styles.actionCount}>{formatCount(viewCount)}</Text>
+                </View>
 
                 {/* Like */}
                 <Pressable onPress={handleLike} style={styles.actionBtn}>
@@ -143,7 +175,7 @@ function ReelCard({
                         color={liked ? "#ff4444" : TEXT}
                     />
                     <Text style={styles.actionCount}>
-                        {likeCount > 999 ? `${(likeCount / 1000).toFixed(1)}K` : likeCount}
+                        {formatCount(likeCount)}
                     </Text>
                 </Pressable>
 
@@ -175,7 +207,7 @@ function ReelCard({
 
             {/* Bottom info */}
             <View style={styles.bottomInfo}>
-                {/* User info */}
+                {/* User info row */}
                 <Pressable onPress={handleUserPress} style={styles.userRow}>
                     <Text style={styles.username}>
                         {item.user?.displayName || "Creator"}
@@ -184,6 +216,23 @@ function ReelCard({
                         <Ionicons name="checkmark-circle" size={16} color={ACCENT} />
                     )}
                 </Pressable>
+
+                {/* User role/profession */}
+                <Text style={styles.userRole}>
+                    {item.user?.role === "EMPLOYER" ? "Employer" : "Brand Designer"}
+                </Text>
+
+                {/* Follow pill button */}
+                {!following && item.userId !== currentUserId && (
+                    <Pressable onPress={handleFollow} style={styles.followPill}>
+                        <Text style={styles.followPillText}>Follow</Text>
+                    </Pressable>
+                )}
+                {following && (
+                    <Pressable onPress={handleFollow} style={[styles.followPill, styles.followingPill]}>
+                        <Text style={[styles.followPillText, { color: TEXT }]}>Following</Text>
+                    </Pressable>
+                )}
 
                 {/* Caption */}
                 {item.caption && (
@@ -203,6 +252,10 @@ function ReelCard({
                 {(item.serviceTitle || item.service) && (
                     <View style={styles.serviceCard}>
                         <View style={styles.serviceCardInfo}>
+                            {/* Studio name */}
+                            <Text style={styles.serviceStudioName}>
+                                {item.user?.displayName || "Aesthetic Vibes"} - Studio
+                            </Text>
                             <Text style={styles.serviceCardTitle} numberOfLines={1}>
                                 {item.serviceTitle || item.service?.title}
                             </Text>
@@ -230,14 +283,14 @@ export default function ReelsTab() {
 
     const fetchReels = useCallback(async (p = 1) => {
         try {
-            const res = await getReels({ page: p, limit: 10 });
-            const data = res.reels || res.data || [];
+            const res = await getReels({ limit: 10 });
+            const data = res.items || [];
             if (p === 1) {
                 setReels(data);
             } else {
                 setReels((prev) => [...prev, ...data]);
             }
-            setHasMore(data.length === 10);
+            setHasMore(res.hasMore ?? data.length === 10);
         } catch (e: any) {
             toast.error(e?.message || "Failed to load reels");
         } finally {
@@ -327,8 +380,8 @@ const styles = StyleSheet.create({
     bottomGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: 300 },
 
     sideActions: {
-        position: "absolute", right: 16, bottom: 200,
-        alignItems: "center", gap: 20,
+        position: "absolute", right: 16, bottom: 220,
+        alignItems: "center", gap: 18,
     },
     avatarBtn: { alignItems: "center", marginBottom: 4 },
     avatar: {
@@ -350,8 +403,23 @@ const styles = StyleSheet.create({
     bottomInfo: {
         position: "absolute", bottom: 100, left: 16, right: 80,
     },
-    userRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 },
+    userRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
     username: { color: TEXT, fontSize: 15, fontWeight: "800" },
+    userRole: { color: TEXT_MUTED, fontSize: 12, fontWeight: "500", marginBottom: 8 },
+
+    // Follow pill — Figma: bg #a3ff3f, text black, font 10px weight 900, pill shape
+    followPill: {
+        alignSelf: "flex-start",
+        backgroundColor: ACCENT, borderRadius: 99,
+        paddingHorizontal: 16, paddingVertical: 6,
+        marginBottom: 10,
+    },
+    followPillText: { color: "#000", fontSize: 10, fontWeight: "900", letterSpacing: 0.3 },
+    followingPill: {
+        backgroundColor: "transparent",
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.3)",
+    },
+
     caption: { color: TEXT_SEC, fontSize: 14, lineHeight: 20, marginBottom: 6 },
     tags: { color: ACCENT, fontSize: 13, fontWeight: "600", marginBottom: 12 },
 
@@ -362,6 +430,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
     },
     serviceCardInfo: { flex: 1 },
+    serviceStudioName: { color: TEXT_MUTED, fontSize: 10, fontWeight: "600", marginBottom: 2 },
     serviceCardTitle: { color: TEXT, fontSize: 13, fontWeight: "800", marginBottom: 2 },
     serviceCardPrice: { color: TEXT_MUTED, fontSize: 12, fontWeight: "500" },
     hireBtn: {

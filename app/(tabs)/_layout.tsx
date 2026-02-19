@@ -113,24 +113,13 @@ export default function TabsLayout() {
                     ),
                 }}
             />
-            {/* Create / post content */}
-            <Tabs.Screen
-                name="create"
-                options={{
-                    title: "Create",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="add-circle" size={size} color={color} />
-                    ),
-                }}
-            />
-            {/* Saved — hidden from tab bar, accessible via links */}
+            {/* Stats — redirects to analytics */}
             <Tabs.Screen
                 name="saved"
                 options={{
-                    title: "Saved",
-                    href: null,
+                    title: "Stats",
                     tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="bookmark" size={size} color={color} />
+                        <Ionicons name="bar-chart" size={size} color={color} />
                     ),
                 }}
             />
@@ -141,6 +130,17 @@ export default function TabsLayout() {
                     title: "Profile",
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person" size={size} color={color} />
+                    ),
+                }}
+            />
+            {/* Create — hidden from tab bar, accessible via FAB */}
+            <Tabs.Screen
+                name="create"
+                options={{
+                    href: null,
+                    title: "Create",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="add-circle" size={size} color={color} />
                     ),
                 }}
             />

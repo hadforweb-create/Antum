@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import {
-    X,
+    ArrowLeft,
     Star,
     MapPin,
     MessageCircle,
@@ -25,20 +25,33 @@ import {
     MoreHorizontal,
     UserPlus,
     UserCheck,
+    Globe,
 } from "lucide-react-native";
 import { httpClient } from "@/lib/api/http";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 
-import { useThemeStore, useAuthStore } from "@/lib/store";
-import { colors } from "@/lib/theme";
+import { useAuthStore } from "@/lib/store";
 import { createConversation } from "@/lib/api/conversations";
 import { checkShortlist, addToShortlist, removeFromShortlist } from "@/lib/api/shortlist";
 import { getServices, Service } from "@/lib/api/services";
 import { getUser } from "@/lib/api/users";
+import { PortfolioGrid, PortfolioItem } from "@/components/PortfolioGrid";
 import { toast } from "@/lib/ui/toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// Design system constants
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
+const INPUT_BG = "rgba(255,255,255,0.06)";
 
 interface UserProfile {
     id: string;
@@ -48,12 +61,12 @@ interface UserProfile {
     bio: string | null;
     location: string | null;
     role: string;
+    website?: string | null;
 }
 
 export default function ProfileDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const { isDark } = useThemeStore();
     const { user: currentUser } = useAuthStore();
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -68,17 +81,10 @@ export default function ProfileDetailScreen() {
     const [followLoading, setFollowLoading] = useState(false);
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
-
-    const bgColor = isDark ? "#121210" : "#F5F3EE";
-    const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E8A";
-    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
-    const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
+    const [activeTab, setActiveTab] = useState<"portfolio" | "services" | "reviews">("portfolio");
 
     const isOwnProfile = currentUser?.id === id;
 
-    // Fetch profile and shortlist status
     useEffect(() => {
         if (!id) return;
 
@@ -87,7 +93,6 @@ export default function ProfileDetailScreen() {
                 setLoading(true);
                 setError(null);
 
-                // Fetch user profile and their services in parallel
                 const [userResponse, servicesResponse] = await Promise.all([
                     getUser(id),
                     getServices({ userId: id, limit: 10 }),
@@ -96,7 +101,6 @@ export default function ProfileDetailScreen() {
                 setProfile(userResponse);
                 setServices(servicesResponse.services);
 
-                // Fetch follow counts
                 const [followers, following] = await Promise.all([
                     getFollowerCount(id),
                     getFollowingCount(id),
@@ -104,7 +108,6 @@ export default function ProfileDetailScreen() {
                 setFollowerCount(followers);
                 setFollowingCount(following);
 
-                // Check shortlist + follow status (only if not own profile)
                 if (!isOwnProfile) {
                     try {
                         const [shortlistStatus, followStatus] = await Promise.all([
@@ -128,7 +131,7 @@ export default function ProfileDetailScreen() {
         fetchData();
     }, [id, isOwnProfile]);
 
-    const handleClose = () => {
+    const handleBack = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.back();
     };
@@ -250,94 +253,72 @@ export default function ProfileDetailScreen() {
     // Loading state
     if (loading) {
         return (
-            <View style={[styles.container, { backgroundColor: bgColor }]}>
-                <SafeAreaView style={styles.loadingHeader}>
-                    <Pressable onPress={handleClose} style={styles.closeButton}>
-                        <X size={24} color="#FFF" strokeWidth={2.5} />
+            <SafeAreaView style={styles.container} edges={["top"]}>
+                <View style={styles.headerBar}>
+                    <Pressable onPress={handleBack} style={styles.backButton}>
+                        <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
                     </Pressable>
-                </SafeAreaView>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.headerTitle}>Profile</Text>
+                    <View style={{ width: 40 }} />
                 </View>
-            </View>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={ACCENT} />
+                </View>
+            </SafeAreaView>
         );
     }
 
     // Error state
     if (error || !profile) {
         return (
-            <View style={[styles.container, { backgroundColor: bgColor }]}>
-                <SafeAreaView style={styles.header}>
-                    <Pressable onPress={handleClose} style={styles.closeButtonAlt}>
-                        <X size={24} color={textColor} strokeWidth={2.5} />
+            <SafeAreaView style={styles.container} edges={["top"]}>
+                <View style={styles.headerBar}>
+                    <Pressable onPress={handleBack} style={styles.backButton}>
+                        <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
                     </Pressable>
-                </SafeAreaView>
+                    <Text style={styles.headerTitle}>Profile</Text>
+                    <View style={{ width: 40 }} />
+                </View>
                 <View style={styles.errorContainer}>
-                    <Text style={[styles.errorTitle, { color: textColor }]}>
+                    <Text style={styles.errorTitle}>
                         {error || "Profile not found"}
                     </Text>
-                    <Pressable
-                        onPress={handleClose}
-                        style={[styles.retryButton, { backgroundColor: colors.primary }]}
-                    >
+                    <Pressable onPress={handleBack} style={styles.retryButton}>
                         <Text style={styles.retryText}>Go Back</Text>
                     </Pressable>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     const displayName = profile.name || profile.email.split("@")[0];
 
     return (
-        <View style={[styles.container, { backgroundColor: bgColor }]}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+            {/* Header */}
+            <View style={styles.headerBar}>
+                <Pressable onPress={handleBack} style={styles.backButton}>
+                    <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
+                </Pressable>
+                <Text style={styles.headerTitle}>Profile</Text>
+                {!isOwnProfile ? (
+                    <Pressable onPress={handleOptions} style={styles.backButton}>
+                        <MoreHorizontal size={22} color={TEXT} strokeWidth={2} />
+                    </Pressable>
+                ) : (
+                    <View style={{ width: 40 }} />
+                )}
+            </View>
+
             <ScrollView
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
-                bounces={false}
+                contentContainerStyle={{ paddingBottom: 40 }}
             >
-                {/* Cover Image (placeholder gradient) */}
-                <View style={[styles.coverContainer, { backgroundColor: colors.primary }]}>
-                    {/* Header */}
-                    <SafeAreaView style={styles.headerOverlay}>
-                        <Pressable onPress={handleClose} style={styles.closeButton}>
-                            <X size={24} color="#FFF" strokeWidth={2.5} />
-                        </Pressable>
-                        <View style={styles.headerRight}>
-                            {!isOwnProfile && (
-                                <View style={{ flexDirection: "row", gap: 8 }}>
-                                    <Pressable
-                                        onPress={handleToggleShortlist}
-                                        disabled={shortlistLoading}
-                                        style={[styles.headerButton, shortlistLoading && { opacity: 0.6 }]}
-                                    >
-                                        {shortlistLoading ? (
-                                            <ActivityIndicator size="small" color="#FFF" />
-                                        ) : (
-                                            <Bookmark
-                                                size={20}
-                                                color="#FFF"
-                                                fill={isShortlisted ? "#FFF" : "transparent"}
-                                                strokeWidth={2}
-                                            />
-                                        )}
-                                    </Pressable>
-                                    <Pressable
-                                        onPress={handleOptions}
-                                        style={styles.headerButton}
-                                    >
-                                        <MoreHorizontal size={20} color="#FFF" />
-                                    </Pressable>
-                                </View>
-                            )}
-                        </View>
-                    </SafeAreaView>
-                </View>
-
-                {/* Profile Content */}
-                <View style={styles.profileContent}>
-                    {/* Avatar & Basic Info */}
-                    <View style={styles.avatarSection}>
+                {/* Profile Card */}
+                <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+                    <View style={styles.profileCard}>
+                        {/* Avatar */}
                         <View style={styles.avatarContainer}>
                             {profile.avatarUrl ? (
                                 <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
@@ -350,212 +331,217 @@ export default function ProfileDetailScreen() {
                             )}
                             {profile.role === "FREELANCER" && (
                                 <View style={styles.verifiedBadge}>
-                                    <Check size={14} color="#FFF" strokeWidth={3} />
+                                    <Check size={12} color={BG} strokeWidth={3} />
                                 </View>
                             )}
                         </View>
 
-                        <View style={styles.nameSection}>
-                            <Text style={[styles.displayName, { color: textColor }]}>
-                                {displayName}
-                            </Text>
-                            <Text style={[styles.username, { color: mutedColor }]}>
-                                @{profile.email.split("@")[0]}
-                            </Text>
-                        </View>
-                    </View>
+                        {/* Name & Role */}
+                        <Text style={styles.displayName}>{displayName}</Text>
+                        <Text style={styles.roleText}>
+                            {profile.role === "FREELANCER" ? "Freelancer" : "Employer"}
+                        </Text>
 
-                    {/* Location */}
-                    {profile.location && (
+                        {/* Location & Website */}
                         <View style={styles.metaRow}>
-                            <View style={styles.locationContainer}>
-                                <MapPin size={16} color={mutedColor} strokeWidth={2} />
-                                <Text style={[styles.locationText, { color: mutedColor }]}>
-                                    {profile.location}
-                                </Text>
-                            </View>
+                            {profile.location && (
+                                <View style={styles.metaItem}>
+                                    <MapPin size={14} color={TEXT_MUTED} strokeWidth={2} />
+                                    <Text style={styles.metaText}>{profile.location}</Text>
+                                </View>
+                            )}
+                            {profile.website && (
+                                <View style={styles.metaItem}>
+                                    <Globe size={14} color={ACCENT} strokeWidth={2} />
+                                    <Text style={[styles.metaText, { color: ACCENT }]}>{profile.website}</Text>
+                                </View>
+                            )}
                         </View>
-                    )}
 
-                    {/* Bio */}
-                    {profile.bio && (
-                        <Text style={[styles.bio, { color: textColor }]}>{profile.bio}</Text>
-                    )}
+                        {/* Bio */}
+                        {profile.bio && (
+                            <Text style={styles.bio}>{profile.bio}</Text>
+                        )}
 
-                    {/* Stats */}
-                    <View style={styles.statsRow}>
-                        <View style={[styles.statItem, { backgroundColor: inputBg }]}>
-                            <Text style={[styles.statValue, { color: textColor }]}>
-                                {followerCount}
-                            </Text>
-                            <Text style={[styles.statLabel, { color: mutedColor }]}>Followers</Text>
-                        </View>
-                        <View style={[styles.statItem, { backgroundColor: inputBg }]}>
-                            <Text style={[styles.statValue, { color: textColor }]}>
-                                {followingCount}
-                            </Text>
-                            <Text style={[styles.statLabel, { color: mutedColor }]}>Following</Text>
-                        </View>
-                        <View style={[styles.statItem, { backgroundColor: inputBg }]}>
-                            <Text style={[styles.statValue, { color: textColor }]}>
-                                {services.length}
-                            </Text>
-                            <Text style={[styles.statLabel, { color: mutedColor }]}>Services</Text>
-                        </View>
-                    </View>
-
-                    {/* Actions - only for other profiles */}
-                    {!isOwnProfile && (
-                        <View style={styles.actionsRow}>
-                            <Pressable
-                                onPress={handleToggleFollow}
-                                disabled={followLoading}
-                                style={[
-                                    styles.followButton,
-                                    isFollowing && styles.followingButton,
-                                    followLoading && { opacity: 0.6 },
-                                ]}
-                            >
-                                {followLoading ? (
-                                    <ActivityIndicator size="small" color={isFollowing ? "#FFF" : colors.primary} />
-                                ) : (
-                                    <>
-                                        {isFollowing ? (
-                                            <UserCheck size={18} color="#FFF" strokeWidth={2} />
-                                        ) : (
-                                            <UserPlus size={18} color={colors.primary} strokeWidth={2} />
-                                        )}
-                                        <Text style={[styles.followButtonText, { color: isFollowing ? "#FFF" : colors.primary }]}>
+                        {/* Action Buttons */}
+                        {!isOwnProfile && (
+                            <View style={styles.actionsRow}>
+                                <Pressable
+                                    onPress={handleMessage}
+                                    disabled={messagingLoading}
+                                    style={[styles.messageBtn, messagingLoading && { opacity: 0.6 }]}
+                                >
+                                    {messagingLoading ? (
+                                        <ActivityIndicator size="small" color={BG} />
+                                    ) : (
+                                        <Text style={styles.messageBtnText}>Message</Text>
+                                    )}
+                                </Pressable>
+                                <Pressable
+                                    onPress={handleToggleFollow}
+                                    disabled={followLoading}
+                                    style={[
+                                        styles.followBtn,
+                                        isFollowing && styles.followingBtn,
+                                        followLoading && { opacity: 0.6 },
+                                    ]}
+                                >
+                                    {followLoading ? (
+                                        <ActivityIndicator size="small" color={isFollowing ? BG : TEXT} />
+                                    ) : (
+                                        <Text style={[styles.followBtnText, isFollowing && { color: BG }]}>
                                             {isFollowing ? "Following" : "Follow"}
                                         </Text>
-                                    </>
-                                )}
-                            </Pressable>
-                            <Pressable
-                                onPress={handleMessage}
-                                disabled={messagingLoading}
-                                style={[styles.messageButton, messagingLoading && { opacity: 0.6 }]}
-                            >
-                                {messagingLoading ? (
-                                    <ActivityIndicator size="small" color={colors.primary} />
-                                ) : (
-                                    <>
-                                        <MessageCircle size={20} color={colors.primary} strokeWidth={2} />
-                                        <Text style={[styles.messageButtonText, { color: colors.primary }]}>
-                                            Message
-                                        </Text>
-                                    </>
-                                )}
-                            </Pressable>
-                            <Pressable
-                                onPress={handleToggleShortlist}
-                                disabled={shortlistLoading}
-                                style={[
-                                    styles.saveButton,
-                                    isShortlisted && styles.savedButton,
-                                    shortlistLoading && { opacity: 0.6 },
-                                ]}
-                            >
-                                {shortlistLoading ? (
-                                    <ActivityIndicator
-                                        size="small"
-                                        color={isShortlisted ? "#FFF" : colors.primary}
-                                    />
-                                ) : (
-                                    <>
-                                        <Bookmark
-                                            size={20}
-                                            color={isShortlisted ? "#FFF" : colors.primary}
-                                            fill={isShortlisted ? "#FFF" : "transparent"}
-                                            strokeWidth={2}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.saveButtonText,
-                                                { color: isShortlisted ? "#FFF" : colors.primary },
-                                            ]}
-                                        >
-                                            {isShortlisted ? "Saved" : "Save"}
-                                        </Text>
-                                    </>
-                                )}
-                            </Pressable>
-                        </View>
-                    )}
-
-                    {/* Services */}
-                    {services.length > 0 && (
-                        <Animated.View entering={FadeInDown.delay(100).springify()}>
-                            <View style={styles.sectionHeader}>
-                                <Briefcase size={18} color={textColor} strokeWidth={2} />
-                                <Text style={[styles.sectionTitle, { color: textColor, marginBottom: 0 }]}>
-                                    Services
-                                </Text>
+                                    )}
+                                </Pressable>
                             </View>
-                            {services.map((service) => (
+                        )}
+
+                        {/* Stats */}
+                        <View style={styles.statsRow}>
+                            <View style={styles.statItem}>
+                                <Text style={styles.statValue}>
+                                    {followerCount >= 1000 ? `${(followerCount / 1000).toFixed(1)}K` : followerCount}
+                                </Text>
+                                <Text style={styles.statLabel}>Followers</Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                                <Text style={styles.statValue}>
+                                    {followingCount >= 1000 ? `${(followingCount / 1000).toFixed(1)}K` : followingCount}
+                                </Text>
+                                <Text style={styles.statLabel}>Following</Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                                <Text style={styles.statValue}>{services.length}</Text>
+                                <Text style={styles.statLabel}>Projects</Text>
+                            </View>
+                        </View>
+                    </View>
+                </Animated.View>
+
+                {/* Tabs */}
+                <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+                    <View style={styles.tabsContainer}>
+                        {(["portfolio", "services", "reviews"] as const).map((tab) => (
+                            <Pressable
+                                key={tab}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setActiveTab(tab);
+                                }}
+                                style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
+                            >
+                                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </View>
+                </Animated.View>
+
+                {/* Tab Content */}
+                {activeTab === "portfolio" && (
+                    <Animated.View entering={FadeIn.duration(300)} style={styles.tabContent}>
+                        {services.length > 0 ? (
+                            <PortfolioGrid
+                                items={services.map((service) => ({
+                                    id: service.id,
+                                    title: service.title,
+                                    thumbnail: service.imageUrl || "https://via.placeholder.com/400",
+                                    category: service.category,
+                                    priceFormatted: service.priceFormatted,
+                                }))}
+                                numColumns={2}
+                                onItemPress={(item) => handleServicePress(item.id)}
+                            />
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <Briefcase size={32} color={TEXT_MUTED} strokeWidth={1.5} />
+                                <Text style={styles.emptyText}>No portfolio items yet</Text>
+                            </View>
+                        )}
+                    </Animated.View>
+                )}
+
+                {activeTab === "services" && (
+                    <Animated.View entering={FadeIn.duration(300)} style={styles.tabContent}>
+                        {services.length > 0 ? (
+                            services.map((service, idx) => (
                                 <Pressable
                                     key={service.id}
                                     onPress={() => handleServicePress(service.id)}
-                                    style={[styles.serviceCard, { backgroundColor: cardBg, borderColor }]}
+                                    style={styles.serviceCard}
                                 >
                                     {service.imageUrl ? (
-                                        <Image source={{ uri: service.imageUrl }} style={styles.serviceImage} />
+                                        <Image source={{ uri: service.imageUrl }} style={styles.serviceImage} contentFit="cover" />
                                     ) : (
-                                        <View
-                                            style={[
-                                                styles.serviceImage,
-                                                styles.servicePlaceholder,
-                                                { backgroundColor: colors.primary },
-                                            ]}
-                                        >
-                                            <Text style={styles.servicePlaceholderText}>
-                                                {service.category.charAt(0)}
-                                            </Text>
+                                        <View style={[styles.serviceImage, styles.servicePlaceholder]}>
+                                            <Briefcase size={20} color={TEXT_MUTED} />
                                         </View>
                                     )}
                                     <View style={styles.serviceInfo}>
-                                        <Text style={[styles.serviceTitle, { color: textColor }]} numberOfLines={2}>
-                                            {service.title}
-                                        </Text>
-                                        <Text style={styles.servicePrice}>From {service.priceFormatted}</Text>
+                                        <Text style={styles.serviceTitle} numberOfLines={1}>{service.title}</Text>
+                                        <Text style={styles.serviceCategory}>{service.category}</Text>
+                                        <Text style={styles.servicePrice}>{service.priceFormatted}</Text>
                                     </View>
                                 </Pressable>
-                            ))}
-                        </Animated.View>
-                    )}
+                            ))
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <Briefcase size={32} color={TEXT_MUTED} strokeWidth={1.5} />
+                                <Text style={styles.emptyText}>No services listed yet</Text>
+                            </View>
+                        )}
+                    </Animated.View>
+                )}
 
-                    {/* Empty services state for freelancers */}
-                    {services.length === 0 && profile.role === "FREELANCER" && (
-                        <View style={styles.emptyServices}>
-                            <Briefcase size={32} color={mutedColor} strokeWidth={1.5} />
-                            <Text style={[styles.emptyText, { color: mutedColor }]}>
-                                No services listed yet
-                            </Text>
+                {activeTab === "reviews" && (
+                    <Animated.View entering={FadeIn.duration(300)} style={styles.tabContent}>
+                        <View style={styles.emptyState}>
+                            <Star size={32} color={TEXT_MUTED} strokeWidth={1.5} />
+                            <Text style={styles.emptyText}>No reviews yet</Text>
                         </View>
-                    )}
-
-                    <View style={{ height: 40 }} />
-                </View>
+                    </Animated.View>
+                )}
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: BG,
+    },
+    headerBar: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: "900",
+        color: TEXT,
+        letterSpacing: -0.3,
     },
     scrollView: {
         flex: 1,
-    },
-    loadingHeader: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        paddingHorizontal: 16,
-        paddingTop: 8,
     },
     loadingContainer: {
         flex: 1,
@@ -569,236 +555,205 @@ const styles = StyleSheet.create({
         padding: 40,
     },
     errorTitle: {
-        fontSize: 18,
-        fontWeight: "600",
+        fontSize: 20,
+        fontWeight: "900",
+        color: TEXT,
         textAlign: "center",
         marginBottom: 20,
     },
     retryButton: {
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 12,
+        borderRadius: 14,
+        backgroundColor: ACCENT,
     },
     retryText: {
-        color: "#FFF",
+        color: BG,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "800",
     },
-    coverContainer: {
-        height: 180,
-    },
-    header: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
-    },
-    headerOverlay: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingTop: 8,
-    },
-    headerRight: {
-        flexDirection: "row",
-        gap: 8,
-    },
-    closeButton: {
-        width: 44,
-        height: 44,
+    profileCard: {
+        margin: 16,
+        padding: 24,
         borderRadius: 22,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        alignItems: "center",
-        justifyContent: "center",
+        backgroundColor: SURFACE,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
-    },
-    closeButtonAlt: {
-        width: 44,
-        height: 44,
+        borderColor: BORDER,
         alignItems: "center",
-        justifyContent: "center",
-    },
-    headerButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
-    },
-    profileContent: {
-        padding: 20,
-        marginTop: -50,
-    },
-    avatarSection: {
-        flexDirection: "row",
-        alignItems: "flex-end",
-        marginBottom: 16,
     },
     avatarContainer: {
         position: "relative",
+        marginBottom: 16,
     },
     avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 4,
-        borderColor: "#111111",
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        borderWidth: 3,
+        borderColor: ACCENT,
     },
     avatarPlaceholder: {
-        backgroundColor: "#111111",
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
     },
     avatarText: {
-        color: "#FFF",
-        fontSize: 40,
+        color: ACCENT,
+        fontSize: 36,
         fontWeight: "700",
     },
     verifiedBadge: {
         position: "absolute",
-        bottom: 4,
-        right: 4,
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: "#111111",
+        bottom: 2,
+        right: 2,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: ACCENT,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 2,
-        borderColor: "#FFF",
-    },
-    nameSection: {
-        marginLeft: 16,
-        paddingBottom: 8,
+        borderColor: SURFACE,
     },
     displayName: {
         fontSize: 24,
-        fontWeight: "800",
+        fontWeight: "900",
+        color: TEXT,
+        letterSpacing: -0.3,
+        marginBottom: 4,
     },
-    username: {
+    roleText: {
         fontSize: 15,
         fontWeight: "500",
-        marginTop: 2,
+        color: TEXT_MUTED,
+        marginBottom: 12,
     },
     metaRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 20,
-        marginBottom: 16,
+        gap: 16,
+        marginBottom: 12,
+        flexWrap: "wrap",
+        justifyContent: "center",
     },
-    locationContainer: {
+    metaItem: {
         flexDirection: "row",
         alignItems: "center",
         gap: 4,
     },
-    locationText: {
+    metaText: {
         fontSize: 14,
         fontWeight: "500",
+        color: TEXT_MUTED,
     },
     bio: {
-        fontSize: 16,
-        lineHeight: 24,
-        marginBottom: 20,
-    },
-    statsRow: {
-        flexDirection: "row",
-        gap: 10,
-        marginBottom: 20,
-    },
-    statItem: {
-        flex: 1,
-        borderRadius: 12,
-        padding: 14,
-        alignItems: "center",
-    },
-    statValue: {
-        fontSize: 18,
-        fontWeight: "700",
-        marginBottom: 4,
-    },
-    statLabel: {
-        fontSize: 13,
-        fontWeight: "500",
+        fontSize: 15,
+        lineHeight: 22,
+        color: TEXT_SEC,
+        textAlign: "center",
+        marginBottom: 16,
     },
     actionsRow: {
         flexDirection: "row",
         gap: 12,
-        marginBottom: 28,
+        marginBottom: 20,
+        width: "100%",
     },
-    messageButton: {
+    messageBtn: {
         flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
+        backgroundColor: ACCENT,
         paddingVertical: 14,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: colors.primary,
+        borderRadius: 14,
+        alignItems: "center",
     },
-    messageButtonText: {
+    messageBtnText: {
+        color: BG,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "800",
     },
-    saveButton: {
+    followBtn: {
         flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
         paddingVertical: 14,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: colors.primary,
-    },
-    savedButton: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    followButton: {
-        flex: 1,
-        flexDirection: "row",
+        borderRadius: 14,
         alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        paddingVertical: 14,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: colors.primary,
+        borderWidth: 1,
+        borderColor: BORDER,
+        backgroundColor: "transparent",
     },
-    followingButton: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
+    followingBtn: {
+        backgroundColor: ACCENT,
+        borderColor: ACCENT,
     },
-    followButtonText: {
-        fontSize: 15,
-        fontWeight: "600",
-    },
-    saveButtonText: {
+    followBtnText: {
+        color: TEXT,
         fontSize: 16,
-        fontWeight: "600",
-    },
-    sectionHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 14,
-    },
-    sectionTitle: {
-        fontSize: 18,
         fontWeight: "700",
-        marginBottom: 14,
+    },
+    statsRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: BORDER,
+    },
+    statItem: {
+        flex: 1,
+        alignItems: "center",
+    },
+    statDivider: {
+        width: 1,
+        height: 30,
+        backgroundColor: BORDER,
+    },
+    statValue: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: TEXT,
+        marginBottom: 2,
+    },
+    statLabel: {
+        fontSize: 12,
+        fontWeight: "500",
+        color: TEXT_MUTED,
+    },
+    tabsContainer: {
+        flexDirection: "row",
+        marginHorizontal: 16,
+        marginBottom: 16,
+        padding: 4,
+        borderRadius: 14,
+        backgroundColor: SURFACE,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    tabPill: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        alignItems: "center",
+    },
+    tabPillActive: {
+        backgroundColor: ACCENT,
+    },
+    tabText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: TEXT_MUTED,
+    },
+    tabTextActive: {
+        color: BG,
+        fontWeight: "800",
+    },
+    tabContent: {
+        paddingHorizontal: 16,
     },
     serviceCard: {
         flexDirection: "row",
-        borderRadius: 14,
+        borderRadius: 18,
         borderWidth: 1,
+        borderColor: BORDER,
+        backgroundColor: SURFACE,
         overflow: "hidden",
         marginBottom: 12,
     },
@@ -807,13 +762,9 @@ const styles = StyleSheet.create({
         height: 80,
     },
     servicePlaceholder: {
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
-    },
-    servicePlaceholderText: {
-        color: "#FFF",
-        fontSize: 24,
-        fontWeight: "700",
     },
     serviceInfo: {
         flex: 1,
@@ -822,20 +773,27 @@ const styles = StyleSheet.create({
     },
     serviceTitle: {
         fontSize: 15,
-        fontWeight: "600",
-        marginBottom: 6,
+        fontWeight: "700",
+        color: TEXT,
+        marginBottom: 4,
+    },
+    serviceCategory: {
+        fontSize: 13,
+        color: TEXT_MUTED,
+        marginBottom: 4,
     },
     servicePrice: {
         fontSize: 14,
-        fontWeight: "700",
-        color: colors.primary,
+        fontWeight: "800",
+        color: ACCENT,
     },
-    emptyServices: {
+    emptyState: {
         alignItems: "center",
         paddingVertical: 40,
         gap: 12,
     },
     emptyText: {
         fontSize: 15,
+        color: TEXT_MUTED,
     },
 });

@@ -44,6 +44,17 @@ const TOP_CREATORS = [
     { id: "6", name: "Alex R.", category: "AI", initials: "AR", verified: true },
 ];
 
+// Popular Categories from Figma layout.builder (7)
+const POPULAR_CATEGORIES = [
+    { emoji: "🎨", title: "Brand Design", count: "2.4K" },
+    { emoji: "💻", title: "Web Dev", count: "1.8K" },
+    { emoji: "🤖", title: "AI / ML", count: "956" },
+    { emoji: "🎬", title: "Video Edit", count: "1.2K" },
+];
+
+// Trending badge types from Figma
+const BADGE_TYPES = ["Trending", "Hot", "New"] as const;
+
 export default function DiscoverTab() {
     const router = useRouter();
     const { user } = useAuthStore();
@@ -57,7 +68,7 @@ export default function DiscoverTab() {
             const params: any = { page: 1, limit: 10 };
             if (category && category !== "All") params.category = category.toUpperCase();
             const res = await getServices(params);
-            setServices(res.services || res.data || []);
+            setServices(res.services || []);
         } catch (e: any) {
             toast.error(e?.message || "Failed to load services");
         } finally {
@@ -82,6 +93,7 @@ export default function DiscoverTab() {
 
     const featured = services[0];
     const trending = services.slice(1, 4);
+    const recentlyViewed = services.slice(0, 5);
 
     return (
         <View style={styles.container}>
@@ -92,7 +104,7 @@ export default function DiscoverTab() {
                         <Text style={styles.screenTitle}>Discover</Text>
                     </View>
                     <View style={styles.headerActions}>
-                        <Pressable style={styles.iconBtn} onPress={() => router.push("/notifications" as any)}>
+                        <Pressable style={styles.iconBtn} onPress={() => router.push("/search" as any)}>
                             <Ionicons name="search-outline" size={20} color={TEXT_SEC} />
                         </Pressable>
                         <Pressable style={styles.iconBtn} onPress={() => router.push("/notifications" as any)}>
@@ -226,7 +238,7 @@ export default function DiscoverTab() {
                         </ScrollView>
                     </View>
 
-                    {/* Trending Now */}
+                    {/* Trending Now — with badges */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionTitleRow}>
@@ -238,7 +250,7 @@ export default function DiscoverTab() {
                             </Pressable>
                         </View>
 
-                        {trending.length > 0 ? trending.map((svc) => (
+                        {trending.length > 0 ? trending.map((svc, idx) => (
                             <Pressable
                                 key={svc.id}
                                 style={styles.trendingCard}
@@ -250,6 +262,16 @@ export default function DiscoverTab() {
                                     ) : (
                                         <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.trendingImg} />
                                     )}
+                                    {/* Trending badge */}
+                                    <View style={[
+                                        styles.trendingBadge,
+                                        idx === 1 && { backgroundColor: "#ef4444" },
+                                        idx === 2 && { backgroundColor: "#3b82f6" },
+                                    ]}>
+                                        <Text style={styles.trendingBadgeText}>
+                                            {BADGE_TYPES[idx % BADGE_TYPES.length]}
+                                        </Text>
+                                    </View>
                                 </View>
                                 <View style={styles.trendingInfo}>
                                     <Text style={styles.trendingTitle} numberOfLines={2}>{svc.title}</Text>
@@ -264,18 +286,110 @@ export default function DiscoverTab() {
                                         </Text>
                                     </View>
                                 </View>
+                                {/* Bookmark button */}
+                                <Pressable style={styles.trendingBookmark}>
+                                    <Ionicons name="bookmark-outline" size={16} color={TEXT_MUTED} />
+                                </Pressable>
                             </Pressable>
                         )) : (
                             <Text style={{ color: TEXT_MUTED }}>No services in this category</Text>
                         )}
                     </View>
 
+                    {/* Recently Viewed */}
+                    {recentlyViewed.length > 0 && (
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <View style={styles.sectionTitleRow}>
+                                    <Ionicons name="time-outline" size={14} color={TEXT_SEC} />
+                                    <Text style={styles.sectionTitle}>Recently Viewed</Text>
+                                </View>
+                                <Pressable>
+                                    <Text style={styles.seeAll}>See all</Text>
+                                </Pressable>
+                            </View>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ gap: 12, paddingRight: 20 }}
+                            >
+                                {recentlyViewed.map((svc) => (
+                                    <Pressable
+                                        key={svc.id}
+                                        style={styles.recentCard}
+                                        onPress={() => router.push(`/service/${svc.id}` as any)}
+                                    >
+                                        {svc.imageUrl ? (
+                                            <Image source={{ uri: svc.imageUrl }} style={styles.recentImg} resizeMode="cover" />
+                                        ) : (
+                                            <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.recentImg} />
+                                        )}
+                                        <LinearGradient
+                                            colors={["transparent", "rgba(0,0,0,0.75)"]}
+                                            style={styles.recentOverlay}
+                                        />
+                                        {/* Bookmark */}
+                                        <Pressable style={styles.recentBookmark}>
+                                            <Ionicons name="bookmark-outline" size={14} color={TEXT} />
+                                        </Pressable>
+                                        <View style={styles.recentInfo}>
+                                            <Text style={styles.recentTitle} numberOfLines={2}>{svc.title}</Text>
+                                            <View style={styles.recentMeta}>
+                                                <Text style={styles.recentCreator} numberOfLines={1}>
+                                                    {svc.user?.displayName || "Creator"}
+                                                </Text>
+                                                <Text style={styles.recentPrice}>
+                                                    {svc.priceFormatted || `$${Math.round((svc.price || 0) / 100)}`}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    )}
+
+                    {/* Popular Categories — 2×2 grid from Figma */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Popular Categories</Text>
+                        </View>
+                        <View style={styles.catGrid}>
+                            {POPULAR_CATEGORIES.map((cat) => (
+                                <Pressable key={cat.title} style={styles.catGridItem}>
+                                    <Text style={styles.catGridEmoji}>{cat.emoji}</Text>
+                                    <Text style={styles.catGridTitle}>{cat.title}</Text>
+                                    <Text style={styles.catGridCount}>{cat.count}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* FAB for Create */}
                     <View style={{ height: 100 }} />
                 </ScrollView>
             )}
+
+            {/* Floating Action Button — Create */}
+            <Pressable
+                style={styles.fab}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push("/(tabs)/create" as any);
+                }}
+            >
+                <LinearGradient
+                    colors={[ACCENT, "#84cc16"]}
+                    style={styles.fabGrad}
+                >
+                    <Ionicons name="add" size={28} color="#0b0b0f" />
+                </LinearGradient>
+            </Pressable>
         </View>
     );
 }
+
+const RECENT_W = 160;
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: BG },
@@ -318,6 +432,8 @@ const styles = StyleSheet.create({
     sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
     sectionTitle: { color: TEXT, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
     seeAll: { color: ACCENT, fontSize: 13, fontWeight: "700" },
+
+    // Featured card
     featuredCard: {
         borderRadius: 24, overflow: "hidden",
         shadowColor: "#000", shadowOffset: { width: 0, height: 8 },
@@ -349,6 +465,8 @@ const styles = StyleSheet.create({
     featuredCreator: { color: TEXT_SEC, fontSize: 13, fontWeight: "600", flex: 1 },
     ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
     ratingText: { color: TEXT_MUTED, fontSize: 12, fontWeight: "600" },
+
+    // Creator cards
     creatorCard: { alignItems: "center", width: 72 },
     creatorAvatarWrap: { position: "relative", marginBottom: 8 },
     creatorAvatar: {
@@ -365,20 +483,72 @@ const styles = StyleSheet.create({
     },
     creatorName: { color: TEXT_SEC, fontSize: 11, fontWeight: "700", textAlign: "center" },
     creatorCat: { color: TEXT_SUBTLE, fontSize: 10, fontWeight: "500", textAlign: "center" },
+
+    // Trending cards
     trendingCard: {
         flexDirection: "row", backgroundColor: SURFACE, borderRadius: 18,
         borderWidth: 1, borderColor: BORDER, overflow: "hidden", marginBottom: 10,
     },
-    trendingImgWrap: { width: 90, height: 90 },
+    trendingImgWrap: { width: 90, height: 90, position: "relative" },
     trendingImg: { width: 90, height: 90 },
+    trendingBadge: {
+        position: "absolute", top: 6, left: 6,
+        backgroundColor: ACCENT, borderRadius: 6,
+        paddingHorizontal: 6, paddingVertical: 2,
+    },
+    trendingBadgeText: { color: "#000", fontSize: 8, fontWeight: "900", letterSpacing: 0.3 },
     trendingInfo: { flex: 1, padding: 12, justifyContent: "space-between" },
     trendingTitle: { color: TEXT, fontSize: 14, fontWeight: "900", lineHeight: 18 },
     trendingCat: { color: TEXT_SUBTLE, fontSize: 11, fontWeight: "600" },
     trendingMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     trendingPrice: { color: ACCENT, fontSize: 14, fontWeight: "900" },
+    trendingBookmark: {
+        padding: 12, justifyContent: "center", alignItems: "center",
+    },
+
+    // Recently Viewed — horizontal scroll cards
+    recentCard: {
+        width: RECENT_W, height: RECENT_W * 1.25, borderRadius: 18,
+        overflow: "hidden", position: "relative",
+    },
+    recentImg: { width: "100%", height: "100%" },
+    recentOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: "60%" },
+    recentBookmark: {
+        position: "absolute", top: 8, right: 8,
+        width: 28, height: 28, borderRadius: 14,
+        backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center",
+    },
+    recentInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
+    recentTitle: { color: TEXT, fontSize: 12, fontWeight: "800", marginBottom: 4 },
+    recentMeta: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    recentCreator: { color: TEXT_SEC, fontSize: 10, fontWeight: "600", flex: 1, marginRight: 6 },
+    recentPrice: { color: ACCENT, fontSize: 11, fontWeight: "900" },
+
+    // Popular Categories — 2×2 grid
+    catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+    catGridItem: {
+        width: (W - 52) / 2, backgroundColor: SURFACE, borderRadius: 18,
+        padding: 16, borderWidth: 1, borderColor: BORDER,
+    },
+    catGridEmoji: { fontSize: 28, marginBottom: 10 },
+    catGridTitle: { color: TEXT, fontSize: 15, fontWeight: "800", marginBottom: 4 },
+    catGridCount: { color: TEXT_MUTED, fontSize: 13, fontWeight: "600" },
+
+    // Empty state
     emptyCard: {
         height: 180, borderRadius: 24, backgroundColor: SURFACE,
         justifyContent: "center", alignItems: "center",
         borderWidth: 1, borderColor: BORDER,
+    },
+
+    // FAB
+    fab: {
+        position: "absolute", bottom: 100, right: 20,
+        shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 }, elevation: 8,
+    },
+    fabGrad: {
+        width: 56, height: 56, borderRadius: 28,
+        justifyContent: "center", alignItems: "center",
     },
 });

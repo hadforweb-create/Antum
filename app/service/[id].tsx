@@ -13,12 +13,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { X, Star, Clock, MessageCircle, Share2, Edit2, Trash2, Heart } from "lucide-react-native";
+import { X, Star, Clock, MessageCircle, Share2, Edit2, Trash2, Heart, Bookmark } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 
-import { useThemeStore, useAuthStore } from "@/lib/store";
-import { colors } from "@/lib/theme";
+import { useAuthStore } from "@/lib/store";
 import { getService, deleteService, Service } from "@/lib/api/services";
 import { createConversation } from "@/lib/api/conversations";
 import { toggleLike, checkIsLiked, getLikeCount, getCommentCount, createServiceRequest } from "@/lib/api/social";
@@ -27,10 +26,20 @@ import { toast } from "@/lib/ui/toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+// Design system constants
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
+
 export default function ServiceDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const { isDark } = useThemeStore();
     const { user } = useAuthStore();
 
     const [service, setService] = useState<Service | null>(null);
@@ -43,12 +52,7 @@ export default function ServiceDetailScreen() {
     const [commentCount, setCommentCount] = useState(0);
     const [showComments, setShowComments] = useState(false);
     const [hireLoading, setHireLoading] = useState(false);
-
-    const bgColor = isDark ? "#121210" : "#F5F3EE";
-    const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E8A";
-    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
+    const [isBookmarked, setIsBookmarked] = useState(false);
 
     const isOwner = service?.user?.id === user?.id;
 
@@ -62,7 +66,6 @@ export default function ServiceDetailScreen() {
                 const data = await getService(id);
                 setService(data);
 
-                // Fetch social data
                 const [liked, likes, comments] = await Promise.all([
                     checkIsLiked("service", id),
                     getLikeCount("service", id),
@@ -90,7 +93,6 @@ export default function ServiceDetailScreen() {
     const handleMessage = async () => {
         if (!service?.user?.id || messagingLoading) return;
 
-        // Don't message yourself
         if (service.user.id === user?.id) {
             toast.info("You can't message yourself");
             return;
@@ -122,6 +124,12 @@ export default function ServiceDetailScreen() {
         }
     };
 
+    const handleToggleBookmark = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setIsBookmarked(!isBookmarked);
+        toast.info(isBookmarked ? "Removed from saved" : "Added to saved");
+    };
+
     const handleHire = async () => {
         if (!service?.user?.id || hireLoading) return;
         if (service.user.id === user?.id) {
@@ -131,9 +139,7 @@ export default function ServiceDetailScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setHireLoading(true);
         try {
-            // Create service request
             await createServiceRequest(service.id, service.user.id, `I'd like to hire you for: ${service.title}`);
-            // Then open/create conversation
             const conversation = await createConversation(service.user.id);
             toast.success("Request sent!");
             router.push(`/conversation/${conversation.id}`);
@@ -193,14 +199,14 @@ export default function ServiceDetailScreen() {
     // Loading state
     if (loading) {
         return (
-            <View style={[styles.container, { backgroundColor: bgColor }]}>
+            <View style={styles.container}>
                 <SafeAreaView style={styles.loadingHeader}>
                     <Pressable onPress={handleClose} style={styles.closeButton}>
-                        <X size={24} color="#FFF" strokeWidth={2.5} />
+                        <X size={24} color={TEXT} strokeWidth={2.5} />
                     </Pressable>
                 </SafeAreaView>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size="large" color={ACCENT} />
                 </View>
             </View>
         );
@@ -209,20 +215,17 @@ export default function ServiceDetailScreen() {
     // Error state
     if (error || !service) {
         return (
-            <View style={[styles.container, { backgroundColor: bgColor }]}>
+            <View style={styles.container}>
                 <SafeAreaView style={styles.header}>
                     <Pressable onPress={handleClose} style={styles.closeButtonAlt}>
-                        <X size={24} color={textColor} strokeWidth={2.5} />
+                        <X size={24} color={TEXT} strokeWidth={2.5} />
                     </Pressable>
                 </SafeAreaView>
                 <View style={styles.errorContainer}>
-                    <Text style={[styles.errorTitle, { color: textColor }]}>
+                    <Text style={styles.errorTitle}>
                         {error || "Service not found"}
                     </Text>
-                    <Pressable
-                        onPress={handleClose}
-                        style={[styles.retryButton, { backgroundColor: colors.primary }]}
-                    >
+                    <Pressable onPress={handleClose} style={styles.retryButton}>
                         <Text style={styles.retryText}>Go Back</Text>
                     </Pressable>
                 </View>
@@ -231,31 +234,31 @@ export default function ServiceDetailScreen() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: bgColor }]}>
+        <View style={styles.container}>
             {/* Hero Image */}
             <View style={styles.heroContainer}>
                 {service.imageUrl ? (
                     <Image source={{ uri: service.imageUrl }} style={styles.heroImage} contentFit="cover" />
                 ) : (
-                    <View style={[styles.heroImage, styles.heroPlaceholder, { backgroundColor: colors.primary }]}>
+                    <View style={[styles.heroImage, styles.heroPlaceholder]}>
                         <Text style={styles.heroPlaceholderText}>{service.category}</Text>
                     </View>
                 )}
                 <LinearGradient
-                    colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.6)"]}
+                    colors={["rgba(0,0,0,0.4)", "transparent", "rgba(11,11,15,0.95)"]}
                     style={StyleSheet.absoluteFill}
                 />
 
                 {/* Header */}
                 <SafeAreaView style={styles.header}>
                     <Pressable onPress={handleClose} style={styles.closeButton}>
-                        <X size={24} color="#FFF" strokeWidth={2.5} />
+                        <X size={24} color={TEXT} strokeWidth={2.5} />
                     </Pressable>
                     <View style={styles.headerRight}>
                         {isOwner && (
                             <>
                                 <Pressable onPress={handleEdit} style={styles.headerButton}>
-                                    <Edit2 size={20} color="#FFF" strokeWidth={2} />
+                                    <Edit2 size={20} color={TEXT} strokeWidth={2} />
                                 </Pressable>
                                 <Pressable
                                     onPress={handleDelete}
@@ -263,15 +266,15 @@ export default function ServiceDetailScreen() {
                                     disabled={deleteLoading}
                                 >
                                     {deleteLoading ? (
-                                        <ActivityIndicator size="small" color="#FFF" />
+                                        <ActivityIndicator size="small" color={TEXT} />
                                     ) : (
-                                        <Trash2 size={20} color="#D64040" strokeWidth={2} />
+                                        <Trash2 size={20} color="#EF4444" strokeWidth={2} />
                                     )}
                                 </Pressable>
                             </>
                         )}
                         <Pressable style={styles.headerButton} onPress={handleShare}>
-                            <Share2 size={20} color="#FFF" strokeWidth={2} />
+                            <Share2 size={20} color={TEXT} strokeWidth={2} />
                         </Pressable>
                     </View>
                 </SafeAreaView>
@@ -290,15 +293,15 @@ export default function ServiceDetailScreen() {
             >
                 {/* Title & Meta */}
                 <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-                    <Text style={[styles.title, { color: textColor }]}>{service.title}</Text>
+                    <Text style={styles.title}>{service.title}</Text>
 
                     <View style={styles.metaRow}>
                         <View style={styles.categoryBadge}>
                             <Text style={styles.categoryText}>{service.category}</Text>
                         </View>
                         <View style={styles.deliveryBadge}>
-                            <Clock size={14} color={mutedColor} strokeWidth={2} />
-                            <Text style={[styles.deliveryText, { color: mutedColor }]}>
+                            <Clock size={14} color={TEXT_MUTED} strokeWidth={2} />
+                            <Text style={styles.deliveryText}>
                                 {service.deliveryDays} day{service.deliveryDays !== 1 ? "s" : ""} delivery
                             </Text>
                         </View>
@@ -310,7 +313,7 @@ export default function ServiceDetailScreen() {
                     <Animated.View entering={FadeInDown.delay(200).duration(300)}>
                         <Pressable
                             onPress={handleCreatorPress}
-                            style={[styles.creatorCard, { backgroundColor: cardBg, borderColor }]}
+                            style={styles.creatorCard}
                         >
                             {service.user.avatarUrl ? (
                                 <Image
@@ -318,23 +321,18 @@ export default function ServiceDetailScreen() {
                                     style={styles.creatorAvatar}
                                 />
                             ) : (
-                                <View
-                                    style={[
-                                        styles.creatorAvatar,
-                                        { backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
-                                    ]}
-                                >
-                                    <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700" }}>
+                                <View style={[styles.creatorAvatar, styles.creatorAvatarPlaceholder]}>
+                                    <Text style={styles.creatorAvatarText}>
                                         {(service.user.name || service.user.email).charAt(0).toUpperCase()}
                                     </Text>
                                 </View>
                             )}
                             <View style={styles.creatorInfo}>
-                                <Text style={[styles.creatorName, { color: textColor }]}>
+                                <Text style={styles.creatorName}>
                                     {service.user.name || service.user.email}
                                 </Text>
                                 {service.user.location && (
-                                    <Text style={[styles.creatorLocation, { color: mutedColor }]}>
+                                    <Text style={styles.creatorLocation}>
                                         {service.user.location}
                                     </Text>
                                 )}
@@ -348,34 +346,45 @@ export default function ServiceDetailScreen() {
 
                 {/* Social Actions */}
                 <Animated.View entering={FadeInDown.delay(250).duration(300)}>
-                    <View style={styles.socialRow}>
-                        <Pressable onPress={handleToggleLike} style={styles.socialButton}>
+                    <View style={styles.engagementRow}>
+                        <Pressable onPress={handleToggleLike} style={[styles.engagementButton, isLiked && styles.engagementButtonActive]}>
                             <Heart
-                                size={22}
-                                color={isLiked ? "#EF4444" : mutedColor}
+                                size={20}
+                                color={isLiked ? "#EF4444" : TEXT}
                                 fill={isLiked ? "#EF4444" : "transparent"}
                                 strokeWidth={2}
                             />
-                            <Text style={[styles.socialCount, { color: isLiked ? "#EF4444" : mutedColor }]}>
-                                {likeCount}
+                            <Text style={[styles.engagementCount, { color: isLiked ? "#EF4444" : TEXT }]}>
+                                {likeCount > 999 ? `${(likeCount / 1000).toFixed(1)}K` : likeCount}
                             </Text>
                         </Pressable>
-                        <Pressable onPress={() => setShowComments(true)} style={styles.socialButton}>
-                            <MessageCircle size={22} color={mutedColor} strokeWidth={2} />
-                            <Text style={[styles.socialCount, { color: mutedColor }]}>
-                                {commentCount}
+                        <Pressable onPress={() => setShowComments(true)} style={styles.engagementButton}>
+                            <MessageCircle size={20} color={TEXT} strokeWidth={2} />
+                            <Text style={styles.engagementCount}>
+                                {commentCount > 999 ? `${(commentCount / 1000).toFixed(1)}K` : commentCount}
                             </Text>
                         </Pressable>
-                        <Pressable onPress={handleShare} style={styles.socialButton}>
-                            <Share2 size={20} color={mutedColor} strokeWidth={2} />
+                        <Pressable onPress={handleToggleBookmark} style={styles.engagementButton}>
+                            <Bookmark
+                                size={20}
+                                color={isBookmarked ? ACCENT : TEXT}
+                                fill={isBookmarked ? ACCENT : "transparent"}
+                                strokeWidth={2}
+                            />
+                            <Text style={[styles.engagementCount, { color: isBookmarked ? ACCENT : TEXT }]}>
+                                {isBookmarked ? "Saved" : "Save"}
+                            </Text>
+                        </Pressable>
+                        <Pressable onPress={handleShare} style={styles.engagementButton}>
+                            <Share2 size={20} color={TEXT} strokeWidth={2} />
                         </Pressable>
                     </View>
                 </Animated.View>
 
                 {/* Description */}
                 <Animated.View entering={FadeInDown.delay(300).duration(300)}>
-                    <Text style={[styles.sectionTitle, { color: textColor }]}>About this service</Text>
-                    <Text style={[styles.description, { color: textColor }]}>{service.description}</Text>
+                    <Text style={styles.sectionTitle}>About this service</Text>
+                    <Text style={styles.description}>{service.description}</Text>
                 </Animated.View>
 
                 <View style={{ height: 120 }} />
@@ -384,21 +393,21 @@ export default function ServiceDetailScreen() {
             {/* Bottom Actions */}
             {!isOwner && (
                 <SafeAreaView edges={["bottom"]} style={styles.bottomActions}>
-                    <View style={[styles.actionsContainer, { backgroundColor: cardBg, borderColor }]}>
+                    <View style={styles.actionsContainer}>
                         <Pressable
                             onPress={handleMessage}
                             disabled={messagingLoading}
                             style={[styles.messageButton, messagingLoading && { opacity: 0.6 }]}
                         >
                             {messagingLoading ? (
-                                <ActivityIndicator size="small" color={textColor} />
+                                <ActivityIndicator size="small" color={TEXT} />
                             ) : (
-                                <MessageCircle size={22} color={textColor} strokeWidth={2} />
+                                <MessageCircle size={22} color={TEXT} strokeWidth={2} />
                             )}
                         </Pressable>
                         <Pressable onPress={handleHire} disabled={hireLoading} style={[styles.hireButton, hireLoading && { opacity: 0.7 }]}>
                             {hireLoading ? (
-                                <ActivityIndicator size="small" color="#FFF" />
+                                <ActivityIndicator size="small" color={BG} />
                             ) : (
                                 <Text style={styles.hireButtonText}>
                                     Hire - {service.priceFormatted}
@@ -425,6 +434,7 @@ export default function ServiceDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: BG,
     },
     loadingHeader: {
         position: "absolute",
@@ -448,7 +458,8 @@ const styles = StyleSheet.create({
     },
     errorTitle: {
         fontSize: 20,
-        fontWeight: "600",
+        fontWeight: "900",
+        color: TEXT,
         textAlign: "center",
         marginBottom: 24,
     },
@@ -456,11 +467,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 28,
         paddingVertical: 14,
         borderRadius: 18,
+        backgroundColor: ACCENT,
     },
     retryText: {
-        color: "#FFF",
+        color: BG,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "800",
     },
     heroContainer: {
         height: 360,
@@ -472,9 +484,10 @@ const styles = StyleSheet.create({
     heroPlaceholder: {
         alignItems: "center",
         justifyContent: "center",
+        backgroundColor: ELEVATED,
     },
     heroPlaceholderText: {
-        color: "#FFF",
+        color: TEXT_MUTED,
         fontSize: 32,
         fontWeight: "800",
     },
@@ -493,47 +506,54 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     closeButton: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "rgba(0,0,0,0.35)",
+        width: 40,
+        height: 40,
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 0,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     closeButtonAlt: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
+        width: 40,
+        height: 40,
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     headerButton: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "rgba(0,0,0,0.35)",
+        width: 40,
+        height: 40,
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 0,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     priceBadge: {
         position: "absolute",
         bottom: 24,
         left: 24,
-        backgroundColor: "rgba(0,0,0,0.65)",
+        backgroundColor: "rgba(11,11,15,0.85)",
         paddingHorizontal: 18,
         paddingVertical: 12,
         borderRadius: 18,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     priceLabel: {
-        color: "rgba(255,255,255,0.7)",
+        color: TEXT_SEC,
         fontSize: 12,
         fontWeight: "500",
         marginBottom: 2,
     },
     priceValue: {
-        color: "#FFF",
+        color: ACCENT,
         fontSize: 30,
         fontWeight: "800",
         letterSpacing: -0.5,
@@ -546,10 +566,11 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 28,
-        fontWeight: "800",
+        fontWeight: "900",
         lineHeight: 36,
         marginBottom: 14,
         letterSpacing: -0.3,
+        color: TEXT,
     },
     metaRow: {
         flexDirection: "row",
@@ -558,15 +579,15 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     categoryBadge: {
-        backgroundColor: colors.primary,
+        backgroundColor: ACCENT,
         paddingHorizontal: 14,
         paddingVertical: 7,
         borderRadius: 12,
     },
     categoryText: {
-        color: "#FFF",
+        color: BG,
         fontSize: 13,
-        fontWeight: "600",
+        fontWeight: "700",
     },
     deliveryBadge: {
         flexDirection: "row",
@@ -576,24 +597,32 @@ const styles = StyleSheet.create({
     deliveryText: {
         fontSize: 14,
         fontWeight: "500",
+        color: TEXT_MUTED,
     },
     creatorCard: {
         flexDirection: "row",
         alignItems: "center",
         padding: 20,
-        borderRadius: 24,
-        borderWidth: 0,
+        borderRadius: 22,
         marginBottom: 28,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.06,
-        shadowRadius: 14,
-        elevation: 3,
+        backgroundColor: SURFACE,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     creatorAvatar: {
         width: 56,
         height: 56,
         borderRadius: 28,
+    },
+    creatorAvatarPlaceholder: {
+        backgroundColor: ACCENT,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    creatorAvatarText: {
+        color: BG,
+        fontSize: 18,
+        fontWeight: "700",
     },
     creatorInfo: {
         flex: 1,
@@ -602,47 +631,67 @@ const styles = StyleSheet.create({
     creatorName: {
         fontSize: 17,
         fontWeight: "700",
+        color: TEXT,
     },
     creatorLocation: {
         fontSize: 14,
         marginTop: 3,
+        color: TEXT_MUTED,
     },
     viewProfileButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: ACCENT,
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 14,
     },
     viewProfileText: {
-        color: "#FFF",
+        color: BG,
         fontSize: 13,
-        fontWeight: "600",
+        fontWeight: "700",
     },
     sectionTitle: {
         fontSize: 22,
-        fontWeight: "700",
+        fontWeight: "900",
         marginBottom: 14,
+        color: TEXT,
+        letterSpacing: -0.3,
     },
-    socialRow: {
+    engagementRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 24,
-        marginBottom: 24,
-        paddingVertical: 8,
+        gap: 12,
+        marginBottom: 28,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        backgroundColor: SURFACE,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
-    socialButton: {
+    engagementButton: {
+        flex: 1,
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 6,
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderRadius: 14,
+        backgroundColor: "transparent",
     },
-    socialCount: {
-        fontSize: 15,
+    engagementButtonActive: {
+        backgroundColor: "rgba(163,255,63,0.08)",
+    },
+    engagementCount: {
+        fontSize: 13,
         fontWeight: "600",
+        color: TEXT,
     },
     description: {
         fontSize: 16,
         lineHeight: 30,
         marginBottom: 28,
+        color: TEXT_SEC,
     },
     bottomActions: {
         position: "absolute",
@@ -655,36 +704,30 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 14,
         padding: 20,
-        borderTopWidth: 0,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 16,
-        elevation: 8,
+        backgroundColor: "rgba(11,11,15,0.96)",
+        borderTopWidth: 1,
+        borderTopColor: BORDER,
     },
     messageButton: {
         width: 56,
         height: 56,
         borderRadius: 18,
-        backgroundColor: "rgba(17, 17, 17, 0.05)",
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     hireButton: {
         flex: 1,
-        backgroundColor: colors.primary,
+        backgroundColor: ACCENT,
         paddingVertical: 20,
         borderRadius: 22,
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.12,
-        shadowRadius: 20,
-        elevation: 5,
     },
     hireButtonText: {
-        color: "#FFF",
+        color: BG,
         fontSize: 17,
-        fontWeight: "700",
+        fontWeight: "800",
     },
 });
