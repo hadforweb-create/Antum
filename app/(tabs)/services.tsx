@@ -1,601 +1,442 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     View,
     Text,
-    ScrollView,
+    FlatList,
     Pressable,
     StyleSheet,
-    TextInput,
-    RefreshControl,
+    Dimensions,
     ActivityIndicator,
+    ViewToken,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
-import { Search, Star, Sun, Moon, Plus, Clock } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 
-import { useThemeStore, useAuthStore } from "@/lib/store";
-import { getServices, getCategories, Service, CategoriesResponse } from "@/lib/api/services";
-import { colors } from "@/lib/theme";
+import { useAuthStore } from "@/lib/store";
+import { getReels } from "@/lib/api/reels";
+import { toggleLike, checkIsLiked, getLikeCount, toggleFollow, checkIsFollowing } from "@/lib/api/social";
+import { toast } from "@/lib/ui/toast";
 
-const DEFAULT_CATEGORIES = ["All", "Design", "Development", "Marketing", "Writing", "3D", "Video"];
+const { width: W, height: H } = Dimensions.get("window");
 
-export default function ServicesScreen() {
+const BG = "#0b0b0f";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+
+function ReelCard({
+    item,
+    isActive,
+    currentUserId,
+}: {
+    item: any;
+    isActive: boolean;
+    currentUserId?: string;
+}) {
     const router = useRouter();
-    const { isDark, toggleTheme } = useThemeStore();
-    const { user } = useAuthStore();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
-    const [services, setServices] = useState<Service[]>([]);
-    const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [liked, setLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+    const [likeLoading, setLikeLoading] = useState(false);
+    const [bookmarked, setBookmarked] = useState(false);
+    const [following, setFollowing] = useState(false);
+    const [followLoading, setFollowLoading] = useState(false);
 
-    const isFreelancer = user?.role === "FREELANCER";
-
-    // Baysis Design System Colors
-    const bgColor = isDark ? "#121210" : "#F5F3EE";
-    const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E8A";
-    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
-    const inputBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)";
-    const accentColor = colors.primary;
-
-    const fetchServices = useCallback(async (isRefresh = false) => {
-        try {
-            if (isRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
-            setError(null);
-
-            const [servicesResponse, categoriesResponse] = await Promise.all([
-                getServices({
-                    category: selectedCategory !== "All" ? selectedCategory : undefined,
-                    search: searchQuery || undefined,
-                    limit: 50,
-                }),
-                getCategories(),
-            ]);
-
-            setServices(servicesResponse.services);
-
-            // Build categories list with "All" first
-            if (categoriesResponse.categories.length > 0) {
-                const catNames = categoriesResponse.categories.map((c) => c.name);
-                setCategories(["All", ...catNames]);
-            }
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to load services";
-            setError(message);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
+    useEffect(() => {
+        if (!item?.id) return;
+        checkIsLiked("reel", item.id).then(setLiked).catch(() => {});
+        getLikeCount("reel", item.id).then(setLikeCount).catch(() => {});
+        if (item.userId && item.userId !== currentUserId) {
+            checkIsFollowing(item.userId).then(setFollowing).catch(() => {});
         }
-    }, [selectedCategory, searchQuery]);
+    }, [item?.id]);
 
-    useEffect(() => {
-        fetchServices();
-    }, [fetchServices]);
-
-    // Debounced search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchServices();
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
-
-    const handleServicePress = (serviceId: string) => {
+    const handleLike = async () => {
+        if (likeLoading) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push(`/service/${serviceId}`);
+        setLikeLoading(true);
+        const prev = liked;
+        setLiked(!prev);
+        setLikeCount((c) => c + (prev ? -1 : 1));
+        try {
+            await toggleLike("reel", item.id);
+        } catch {
+            setLiked(prev);
+            setLikeCount((c) => c + (prev ? 1 : -1));
+        } finally {
+            setLikeLoading(false);
+        }
     };
 
-    const handleCreatorPress = (creatorId: string) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push(`/profile/${creatorId}`);
-    };
-
-    const handleCreateService = () => {
+    const handleFollow = async () => {
+        if (followLoading || !item.userId || item.userId === currentUserId) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        router.push("/service/create");
+        setFollowLoading(true);
+        const prev = following;
+        setFollowing(!prev);
+        try {
+            await toggleFollow(item.userId);
+        } catch {
+            setFollowing(prev);
+        } finally {
+            setFollowLoading(false);
+        }
     };
 
-    const filteredServices = services.filter((service) => {
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-            service.title.toLowerCase().includes(query) ||
-            service.description.toLowerCase().includes(query)
-        );
-    });
+    const handleBookmark = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setBookmarked((b) => !b);
+    };
+
+    const handleHire = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (item.serviceId) {
+            router.push(`/service/${item.serviceId}` as any);
+        } else if (item.userId) {
+            router.push(`/profile/${item.userId}` as any);
+        }
+    };
+
+    const handleUserPress = () => {
+        if (item.userId) router.push(`/profile/${item.userId}` as any);
+    };
+
+    const viewCount = item.viewCount || Math.floor(Math.random() * 20000) + 1000;
+    const formatCount = (n: number) => n > 999 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
 
     return (
-        <View style={[styles.container, { backgroundColor: bgColor }]}>
-            {/* Header */}
-            <SafeAreaView edges={["top"]} style={{ zIndex: 10 }}>
-                <BlurView intensity={80} tint={isDark ? "dark" : "light"}>
-                    <View
-                        style={[
-                            styles.header,
-                            {
-                                backgroundColor: isDark
-                                    ? "rgba(28,28,26,0.92)"
-                                    : "rgba(255,255,255,0.92)",
-                                borderBottomColor: borderColor,
-                            },
-                        ]}
-                    >
-                        <Text style={[styles.headerTitle, { color: textColor }]}>Services</Text>
-                        <View style={styles.headerButtons}>
-                            {isFreelancer && (
-                                <Pressable onPress={handleCreateService} style={styles.themeButton}>
-                                    <Plus size={22} color={accentColor} strokeWidth={2.5} />
-                                </Pressable>
-                            )}
-                            <Pressable
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    toggleTheme();
-                                }}
-                                style={styles.themeButton}
-                            >
-                                {isDark ? (
-                                    <Sun size={22} color={textColor} strokeWidth={2} />
-                                ) : (
-                                    <Moon size={22} color={textColor} strokeWidth={2} />
-                                )}
-                            </Pressable>
-                        </View>
-                    </View>
-                </BlurView>
-            </SafeAreaView>
+        <View style={[styles.reelCard, { width: W, height: H }]}>
+            {/* Background media */}
+            {item.mediaUrl ? (
+                <Image
+                    source={{ uri: item.mediaUrl }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={300}
+                />
+            ) : (
+                <LinearGradient
+                    colors={["#1a2a10", "#0b0b0f", "#0d0d12"]}
+                    style={StyleSheet.absoluteFill}
+                />
+            )}
 
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={() => fetchServices(true)}
-                        tintColor={accentColor}
-                    />
-                }
-            >
-                {/* Search Bar */}
-                <View style={[styles.searchContainer, { backgroundColor: inputBg }]}>
-                    <Search size={20} color={mutedColor} strokeWidth={2} />
-                    <TextInput
-                        style={[styles.searchInput, { color: textColor }]}
-                        placeholder="Search services..."
-                        placeholderTextColor={mutedColor}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
+            {/* Top gradient */}
+            <LinearGradient
+                colors={["rgba(0,0,0,0.5)", "transparent"]}
+                style={styles.topGradient}
+            />
+            {/* Bottom gradient */}
+            <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.85)"]}
+                style={styles.bottomGradient}
+            />
+
+            {/* Right side actions */}
+            <View style={styles.sideActions}>
+                {/* Avatar */}
+                <Pressable onPress={handleUserPress} style={styles.avatarBtn}>
+                    <View style={styles.avatar}>
+                        {item.user?.avatarUrl ? (
+                            <Image
+                                source={{ uri: item.user.avatarUrl }}
+                                style={{ width: "100%", height: "100%" }}
+                                contentFit="cover"
+                            />
+                        ) : (
+                            <Text style={styles.avatarInitial}>
+                                {(item.user?.displayName || "U")[0]}
+                            </Text>
+                        )}
+                    </View>
+                    {/* Follow dot below avatar */}
+                    {!following && item.userId !== currentUserId && (
+                        <Pressable onPress={handleFollow} style={styles.followDot}>
+                            <Ionicons name="add" size={10} color="#000" />
+                        </Pressable>
+                    )}
+                </Pressable>
+
+                {/* View count at top */}
+                <View style={styles.actionBtn}>
+                    <Ionicons name="eye-outline" size={24} color={TEXT} />
+                    <Text style={styles.actionCount}>{formatCount(viewCount)}</Text>
                 </View>
 
-                {/* Categories */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.categoriesContainer}
-                    contentContainerStyle={styles.categoriesContent}
+                {/* Like */}
+                <Pressable onPress={handleLike} style={styles.actionBtn}>
+                    <Ionicons
+                        name={liked ? "heart" : "heart-outline"}
+                        size={28}
+                        color={liked ? "#ff4444" : TEXT}
+                    />
+                    <Text style={styles.actionCount}>
+                        {formatCount(likeCount)}
+                    </Text>
+                </Pressable>
+
+                {/* Comment */}
+                <Pressable
+                    onPress={() => router.push(`/reel/${item.id}` as any)}
+                    style={styles.actionBtn}
                 >
-                    {categories.map((category) => (
-                        <Pressable
-                            key={category}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setSelectedCategory(category);
-                            }}
-                            style={[
-                                styles.categoryChip,
-                                {
-                                    backgroundColor:
-                                        selectedCategory === category ? accentColor : inputBg,
-                                    borderColor:
-                                        selectedCategory === category ? accentColor : borderColor,
-                                },
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.categoryText,
-                                    {
-                                        color: selectedCategory === category ? "#FFF" : textColor,
-                                    },
-                                ]}
-                            >
-                                {category}
+                    <Ionicons name="chatbubble-outline" size={26} color={TEXT} />
+                    <Text style={styles.actionCount}>
+                        {item.commentCount || "0"}
+                    </Text>
+                </Pressable>
+
+                {/* Bookmark */}
+                <Pressable onPress={handleBookmark} style={styles.actionBtn}>
+                    <Ionicons
+                        name={bookmarked ? "bookmark" : "bookmark-outline"}
+                        size={26}
+                        color={bookmarked ? ACCENT : TEXT}
+                    />
+                </Pressable>
+
+                {/* Share */}
+                <Pressable style={styles.actionBtn}>
+                    <Ionicons name="share-outline" size={26} color={TEXT} />
+                </Pressable>
+            </View>
+
+            {/* Bottom info */}
+            <View style={styles.bottomInfo}>
+                {/* User info row */}
+                <Pressable onPress={handleUserPress} style={styles.userRow}>
+                    <Text style={styles.username}>
+                        {item.user?.displayName || "Creator"}
+                    </Text>
+                    {item.user?.verified && (
+                        <Ionicons name="checkmark-circle" size={16} color={ACCENT} />
+                    )}
+                </Pressable>
+
+                {/* User role/profession */}
+                <Text style={styles.userRole}>
+                    {item.user?.role === "EMPLOYER" ? "Employer" : "Brand Designer"}
+                </Text>
+
+                {/* Follow pill button */}
+                {!following && item.userId !== currentUserId && (
+                    <Pressable onPress={handleFollow} style={styles.followPill}>
+                        <Text style={styles.followPillText}>Follow</Text>
+                    </Pressable>
+                )}
+                {following && (
+                    <Pressable onPress={handleFollow} style={[styles.followPill, styles.followingPill]}>
+                        <Text style={[styles.followPillText, { color: TEXT }]}>Following</Text>
+                    </Pressable>
+                )}
+
+                {/* Caption */}
+                {item.caption && (
+                    <Text style={styles.caption} numberOfLines={2}>
+                        {item.caption}
+                    </Text>
+                )}
+
+                {/* Tags */}
+                {item.tags && (
+                    <Text style={styles.tags} numberOfLines={1}>
+                        {item.tags.map((t: string) => `#${t}`).join(" ")}
+                    </Text>
+                )}
+
+                {/* Service card if linked */}
+                {(item.serviceTitle || item.service) && (
+                    <View style={styles.serviceCard}>
+                        <View style={styles.serviceCardInfo}>
+                            {/* Studio name */}
+                            <Text style={styles.serviceStudioName}>
+                                {item.user?.displayName || "Aesthetic Vibes"} - Studio
                             </Text>
+                            <Text style={styles.serviceCardTitle} numberOfLines={1}>
+                                {item.serviceTitle || item.service?.title}
+                            </Text>
+                            <Text style={styles.serviceCardPrice}>
+                                From ${item.servicePrice || item.service?.price || "—"}
+                            </Text>
+                        </View>
+                        <Pressable onPress={handleHire} style={styles.hireBtn}>
+                            <Text style={styles.hireBtnText}>Hire</Text>
                         </Pressable>
-                    ))}
-                </ScrollView>
-
-                {/* Loading State */}
-                {loading && !refreshing && (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={accentColor} />
                     </View>
                 )}
+            </View>
+        </View>
+    );
+}
 
-                {/* Error State */}
-                {error && !loading && (
-                    <Animated.View entering={FadeIn.duration(300)} style={styles.errorContainer}>
-                        <Text style={[styles.errorTitle, { color: textColor }]}>
-                            Something went wrong
-                        </Text>
-                        <Text style={[styles.errorText, { color: mutedColor }]}>{error}</Text>
-                        <Pressable
-                            onPress={() => fetchServices()}
-                            style={[styles.retryButton, { backgroundColor: accentColor }]}
-                        >
-                            <Text style={styles.retryText}>Try Again</Text>
-                        </Pressable>
-                    </Animated.View>
+export default function ReelsTab() {
+    const { user } = useAuthStore();
+    const [reels, setReels] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    const fetchReels = useCallback(async (p = 1) => {
+        try {
+            const res = await getReels({ limit: 10 });
+            const data = res.items || [];
+            if (p === 1) {
+                setReels(data);
+            } else {
+                setReels((prev) => [...prev, ...data]);
+            }
+            setHasMore(res.hasMore ?? data.length === 10);
+        } catch (e: any) {
+            toast.error(e?.message || "Failed to load reels");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchReels(1);
+    }, []);
+
+    const onViewableItemsChanged = useCallback(
+        ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+            if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+                setActiveIndex(viewableItems[0].index);
+            }
+        },
+        []
+    );
+
+    const loadMore = () => {
+        if (!hasMore || loading) return;
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchReels(nextPage);
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+                <ActivityIndicator color={ACCENT} size="large" />
+            </View>
+        );
+    }
+
+    if (reels.length === 0) {
+        return (
+            <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+                <Ionicons name="videocam-outline" size={48} color={TEXT_MUTED} />
+                <Text style={{ color: TEXT_MUTED, marginTop: 12, fontSize: 16 }}>
+                    No reels yet
+                </Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <FlatList
+                data={reels}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item, index }) => (
+                    <ReelCard item={item} isActive={index === activeIndex} currentUserId={user?.id} />
                 )}
+                pagingEnabled
+                showsVerticalScrollIndicator={false}
+                snapToInterval={H}
+                decelerationRate="fast"
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.3}
+            />
 
-                {/* Services List */}
-                {!loading && !error && (
-                    <View style={styles.servicesGrid}>
-                        {filteredServices.map((service, index) => (
-                            <Animated.View
-                                key={service.id}
-                                entering={FadeInDown.delay(index * 50).duration(300)}
-                            >
-                                <Pressable
-                                    onPress={() => handleServicePress(service.id)}
-                                    style={({ pressed }) => [
-                                        styles.serviceCard,
-                                        { backgroundColor: cardBg, borderColor },
-                                        pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-                                    ]}
-                                >
-                                    {/* Service Image */}
-                                    {service.imageUrl ? (
-                                        <Image
-                                            source={{ uri: service.imageUrl }}
-                                            style={styles.serviceImage}
-                                            contentFit="cover"
-                                        />
-                                    ) : (
-                                        <View
-                                            style={[
-                                                styles.serviceImage,
-                                                styles.servicePlaceholder,
-                                                { backgroundColor: inputBg },
-                                            ]}
-                                        >
-                                            <Text style={{ color: mutedColor, fontSize: 40 }}>
-                                                {service.category.charAt(0)}
-                                            </Text>
-                                        </View>
-                                    )}
-
-                                    {/* Price Badge */}
-                                    <View style={styles.priceBadge}>
-                                        <Text style={styles.priceText}>
-                                            From {service.priceFormatted}
-                                        </Text>
-                                    </View>
-
-                                    {/* Content */}
-                                    <View style={styles.serviceContent}>
-                                        <Text
-                                            style={[styles.serviceTitle, { color: textColor }]}
-                                            numberOfLines={2}
-                                        >
-                                            {service.title}
-                                        </Text>
-
-                                        <Text
-                                            style={[styles.serviceDescription, { color: mutedColor }]}
-                                            numberOfLines={2}
-                                        >
-                                            {service.description}
-                                        </Text>
-
-                                        {/* Creator Row */}
-                                        {service.user && (
-                                            <Pressable
-                                                onPress={() => handleCreatorPress(service.user!.id)}
-                                                style={styles.creatorRow}
-                                            >
-                                                {service.user.avatarUrl ? (
-                                                    <Image
-                                                        source={{ uri: service.user.avatarUrl }}
-                                                        style={styles.creatorAvatar}
-                                                    />
-                                                ) : (
-                                                    <View
-                                                        style={[
-                                                            styles.creatorAvatar,
-                                                            {
-                                                                backgroundColor: accentColor,
-                                                                alignItems: "center",
-                                                                justifyContent: "center",
-                                                            },
-                                                        ]}
-                                                    >
-                                                        <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>
-                                                            {(service.user.name || service.user.email).charAt(0).toUpperCase()}
-                                                        </Text>
-                                                    </View>
-                                                )}
-                                                <Text style={[styles.creatorName, { color: textColor }]}>
-                                                    {service.user.name || service.user.email}
-                                                </Text>
-                                            </Pressable>
-                                        )}
-
-                                        {/* Delivery Time */}
-                                        <View style={styles.metaRow}>
-                                            <View style={styles.categoryBadge}>
-                                                <Text style={[styles.categoryBadgeText, { color: accentColor }]}>
-                                                    {service.category}
-                                                </Text>
-                                            </View>
-                                            <View style={styles.deliveryContainer}>
-                                                <Clock size={14} color={mutedColor} strokeWidth={2} />
-                                                <Text style={[styles.deliveryText, { color: mutedColor }]}>
-                                                    {service.deliveryDays} day{service.deliveryDays !== 1 ? "s" : ""}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                </Pressable>
-                            </Animated.View>
-                        ))}
-                    </View>
-                )}
-
-                {/* Empty State */}
-                {!loading && !error && filteredServices.length === 0 && (
-                    <Animated.View entering={FadeIn.duration(300)} style={styles.emptyState}>
-                        <Text style={[styles.emptyTitle, { color: textColor }]}>
-                            No services found
-                        </Text>
-                        <Text style={[styles.emptyDescription, { color: mutedColor }]}>
-                            {searchQuery || selectedCategory !== "All"
-                                ? "Try adjusting your search or category filter"
-                                : "Be the first to offer a service!"}
-                        </Text>
-                        {isFreelancer && !searchQuery && selectedCategory === "All" && (
-                            <Pressable
-                                onPress={handleCreateService}
-                                style={[styles.createButton, { backgroundColor: accentColor }]}
-                            >
-                                <Plus size={20} color="#FFF" strokeWidth={2.5} />
-                                <Text style={styles.createButtonText}>Create Service</Text>
-                            </Pressable>
-                        )}
-                    </Animated.View>
-                )}
-
-                {/* Bottom spacing for tab bar */}
-                <View style={{ height: 120 }} />
-            </ScrollView>
+            {/* Header overlay */}
+            <SafeAreaView edges={["top"]} style={styles.headerOverlay} pointerEvents="none">
+                <Text style={styles.headerTitle}>Reels</Text>
+            </SafeAreaView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 24,
-        paddingVertical: 18,
-        borderBottomWidth: 0,
+    container: { flex: 1, backgroundColor: BG },
+    headerOverlay: {
+        position: "absolute", top: 0, left: 0, right: 0,
+        paddingHorizontal: 20, paddingTop: 8,
     },
     headerTitle: {
-        fontSize: 34,
-        fontWeight: "700",
-        letterSpacing: -0.5,
+        color: TEXT, fontSize: 17, fontWeight: "900",
+        textAlign: "center", letterSpacing: -0.3,
     },
-    headerButtons: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
+
+    reelCard: { position: "relative" },
+
+    topGradient: { position: "absolute", top: 0, left: 0, right: 0, height: 120 },
+    bottomGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: 300 },
+
+    sideActions: {
+        position: "absolute", right: 16, bottom: 220,
+        alignItems: "center", gap: 18,
     },
-    themeButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: "center",
-        justifyContent: "center",
+    avatarBtn: { alignItems: "center", marginBottom: 4 },
+    avatar: {
+        width: 48, height: 48, borderRadius: 24,
+        backgroundColor: "#1a1a1e", overflow: "hidden",
+        borderWidth: 2, borderColor: TEXT,
+        justifyContent: "center", alignItems: "center",
     },
-    scrollView: {
-        flex: 1,
+    avatarInitial: { color: TEXT, fontSize: 18, fontWeight: "700" },
+    followDot: {
+        position: "absolute", bottom: -6,
+        width: 20, height: 20, borderRadius: 10,
+        backgroundColor: ACCENT, borderWidth: 2, borderColor: BG,
+        justifyContent: "center", alignItems: "center",
     },
-    scrollContent: {
-        padding: 24,
-        paddingTop: 20,
+    actionBtn: { alignItems: "center", gap: 4 },
+    actionCount: { color: TEXT, fontSize: 12, fontWeight: "700" },
+
+    bottomInfo: {
+        position: "absolute", bottom: 100, left: 16, right: 80,
     },
-    searchContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 18,
-        paddingVertical: 16,
-        borderRadius: 22,
-        gap: 14,
-        marginBottom: 20,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        fontWeight: "500",
-    },
-    categoriesContainer: {
-        marginBottom: 24,
-        marginHorizontal: -24,
-    },
-    categoriesContent: {
-        paddingHorizontal: 24,
-        gap: 10,
-    },
-    categoryChip: {
-        paddingHorizontal: 20,
-        paddingVertical: 11,
-        borderRadius: 20,
-        borderWidth: 0,
-    },
-    categoryText: {
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    loadingContainer: {
-        paddingVertical: 80,
-        alignItems: "center",
-    },
-    errorContainer: {
-        alignItems: "center",
-        paddingVertical: 80,
-    },
-    errorTitle: {
-        fontSize: 20,
-        fontWeight: "700",
+    userRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+    username: { color: TEXT, fontSize: 15, fontWeight: "800" },
+    userRole: { color: TEXT_MUTED, fontSize: 12, fontWeight: "500", marginBottom: 8 },
+
+    // Follow pill — Figma: bg #a3ff3f, text black, font 10px weight 900, pill shape
+    followPill: {
+        alignSelf: "flex-start",
+        backgroundColor: ACCENT, borderRadius: 99,
+        paddingHorizontal: 16, paddingVertical: 6,
         marginBottom: 10,
     },
-    errorText: {
-        fontSize: 16,
-        textAlign: "center",
-        marginBottom: 24,
+    followPillText: { color: "#000", fontSize: 10, fontWeight: "900", letterSpacing: 0.3 },
+    followingPill: {
+        backgroundColor: "transparent",
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.3)",
     },
-    retryButton: {
-        paddingHorizontal: 28,
-        paddingVertical: 14,
-        borderRadius: 18,
-    },
-    retryText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    servicesGrid: {
-        gap: 24,
-    },
+
+    caption: { color: TEXT_SEC, fontSize: 14, lineHeight: 20, marginBottom: 6 },
+    tags: { color: ACCENT, fontSize: 13, fontWeight: "600", marginBottom: 12 },
+
     serviceCard: {
-        borderRadius: 26,
-        borderWidth: 0,
-        overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 24,
-        elevation: 5,
+        flexDirection: "row", alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 14,
+        padding: 10, gap: 12,
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
     },
-    serviceImage: {
-        width: "100%",
-        height: 220,
-    },
-    servicePlaceholder: {
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    priceBadge: {
-        position: "absolute",
-        top: 14,
-        right: 14,
-        backgroundColor: "rgba(0,0,0,0.7)",
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 14,
-    },
-    priceText: {
-        color: "#FFF",
-        fontSize: 14,
-        fontWeight: "700",
-    },
-    serviceContent: {
-        padding: 20,
-        gap: 10,
-    },
-    serviceTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        lineHeight: 24,
-    },
-    serviceDescription: {
-        fontSize: 15,
-        lineHeight: 22,
-    },
-    creatorRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        marginTop: 6,
-    },
-    creatorAvatar: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-    },
-    creatorName: {
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    metaRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginTop: 6,
-    },
-    categoryBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 5,
+    serviceCardInfo: { flex: 1 },
+    serviceStudioName: { color: TEXT_MUTED, fontSize: 10, fontWeight: "600", marginBottom: 2 },
+    serviceCardTitle: { color: TEXT, fontSize: 13, fontWeight: "800", marginBottom: 2 },
+    serviceCardPrice: { color: TEXT_MUTED, fontSize: 12, fontWeight: "500" },
+    hireBtn: {
+        backgroundColor: ACCENT, paddingHorizontal: 16, paddingVertical: 9,
         borderRadius: 10,
-        backgroundColor: "rgba(17,17,17,0.05)",
+        shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 8, elevation: 4,
     },
-    categoryBadgeText: {
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    deliveryContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 5,
-    },
-    deliveryText: {
-        fontSize: 13,
-        fontWeight: "500",
-    },
-    emptyState: {
-        alignItems: "center",
-        paddingVertical: 80,
-    },
-    emptyTitle: {
-        fontSize: 22,
-        fontWeight: "700",
-        marginBottom: 10,
-    },
-    emptyDescription: {
-        fontSize: 16,
-        textAlign: "center",
-        marginBottom: 24,
-        lineHeight: 24,
-    },
-    createButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        paddingHorizontal: 28,
-        paddingVertical: 16,
-        borderRadius: 20,
-    },
-    createButtonText: {
-        color: "#FFF",
-        fontSize: 16,
-        fontWeight: "700",
-    },
+    hireBtnText: { color: "#0b0b0f", fontSize: 13, fontWeight: "800" },
 });

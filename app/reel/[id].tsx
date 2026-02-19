@@ -5,18 +5,30 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
-import { X, MapPin, MessageCircle, Play, Volume2, VolumeX, ImageIcon, Briefcase, User } from "lucide-react-native";
+import { X, MapPin, MessageCircle, Play, Volume2, VolumeX, ImageIcon, Briefcase, User, Heart, Bookmark, Share2 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useAuthStore } from "@/lib/store";
-import { colors } from "@/lib/theme";
 import { getReel } from "@/lib/api/reels";
 import { createConversation } from "@/lib/api/conversations";
+import { toggleLike, checkIsLiked, getLikeCount, getCommentCount } from "@/lib/api/social";
+import { CommentsSheet } from "@/components/CommentsSheet";
 import { Shimmer } from "@/components/ui/Shimmer";
 import { toast } from "@/lib/ui/toast";
 import type { Reel } from "@/types";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Design system constants
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
 
 export default function ReelDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,6 +43,11 @@ export default function ReelDetailScreen() {
     const [isPlaying, setIsPlaying] = useState(true);
     const [isMuted, setIsMuted] = useState(false);
     const [mediaLoading, setMediaLoading] = useState(true);
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+    const [commentCount, setCommentCount] = useState(0);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [showComments, setShowComments] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -41,6 +58,15 @@ export default function ReelDetailScreen() {
                 setError(null);
                 const data = await getReel(id);
                 setReel(data);
+
+                const [liked, likes, comments] = await Promise.all([
+                    checkIsLiked("reel", id),
+                    getLikeCount("reel", id),
+                    getCommentCount("reel", id),
+                ]);
+                setIsLiked(liked);
+                setLikeCount(likes);
+                setCommentCount(comments);
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Failed to load reel";
                 setError(message);
@@ -87,7 +113,6 @@ export default function ReelDetailScreen() {
     const handleMessage = async () => {
         if (!reel?.userId) return;
 
-        // Check if trying to message self
         if (reel.userId === user?.id) {
             toast.info("You can't message yourself");
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -114,6 +139,29 @@ export default function ReelDetailScreen() {
         router.push(`/profile/${reel.userId}`);
     };
 
+    const handleToggleLike = async () => {
+        if (!id) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            const nowLiked = await toggleLike("reel", id);
+            setIsLiked(nowLiked);
+            setLikeCount((c) => nowLiked ? c + 1 : Math.max(0, c - 1));
+        } catch {
+            toast.error("Failed to update like");
+        }
+    };
+
+    const handleToggleBookmark = async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setIsBookmarked(!isBookmarked);
+        toast.info(isBookmarked ? "Removed from saved" : "Added to saved");
+    };
+
+    const handleShare = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        toast.info("Share coming soon");
+    };
+
     // Loading state
     if (loading) {
         return (
@@ -121,7 +169,7 @@ export default function ReelDetailScreen() {
                 <Shimmer style={StyleSheet.absoluteFill} />
                 <SafeAreaView style={styles.headerOverlay}>
                     <Pressable onPress={handleClose} style={styles.closeButton}>
-                        <X size={24} color="#FFF" strokeWidth={2.5} />
+                        <X size={24} color={TEXT} strokeWidth={2.5} />
                     </Pressable>
                 </SafeAreaView>
             </View>
@@ -135,7 +183,7 @@ export default function ReelDetailScreen() {
                 <View style={styles.errorContainer}>
                     <Animated.View entering={FadeIn.duration(300)}>
                         <View style={styles.errorIcon}>
-                            <Play size={48} color="rgba(255,255,255,0.3)" strokeWidth={1.5} />
+                            <Play size={48} color={TEXT_SUBTLE} strokeWidth={1.5} />
                         </View>
                         <Text style={styles.errorTitle}>Failed to load</Text>
                         <Text style={styles.errorText}>{error || "Reel not found"}</Text>
@@ -175,7 +223,7 @@ export default function ReelDetailScreen() {
                         {!isPlaying && (
                             <View style={styles.playIconOverlay}>
                                 <View style={styles.playIconBg}>
-                                    <Play size={48} color="#FFF" fill="#FFF" />
+                                    <Play size={48} color={TEXT} fill={TEXT} />
                                 </View>
                             </View>
                         )}
@@ -192,12 +240,12 @@ export default function ReelDetailScreen() {
 
             {/* Gradient overlays */}
             <LinearGradient
-                colors={["rgba(0,0,0,0.6)", "transparent"]}
+                colors={["rgba(11,11,15,0.6)", "transparent"]}
                 style={styles.topGradient}
                 pointerEvents="none"
             />
             <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.9)"]}
+                colors={["transparent", "rgba(11,11,15,0.95)"]}
                 style={styles.bottomGradient}
                 pointerEvents="none"
             />
@@ -205,23 +253,23 @@ export default function ReelDetailScreen() {
             {/* Header */}
             <SafeAreaView style={styles.headerOverlay}>
                 <Pressable onPress={handleClose} style={styles.closeButton}>
-                    <X size={24} color="#FFF" strokeWidth={2.5} />
+                    <X size={24} color={TEXT} strokeWidth={2.5} />
                 </Pressable>
                 <View style={styles.headerRight}>
                     {/* Media type badge */}
                     <View style={styles.mediaTypeBadge}>
                         {isVideo ? (
-                            <Play size={14} color="#FFF" fill="#FFF" />
+                            <Play size={14} color={TEXT} fill={TEXT} />
                         ) : (
-                            <ImageIcon size={14} color="#FFF" />
+                            <ImageIcon size={14} color={TEXT} />
                         )}
                     </View>
                     {isVideo && (
                         <Pressable onPress={handleMuteToggle} style={styles.muteButton}>
                             {isMuted ? (
-                                <VolumeX size={20} color="#FFF" strokeWidth={2} />
+                                <VolumeX size={20} color={TEXT} strokeWidth={2} />
                             ) : (
-                                <Volume2 size={20} color="#FFF" strokeWidth={2} />
+                                <Volume2 size={20} color={TEXT} strokeWidth={2} />
                             )}
                         </Pressable>
                     )}
@@ -242,14 +290,14 @@ export default function ReelDetailScreen() {
                                 {reel.user?.avatarUrl ? (
                                     <Image source={{ uri: reel.user.avatarUrl }} style={styles.avatarImage} />
                                 ) : (
-                                    <User size={24} color="#FFF" />
+                                    <User size={24} color={BG} />
                                 )}
                             </View>
                             <View style={styles.userInfo}>
                                 <Text style={styles.userName}>{displayName}</Text>
                                 {reel.user?.location && (
                                     <View style={styles.locationRow}>
-                                        <MapPin size={14} color="rgba(255,255,255,0.6)" strokeWidth={2} />
+                                        <MapPin size={14} color={TEXT_MUTED} strokeWidth={2} />
                                         <Text style={styles.locationText}>{reel.user.location}</Text>
                                     </View>
                                 )}
@@ -268,24 +316,66 @@ export default function ReelDetailScreen() {
                         </Animated.View>
                     )}
 
+                    {/* Engagement metrics */}
+                    <Animated.View entering={FadeInDown.delay(250).duration(300)} style={styles.engagementRow}>
+                        <Pressable onPress={handleToggleLike} style={[styles.engagementButton, isLiked && styles.engagementButtonActive]}>
+                            <Heart
+                                size={18}
+                                color={isLiked ? "#EF4444" : TEXT}
+                                fill={isLiked ? "#EF4444" : "transparent"}
+                                strokeWidth={2}
+                            />
+                            <Text style={[styles.engagementCount, { color: isLiked ? "#EF4444" : TEXT }]}>
+                                {likeCount > 999 ? `${(likeCount / 1000).toFixed(1)}K` : likeCount}
+                            </Text>
+                        </Pressable>
+                        <Pressable onPress={() => setShowComments(true)} style={styles.engagementButton}>
+                            <MessageCircle size={18} color={TEXT} strokeWidth={2} />
+                            <Text style={styles.engagementCount}>
+                                {commentCount > 999 ? `${(commentCount / 1000).toFixed(1)}K` : commentCount}
+                            </Text>
+                        </Pressable>
+                        <Pressable onPress={handleToggleBookmark} style={[styles.engagementButton, isBookmarked && styles.engagementButtonActive]}>
+                            <Bookmark
+                                size={18}
+                                color={isBookmarked ? ACCENT : TEXT}
+                                fill={isBookmarked ? ACCENT : "transparent"}
+                                strokeWidth={2}
+                            />
+                        </Pressable>
+                        <Pressable onPress={handleShare} style={styles.engagementButton}>
+                            <Share2 size={18} color={TEXT} strokeWidth={2} />
+                        </Pressable>
+                    </Animated.View>
+
                     {/* Action buttons */}
                     <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.actionsContainer}>
                         <ActionButton
                             onPress={handleMessage}
                             loading={actionLoading}
-                            icon={<MessageCircle size={20} color="#FFF" strokeWidth={2.5} />}
+                            icon={<MessageCircle size={20} color={BG} strokeWidth={2.5} />}
                             label="Message"
                             primary
                         />
                         <ActionButton
                             onPress={handleViewProfile}
                             loading={false}
-                            icon={<Briefcase size={20} color="#FFF" strokeWidth={2.5} />}
+                            icon={<Briefcase size={20} color={TEXT} strokeWidth={2.5} />}
                             label="View Profile"
                         />
                     </Animated.View>
                 </ScrollView>
             </SafeAreaView>
+
+            {/* Comments Sheet */}
+            {id && (
+                <CommentsSheet
+                    visible={showComments}
+                    onClose={() => setShowComments(false)}
+                    targetType="reel"
+                    targetId={id}
+                />
+            )}
         </View>
     );
 }
@@ -334,7 +424,7 @@ function ActionButton({
                 ]}
             >
                 {icon}
-                <Text style={styles.actionButtonText}>{label}</Text>
+                <Text style={[styles.actionButtonText, primary && { color: BG }]}>{label}</Text>
             </Animated.View>
         </Pressable>
     );
@@ -343,7 +433,7 @@ function ActionButton({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: BG,
     },
     mediaContainer: {
         ...StyleSheet.absoluteFillObject,
@@ -354,7 +444,7 @@ const styles = StyleSheet.create({
     },
     mediaLoadingOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "#1a1a1a",
+        backgroundColor: ELEVATED,
     },
     playIconOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -365,7 +455,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(11,11,15,0.5)",
         justifyContent: "center",
         alignItems: "center",
         paddingLeft: 6,
@@ -401,34 +491,34 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     closeButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(0,0,0,0.4)",
+        width: 40,
+        height: 40,
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        borderColor: BORDER,
     },
     mediaTypeBadge: {
         width: 36,
         height: 36,
-        borderRadius: 18,
-        backgroundColor: "rgba(0,0,0,0.4)",
+        borderRadius: 12,
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        borderColor: BORDER,
     },
     muteButton: {
         width: 40,
         height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(0,0,0,0.4)",
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        borderColor: BORDER,
     },
     bottomContent: {
         position: "absolute",
@@ -455,12 +545,12 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: colors.primary,
+        backgroundColor: ACCENT,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 14,
         borderWidth: 2,
-        borderColor: "#FFF",
+        borderColor: TEXT,
         overflow: "hidden",
     },
     avatarImage: {
@@ -471,7 +561,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     userName: {
-        color: "#FFF",
+        color: TEXT,
         fontSize: 20,
         fontWeight: "700",
     },
@@ -481,12 +571,12 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     locationText: {
-        color: "rgba(255,255,255,0.6)",
+        color: TEXT_MUTED,
         fontSize: 14,
         marginLeft: 4,
     },
     bio: {
-        color: "rgba(255,255,255,0.8)",
+        color: TEXT_SEC,
         fontSize: 15,
         lineHeight: 22,
         marginTop: 14,
@@ -495,9 +585,40 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     caption: {
-        color: "#FFF",
+        color: TEXT,
         fontSize: 16,
         lineHeight: 24,
+    },
+    engagementRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-around",
+        gap: 8,
+        marginBottom: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        backgroundColor: "rgba(255,255,255,0.05)",
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    engagementButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        borderRadius: 12,
+        backgroundColor: "transparent",
+    },
+    engagementButtonActive: {
+        backgroundColor: "rgba(255,255,255,0.1)",
+    },
+    engagementCount: {
+        color: TEXT,
+        fontSize: 12,
+        fontWeight: "600",
     },
     actionsContainer: {
         flexDirection: "row",
@@ -513,18 +634,18 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingVertical: 16,
         borderRadius: 16,
-        backgroundColor: "rgba(255,255,255,0.15)",
+        backgroundColor: ELEVATED,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.2)",
+        borderColor: BORDER,
     },
     actionButtonPrimary: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
+        backgroundColor: ACCENT,
+        borderColor: ACCENT,
     },
     actionButtonText: {
-        color: "#FFF",
+        color: TEXT,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "700",
     },
     errorContainer: {
         flex: 1,
@@ -543,28 +664,28 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     errorTitle: {
-        color: "#FFF",
+        color: TEXT,
         fontSize: 22,
-        fontWeight: "700",
+        fontWeight: "900",
         textAlign: "center",
         marginBottom: 8,
     },
     errorText: {
-        color: "rgba(255,255,255,0.5)",
+        color: TEXT_MUTED,
         fontSize: 15,
         textAlign: "center",
         marginBottom: 28,
     },
     errorButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: ACCENT,
         paddingHorizontal: 28,
         paddingVertical: 14,
-        borderRadius: 25,
+        borderRadius: 14,
         alignSelf: "center",
     },
     errorButtonText: {
-        color: "#FFF",
+        color: BG,
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "800",
     },
 });

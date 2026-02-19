@@ -11,17 +11,26 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { ArrowLeft, MessageCircle, User } from "lucide-react-native";
+import { ArrowLeft, MessageCircle } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import { useAuthStore, useThemeStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
 import { getConversations, ConversationResponse } from "@/lib/api/conversations";
-import { colors } from "@/lib/theme";
+
+// Figma design tokens
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
 
 export default function ConversationsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
-    const { isDark } = useThemeStore();
 
     const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -36,7 +45,6 @@ export default function ConversationsScreen() {
                 setLoading(true);
             }
             setError(null);
-
             const response = await getConversations();
             setConversations(response.conversations);
         } catch (err) {
@@ -52,12 +60,10 @@ export default function ConversationsScreen() {
         fetchConversations();
     }, [fetchConversations]);
 
-    // Poll for new conversations every 10 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             fetchConversations(true);
         }, 10000);
-
         return () => clearInterval(interval);
     }, [fetchConversations]);
 
@@ -102,35 +108,36 @@ export default function ConversationsScreen() {
                     onPress={() => handleConversationPress(item.id)}
                     style={({ pressed }) => [
                         styles.conversationItem,
-                        isDark && styles.conversationItemDark,
-                        pressed && styles.conversationItemPressed,
+                        pressed && { opacity: 0.7 },
                     ]}
                 >
-                    <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.avatarText}>{initial}</Text>
+                    <View style={styles.avatar}>
+                        {(otherUser as any)?.avatarUrl ? (
+                            <Image
+                                source={{ uri: (otherUser as any).avatarUrl }}
+                                style={{ width: "100%", height: "100%", borderRadius: 26 }}
+                                contentFit="cover"
+                            />
+                        ) : (
+                            <Text style={styles.avatarText}>{initial}</Text>
+                        )}
                     </View>
 
                     <View style={styles.conversationContent}>
                         <View style={styles.conversationHeader}>
-                            <Text
-                                style={[styles.userName, isDark && styles.textDark]}
-                                numberOfLines={1}
-                            >
+                            <Text style={styles.userName} numberOfLines={1}>
                                 {displayName}
                             </Text>
                             <Text style={styles.timeText}>{formatTime(lastMessageTime)}</Text>
                         </View>
 
                         {item.lastMessage ? (
-                            <Text
-                                style={[styles.lastMessage, isDark && styles.lastMessageDark]}
-                                numberOfLines={2}
-                            >
+                            <Text style={styles.lastMessage} numberOfLines={2}>
                                 {item.lastMessage.senderId === user?.id ? "You: " : ""}
                                 {item.lastMessage.text}
                             </Text>
                         ) : (
-                            <Text style={[styles.lastMessage, styles.noMessages]}>
+                            <Text style={[styles.lastMessage, { fontStyle: "italic" }]}>
                                 No messages yet
                             </Text>
                         )}
@@ -142,11 +149,11 @@ export default function ConversationsScreen() {
 
     const renderEmptyState = () => (
         <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
-            <View style={[styles.emptyIconContainer, isDark && styles.emptyIconContainerDark]}>
-                <MessageCircle size={48} color={isDark ? "#8E8E8A" : "#C7C7CC"} strokeWidth={1.5} />
+            <View style={styles.emptyIconContainer}>
+                <MessageCircle size={48} color={TEXT_MUTED} strokeWidth={1.5} />
             </View>
-            <Text style={[styles.emptyTitle, isDark && styles.textDark]}>Start chatting</Text>
-            <Text style={[styles.emptySubtitle, isDark && styles.subtitleDark]}>
+            <Text style={styles.emptyTitle}>Start chatting</Text>
+            <Text style={styles.emptySubtitle}>
                 Message freelancers from their reels or profile to start a conversation.
             </Text>
             <Pressable
@@ -154,7 +161,7 @@ export default function ConversationsScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     router.push("/(tabs)");
                 }}
-                style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                style={styles.retryButton}
             >
                 <Text style={styles.retryText}>Browse Reels</Text>
             </Pressable>
@@ -163,37 +170,29 @@ export default function ConversationsScreen() {
 
     const renderError = () => (
         <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
-            <Text style={[styles.emptyTitle, isDark && styles.textDark]}>
-                Something went wrong
-            </Text>
-            <Text style={[styles.emptySubtitle, isDark && styles.subtitleDark]}>{error}</Text>
-            <Pressable
-                onPress={() => fetchConversations()}
-                style={[styles.retryButton, { backgroundColor: colors.primary }]}
-            >
+            <Text style={styles.emptyTitle}>Something went wrong</Text>
+            <Text style={styles.emptySubtitle}>{error}</Text>
+            <Pressable onPress={() => fetchConversations()} style={styles.retryButton}>
                 <Text style={styles.retryText}>Try Again</Text>
             </Pressable>
         </Animated.View>
     );
 
     return (
-        <SafeAreaView
-            style={[styles.container, isDark && styles.containerDark]}
-            edges={["top"]}
-        >
+        <SafeAreaView style={styles.container} edges={["top"]}>
             {/* Header */}
-            <View style={[styles.header, isDark && styles.headerDark]}>
+            <View style={styles.header}>
                 <Pressable onPress={handleBack} style={styles.backButton}>
-                    <ArrowLeft size={24} color={isDark ? "#FFF" : "#000"} strokeWidth={2} />
+                    <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
                 </Pressable>
-                <Text style={[styles.headerTitle, isDark && styles.textDark]}>Messages</Text>
-                <View style={styles.headerSpacer} />
+                <Text style={styles.headerTitle}>Messages</Text>
+                <View style={{ width: 40 }} />
             </View>
 
             {/* Content */}
             {loading && !refreshing ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size="large" color={ACCENT} />
                 </View>
             ) : error ? (
                 renderError()
@@ -211,7 +210,7 @@ export default function ConversationsScreen() {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={() => fetchConversations(true)}
-                            tintColor={colors.primary}
+                            tintColor={ACCENT}
                         />
                     }
                     showsVerticalScrollIndicator={false}
@@ -224,42 +223,32 @@ export default function ConversationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F5F3EE",
-    },
-    containerDark: {
-        backgroundColor: "#121210",
+        backgroundColor: BG,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 0.5,
-        borderBottomColor: "rgba(0,0,0,0.1)",
-        backgroundColor: "#F5F3EE",
-    },
-    headerDark: {
-        backgroundColor: "#121210",
-        borderBottomColor: "rgba(255,255,255,0.1)",
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER,
     },
     backButton: {
         width: 40,
         height: 40,
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 20,
+        borderRadius: 14,
+        backgroundColor: ELEVATED,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#121210",
-    },
-    headerSpacer: {
-        width: 40,
-    },
-    textDark: {
-        color: "#FFF",
+        fontSize: 20,
+        fontWeight: "900",
+        color: TEXT,
+        letterSpacing: -0.3,
     },
     loadingContainer: {
         flex: 1,
@@ -277,27 +266,25 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 14,
-        backgroundColor: "#FFF",
+        backgroundColor: SURFACE,
         marginHorizontal: 16,
         marginVertical: 4,
-        borderRadius: 16,
-    },
-    conversationItemDark: {
-        backgroundColor: "#1C1C1A",
-    },
-    conversationItemPressed: {
-        opacity: 0.7,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     avatar: {
         width: 52,
         height: 52,
         borderRadius: 26,
+        backgroundColor: ACCENT,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 14,
+        overflow: "hidden",
     },
     avatarText: {
-        color: "#FFF",
+        color: "#0b0b0f",
         fontSize: 20,
         fontWeight: "700",
     },
@@ -312,29 +299,19 @@ const styles = StyleSheet.create({
     },
     userName: {
         fontSize: 16,
-        fontWeight: "600",
-        color: "#121210",
+        fontWeight: "700",
+        color: TEXT,
         flex: 1,
         marginRight: 8,
     },
     timeText: {
-        fontSize: 13,
-        color: "#8E8E8A",
+        fontSize: 12,
+        color: TEXT_SUBTLE,
     },
     lastMessage: {
         fontSize: 14,
-        color: "#2A2A2A",
+        color: TEXT_MUTED,
         lineHeight: 20,
-    },
-    lastMessageDark: {
-        color: "#AEAEB2",
-    },
-    noMessages: {
-        fontStyle: "italic",
-        color: "#8E8E8A",
-    },
-    subtitleDark: {
-        color: "#8E8E8A",
     },
     emptyContainer: {
         flex: 1,
@@ -346,24 +323,21 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: "rgba(0,0,0,0.05)",
+        backgroundColor: "rgba(255,255,255,0.05)",
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 24,
     },
-    emptyIconContainerDark: {
-        backgroundColor: "rgba(255,255,255,0.05)",
-    },
     emptyTitle: {
         fontSize: 20,
-        fontWeight: "700",
-        color: "#121210",
+        fontWeight: "900",
+        color: TEXT,
         textAlign: "center",
         marginBottom: 8,
     },
     emptySubtitle: {
         fontSize: 15,
-        color: "#2A2A2A",
+        color: TEXT_MUTED,
         textAlign: "center",
         lineHeight: 22,
     },
@@ -371,11 +345,12 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingHorizontal: 24,
         paddingVertical: 12,
-        borderRadius: 12,
+        borderRadius: 14,
+        backgroundColor: ACCENT,
     },
     retryText: {
-        color: "#FFF",
+        color: "#0b0b0f",
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "800",
     },
 });

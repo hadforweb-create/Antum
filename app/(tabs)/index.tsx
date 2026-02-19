@@ -1,708 +1,554 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  View,
-  Text,
-  Dimensions,
-  Pressable,
-  Image,
-  StyleSheet,
-  FlatList,
-  ViewToken,
-  Alert,
-  RefreshControl,
-  ActivityIndicator,
+    View,
+    Text,
+    ScrollView,
+    Pressable,
+    StyleSheet,
+    Image,
+    ActivityIndicator,
+    RefreshControl,
+    Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Heart, MessageCircle, Bookmark, Share2, User, AlertCircle, Film, RefreshCw } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
 
-import { useThemeStore, useAuthStore } from "@/lib/store";
-import { createConversation } from "@/lib/api/conversations";
-import { getReels } from "@/lib/api/reels";
-import { Shimmer } from "@/components/ui/Shimmer";
+import { useAuthStore } from "@/lib/store";
+import { getServices } from "@/lib/api/services";
 import { toast } from "@/lib/ui/toast";
-import type { Reel } from "@/types";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: W } = Dimensions.get("window");
 
-export default function ReelsFeedScreen() {
-  const router = useRouter();
-  const { isDark } = useThemeStore();
-  const { user } = useAuthStore();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [likedReels, setLikedReels] = useState<Set<string>>(new Set());
-  const [savedReels, setSavedReels] = useState<Set<string>>(new Set());
-  const flatListRef = useRef<FlatList>(null);
+// Figma Premium Freelance Marketplace design tokens
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
 
-  // Data loading state
-  const [reels, setReels] = useState<Reel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [cursor, setCursor] = useState<string | null>(null);
+const CATEGORIES = ["All", "Design", "Dev", "Marketing", "Writing", "Video", "3D", "AI"];
 
-  // Fetch reels
-  const fetchReels = useCallback(async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
+const TOP_CREATORS = [
+    { id: "1", name: "Sarah M.", category: "Brand", initials: "SM", verified: true },
+    { id: "2", name: "Alex K.", category: "Dev", initials: "AK", verified: true },
+    { id: "3", name: "Maya P.", category: "Marketing", initials: "MP", verified: false },
+    { id: "4", name: "Jordan L.", category: "3D", initials: "JL", verified: true },
+    { id: "5", name: "Emma D.", category: "Video", initials: "ED", verified: false },
+    { id: "6", name: "Alex R.", category: "AI", initials: "AR", verified: true },
+];
+
+// Popular Categories from Figma layout.builder (7)
+const POPULAR_CATEGORIES = [
+    { emoji: "🎨", title: "Brand Design", count: "2.4K" },
+    { emoji: "💻", title: "Web Dev", count: "1.8K" },
+    { emoji: "🤖", title: "AI / ML", count: "956" },
+    { emoji: "🎬", title: "Video Edit", count: "1.2K" },
+];
+
+// Trending badge types from Figma
+const BADGE_TYPES = ["Trending", "Hot", "New"] as const;
+
+export default function DiscoverTab() {
+    const router = useRouter();
+    const { user } = useAuthStore();
+    const [selectedCat, setSelectedCat] = useState("All");
+    const [services, setServices] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchServices = useCallback(async (category?: string) => {
+        try {
+            const params: any = { page: 1, limit: 10 };
+            if (category && category !== "All") params.category = category.toUpperCase();
+            const res = await getServices(params);
+            setServices(res.services || []);
+        } catch (e: any) {
+            toast.error(e?.message || "Failed to load services");
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchServices(selectedCat);
+    }, [selectedCat]);
+
+    const onRefresh = useCallback(() => {
         setRefreshing(true);
-        setCursor(null);
-      } else if (!loading) {
-        setLoading(true);
-      }
-      setError(null);
+        fetchServices(selectedCat);
+    }, [selectedCat]);
 
-      const response = await getReels({ limit: 10 });
-      setReels(response.items);
-      setHasMore(response.hasMore);
-      setCursor(response.nextCursor);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load reels";
-      setError(message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [loading]);
-
-  // Load more reels
-  const loadMoreReels = useCallback(async () => {
-    if (loadingMore || !hasMore || !cursor) return;
-
-    try {
-      setLoadingMore(true);
-      const response = await getReels({ cursor, limit: 10 });
-      setReels(prev => [...prev, ...response.items]);
-      setHasMore(response.hasMore);
-      setCursor(response.nextCursor);
-    } catch (err) {
-      if (__DEV__) console.error("Failed to load more reels:", err);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, hasMore, cursor]);
-
-  useEffect(() => {
-    fetchReels();
-  }, []);
-
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index !== null) {
-        setCurrentIndex(viewableItems[0].index);
+    const handleCategoryPress = (cat: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setSelectedCat(cat);
+    };
 
-        // Load more when near the end
-        if (viewableItems[0].index >= reels.length - 3) {
-          loadMoreReels();
-        }
-      }
-    },
-    [reels.length, loadMoreReels]
-  );
+    const featured = services[0];
+    const trending = services.slice(1, 4);
+    const recentlyViewed = services.slice(0, 5);
 
-  const viewabilityConfig = {
-    itemVisiblePercentThreshold: 50,
-  };
-
-  const handleReelPress = (reelId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push(`/reel/${reelId}`);
-  };
-
-  const handleProfilePress = (userId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/profile/${userId}`);
-  };
-
-  const handleLike = (reelId: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    toast.info("Coming soon");
-  };
-
-  const handleSave = (reelId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    toast.info("Coming soon");
-  };
-
-  const handleShare = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toast.info("Coming soon");
-  };
-
-  const handleMessage = async (userId: string) => {
-    // Don't message yourself
-    if (userId === user?.id) {
-      toast.info("You can't message yourself");
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      const conversation = await createConversation(userId);
-      router.push(`/conversation/${conversation.id}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to start conversation";
-      toast.error(message);
-    }
-  };
-
-  const renderReel = ({ item, index }: { item: Reel; index: number }) => (
-    <ReelItem
-      reel={item}
-      isActive={index === currentIndex}
-      isLiked={likedReels.has(item.id)}
-      isSaved={savedReels.has(item.id)}
-      onPress={() => handleReelPress(item.id)}
-      onProfilePress={() => handleProfilePress(item.userId)}
-      onLike={() => handleLike(item.id)}
-      onSave={() => handleSave(item.id)}
-      onShare={handleShare}
-      onMessage={() => handleMessage(item.userId)}
-    />
-  );
-
-  // Loading state
-  if (loading && reels.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Shimmer style={styles.loadingShimmer} />
-          <View style={styles.loadingContent}>
-            <ActivityIndicator size="large" color="#FFF" />
-            <Text style={styles.loadingText}>Loading reels...</Text>
-          </View>
-        </View>
-      </View>
-    );
-  }
+        <View style={styles.container}>
+            <SafeAreaView edges={["top"]} style={styles.headerWrap}>
+                <View style={styles.header}>
+                    <View>
+                        <Text style={styles.welcomeLabel}>Welcome back</Text>
+                        <Text style={styles.screenTitle}>Discover</Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <Pressable style={styles.iconBtn} onPress={() => router.push("/search" as any)}>
+                            <Ionicons name="search-outline" size={20} color={TEXT_SEC} />
+                        </Pressable>
+                        <Pressable style={styles.iconBtn} onPress={() => router.push("/notifications" as any)}>
+                            <Ionicons name="notifications-outline" size={20} color={TEXT_SEC} />
+                            <View style={styles.notifDot} />
+                        </Pressable>
+                    </View>
+                </View>
 
-  // Error state
-  if (error && reels.length === 0) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Animated.View entering={FadeIn.duration(300)} style={styles.errorContent}>
-            <View style={styles.errorIconContainer}>
-              <AlertCircle size={48} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
-            </View>
-            <Text style={styles.errorTitle}>Something went wrong</Text>
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable onPress={() => fetchReels()} style={styles.retryButton}>
-              <RefreshCw size={18} color="#FFF" strokeWidth={2.5} />
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </Pressable>
-          </Animated.View>
-        </View>
-      </View>
-    );
-  }
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.catScroll}
+                >
+                    {CATEGORIES.map((cat) => (
+                        <Pressable
+                            key={cat}
+                            onPress={() => handleCategoryPress(cat)}
+                            style={[styles.catPill, selectedCat === cat && styles.catPillActive]}
+                        >
+                            <Text style={[styles.catText, selectedCat === cat && styles.catTextActive]}>
+                                {cat}
+                            </Text>
+                        </Pressable>
+                    ))}
+                </ScrollView>
+            </SafeAreaView>
 
-  // Empty state
-  if (!loading && reels.length === 0) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.emptyContainer}>
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.emptyContent}>
-            <View style={styles.emptyIconContainer}>
-              <Film size={64} color="rgba(255,255,255,0.3)" strokeWidth={1} />
-            </View>
-            <Text style={styles.emptyTitle}>No reels yet</Text>
-            <Text style={styles.emptyText}>
-              Be the first to share your work!{"\n"}Create a reel to showcase your skills.
-            </Text>
-            <Pressable onPress={() => router.push("/(tabs)/create")} style={styles.createButton}>
-              <Text style={styles.createButtonText}>Create Reel</Text>
-            </Pressable>
-          </Animated.View>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <FlatList
-        ref={flatListRef}
-        data={reels}
-        renderItem={renderReel}
-        keyExtractor={(item) => item.id}
-        pagingEnabled
-        showsVerticalScrollIndicator={false}
-        snapToInterval={SCREEN_HEIGHT}
-        decelerationRate="fast"
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        getItemLayout={(_, index) => ({
-          length: SCREEN_HEIGHT,
-          offset: SCREEN_HEIGHT * index,
-          index,
-        })}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => fetchReels(true)}
-            tintColor="#FFF"
-            progressViewOffset={60}
-          />
-        }
-        ListFooterComponent={
-          loadingMore ? (
-            <View style={styles.loadingMoreContainer}>
-              <ActivityIndicator size="small" color="#FFF" />
-            </View>
-          ) : null
-        }
-      />
-
-      {/* Progress Indicators */}
-      <View style={styles.progressContainer}>
-        {reels.slice(0, 6).map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.progressDot,
-              index === currentIndex && styles.progressDotActive,
-            ]}
-          />
-        ))}
-        {reels.length > 6 && (
-          <Text style={styles.moreIndicator}>+{reels.length - 6}</Text>
-        )}
-      </View>
-
-      {/* BAYSIS branding */}
-      <View style={styles.brandingContainer}>
-        <Text style={styles.brandingText}>BAYSIS</Text>
-      </View>
-
-      {/* Instructions (first reel only) */}
-      {currentIndex === 0 && (
-        <Animated.View entering={FadeIn.delay(500)} style={styles.instructions}>
-          <Text style={styles.instructionsText}>Swipe up to discover freelancers</Text>
-        </Animated.View>
-      )}
-    </View>
-  );
-}
-
-// Individual Reel Component
-interface ReelItemProps {
-  reel: Reel;
-  isActive: boolean;
-  isLiked: boolean;
-  isSaved: boolean;
-  onPress: () => void;
-  onProfilePress: () => void;
-  onLike: () => void;
-  onSave: () => void;
-  onShare: () => void;
-  onMessage: () => void;
-}
-
-function ReelItem({
-  reel,
-  isActive,
-  isLiked,
-  isSaved,
-  onPress,
-  onProfilePress,
-  onLike,
-  onSave,
-  onShare,
-  onMessage,
-}: ReelItemProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 400 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
-  };
-
-  // Get display name - fallback to "User" if no name
-  const displayName = reel.user?.name || "User";
-  const username = displayName.replace(/\s+/g, "").toLowerCase();
-
-  return (
-    <View style={styles.reelContainer}>
-      {/* Background Image */}
-      <Image source={{ uri: reel.mediaUrl }} style={styles.reelImage} />
-
-      {/* Gradient Overlay */}
-      <LinearGradient
-        colors={["rgba(0,0,0,0.3)", "transparent", "rgba(0,0,0,0.8)"]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Tap to view detail */}
-      <Pressable
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Right side actions */}
-      <View style={styles.actionsContainer}>
-        {/* Profile */}
-        <Pressable onPress={onProfilePress} style={styles.actionButton}>
-          <View style={styles.avatarContainer}>
-            {reel.user?.avatarUrl ? (
-              <Image source={{ uri: reel.user.avatarUrl }} style={styles.avatar} />
+            {loading ? (
+                <View style={styles.loadingCenter}>
+                    <ActivityIndicator color={ACCENT} size="large" />
+                </View>
             ) : (
-              <View style={styles.avatarPlaceholder}>
-                <User size={24} color="#FFF" />
-              </View>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />
+                    }
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    {/* Featured */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.sectionTitleRow}>
+                                <Ionicons name="sparkles" size={14} color={ACCENT} />
+                                <Text style={styles.sectionTitle}>Featured</Text>
+                            </View>
+                        </View>
+
+                        {featured ? (
+                            <Pressable
+                                onPress={() => router.push(`/service/${featured.id}` as any)}
+                                style={styles.featuredCard}
+                            >
+                                {featured.imageUrl ? (
+                                    <Image source={{ uri: featured.imageUrl }} style={styles.featuredImage} resizeMode="cover" />
+                                ) : (
+                                    <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.featuredImage} />
+                                )}
+                                <LinearGradient
+                                    colors={["transparent", "rgba(0,0,0,0.7)"]}
+                                    style={styles.featuredOverlay}
+                                />
+                                <View style={styles.featuredBadge}>
+                                    <Ionicons name="flash" size={8} color="#000" />
+                                    <Text style={styles.featuredBadgeText}>FEATURED</Text>
+                                </View>
+                                <View style={styles.featuredPrice}>
+                                    <Text style={styles.featuredPriceText}>
+                                        {featured.priceFormatted || `$${featured.price}`}
+                                    </Text>
+                                </View>
+                                <View style={styles.featuredContent}>
+                                    <Text style={styles.featuredTitle} numberOfLines={1}>{featured.title}</Text>
+                                    <View style={styles.featuredMeta}>
+                                        <View style={styles.avatarXS}>
+                                            <Text style={styles.avatarXSText}>
+                                                {(featured.user?.displayName || "U")[0]}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.featuredCreator}>
+                                            {featured.user?.displayName || "Creator"}
+                                        </Text>
+                                        <Ionicons name="checkmark-circle" size={14} color={ACCENT} />
+                                        <View style={styles.ratingRow}>
+                                            <Ionicons name="star" size={12} color={ACCENT} />
+                                            <Text style={styles.ratingText}>4.9</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </Pressable>
+                        ) : (
+                            <View style={styles.emptyCard}>
+                                <Ionicons name="briefcase-outline" size={28} color={TEXT_MUTED} />
+                                <Text style={{ color: TEXT_MUTED, marginTop: 8, fontSize: 14 }}>
+                                    No services yet
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Top Creators */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Top Creators</Text>
+                            <Pressable>
+                                <Text style={styles.seeAll}>See all</Text>
+                            </Pressable>
+                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ gap: 20, paddingRight: 20 }}
+                        >
+                            {TOP_CREATORS.map((creator) => (
+                                <Pressable key={creator.id} style={styles.creatorCard}>
+                                    <View style={styles.creatorAvatarWrap}>
+                                        <View style={styles.creatorAvatar}>
+                                            <Text style={styles.creatorInitials}>{creator.initials}</Text>
+                                        </View>
+                                        {creator.verified && (
+                                            <View style={styles.verifiedBadge}>
+                                                <Ionicons name="checkmark-sharp" size={8} color="#000" />
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={styles.creatorName}>{creator.name}</Text>
+                                    <Text style={styles.creatorCat}>{creator.category}</Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    {/* Trending Now — with badges */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <View style={styles.sectionTitleRow}>
+                                <Ionicons name="flame" size={14} color="#f97316" />
+                                <Text style={styles.sectionTitle}>Trending Now</Text>
+                            </View>
+                            <Pressable onPress={() => router.push("/(tabs)/services" as any)}>
+                                <Text style={styles.seeAll}>View all</Text>
+                            </Pressable>
+                        </View>
+
+                        {trending.length > 0 ? trending.map((svc, idx) => (
+                            <Pressable
+                                key={svc.id}
+                                style={styles.trendingCard}
+                                onPress={() => router.push(`/service/${svc.id}` as any)}
+                            >
+                                <View style={styles.trendingImgWrap}>
+                                    {svc.imageUrl ? (
+                                        <Image source={{ uri: svc.imageUrl }} style={styles.trendingImg} resizeMode="cover" />
+                                    ) : (
+                                        <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.trendingImg} />
+                                    )}
+                                    {/* Trending badge */}
+                                    <View style={[
+                                        styles.trendingBadge,
+                                        idx === 1 && { backgroundColor: "#ef4444" },
+                                        idx === 2 && { backgroundColor: "#3b82f6" },
+                                    ]}>
+                                        <Text style={styles.trendingBadgeText}>
+                                            {BADGE_TYPES[idx % BADGE_TYPES.length]}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={styles.trendingInfo}>
+                                    <Text style={styles.trendingTitle} numberOfLines={2}>{svc.title}</Text>
+                                    <Text style={styles.trendingCat}>{svc.category}</Text>
+                                    <View style={styles.trendingMeta}>
+                                        <View style={styles.ratingRow}>
+                                            <Ionicons name="star" size={11} color={ACCENT} />
+                                            <Text style={styles.ratingText}>4.8</Text>
+                                        </View>
+                                        <Text style={styles.trendingPrice}>
+                                            {svc.priceFormatted || `$${Math.round(svc.price / 100)}`}
+                                        </Text>
+                                    </View>
+                                </View>
+                                {/* Bookmark button */}
+                                <Pressable style={styles.trendingBookmark}>
+                                    <Ionicons name="bookmark-outline" size={16} color={TEXT_MUTED} />
+                                </Pressable>
+                            </Pressable>
+                        )) : (
+                            <Text style={{ color: TEXT_MUTED }}>No services in this category</Text>
+                        )}
+                    </View>
+
+                    {/* Recently Viewed */}
+                    {recentlyViewed.length > 0 && (
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <View style={styles.sectionTitleRow}>
+                                    <Ionicons name="time-outline" size={14} color={TEXT_SEC} />
+                                    <Text style={styles.sectionTitle}>Recently Viewed</Text>
+                                </View>
+                                <Pressable>
+                                    <Text style={styles.seeAll}>See all</Text>
+                                </Pressable>
+                            </View>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ gap: 12, paddingRight: 20 }}
+                            >
+                                {recentlyViewed.map((svc) => (
+                                    <Pressable
+                                        key={svc.id}
+                                        style={styles.recentCard}
+                                        onPress={() => router.push(`/service/${svc.id}` as any)}
+                                    >
+                                        {svc.imageUrl ? (
+                                            <Image source={{ uri: svc.imageUrl }} style={styles.recentImg} resizeMode="cover" />
+                                        ) : (
+                                            <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.recentImg} />
+                                        )}
+                                        <LinearGradient
+                                            colors={["transparent", "rgba(0,0,0,0.75)"]}
+                                            style={styles.recentOverlay}
+                                        />
+                                        {/* Bookmark */}
+                                        <Pressable style={styles.recentBookmark}>
+                                            <Ionicons name="bookmark-outline" size={14} color={TEXT} />
+                                        </Pressable>
+                                        <View style={styles.recentInfo}>
+                                            <Text style={styles.recentTitle} numberOfLines={2}>{svc.title}</Text>
+                                            <View style={styles.recentMeta}>
+                                                <Text style={styles.recentCreator} numberOfLines={1}>
+                                                    {svc.user?.displayName || "Creator"}
+                                                </Text>
+                                                <Text style={styles.recentPrice}>
+                                                    {svc.priceFormatted || `$${Math.round((svc.price || 0) / 100)}`}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    )}
+
+                    {/* Popular Categories — 2×2 grid from Figma */}
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Popular Categories</Text>
+                        </View>
+                        <View style={styles.catGrid}>
+                            {POPULAR_CATEGORIES.map((cat) => (
+                                <Pressable key={cat.title} style={styles.catGridItem}>
+                                    <Text style={styles.catGridEmoji}>{cat.emoji}</Text>
+                                    <Text style={styles.catGridTitle}>{cat.title}</Text>
+                                    <Text style={styles.catGridCount}>{cat.count}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* FAB for Create */}
+                    <View style={{ height: 100 }} />
+                </ScrollView>
             )}
-          </View>
-        </Pressable>
 
-        {/* Like */}
-        <Pressable onPress={onLike} style={styles.actionButton}>
-          <Heart
-            size={28}
-            color={isLiked ? "#D64040" : "#FFF"}
-            fill={isLiked ? "#D64040" : "transparent"}
-            strokeWidth={2}
-          />
-        </Pressable>
-
-        {/* Comment/Message */}
-        <Pressable onPress={onMessage} style={styles.actionButton}>
-          <MessageCircle size={28} color="#FFF" strokeWidth={2} />
-        </Pressable>
-
-        {/* Save */}
-        <Pressable onPress={onSave} style={styles.actionButton}>
-          <Bookmark
-            size={28}
-            color={isSaved ? "#FFF" : "#FFF"}
-            fill={isSaved ? "#FFF" : "transparent"}
-            strokeWidth={2}
-          />
-        </Pressable>
-
-        {/* Share */}
-        <Pressable onPress={onShare} style={styles.actionButton}>
-          <Share2 size={26} color="#FFF" strokeWidth={2} />
-        </Pressable>
-      </View>
-
-      {/* Bottom Content */}
-      <View style={styles.reelOverlay}>
-        <View style={styles.reelContent}>
-          {/* Creator info */}
-          <Pressable onPress={onProfilePress} style={styles.creatorRow}>
-            <Text style={styles.creatorName}>@{username}</Text>
-            <View style={styles.followButton}>
-              <Text style={styles.followButtonText}>Follow</Text>
-            </View>
-          </Pressable>
-
-          {/* Caption */}
-          {reel.caption && (
-            <Text style={styles.reelCaption} numberOfLines={3}>
-              {reel.caption}
-            </Text>
-          )}
-
-          {/* Hire button */}
-          <Pressable onPress={onMessage} style={styles.hireButton}>
-            <User size={18} color="#FFF" strokeWidth={2.5} />
-            <Text style={styles.hireButtonText}>Hire Me</Text>
-          </Pressable>
+            {/* Floating Action Button — Create */}
+            <Pressable
+                style={styles.fab}
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push("/(tabs)/create" as any);
+                }}
+            >
+                <LinearGradient
+                    colors={[ACCENT, "#84cc16"]}
+                    style={styles.fabGrad}
+                >
+                    <Ionicons name="add" size={28} color="#0b0b0f" />
+                </LinearGradient>
+            </Pressable>
         </View>
-      </View>
-    </View>
-  );
+    );
 }
+
+const RECENT_W = 160;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  reelContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-  },
-  reelImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-  },
-  reelOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-    padding: 20,
-    paddingBottom: 120,
-    paddingRight: 70,
-  },
-  reelContent: {
-    gap: 12,
-  },
-  creatorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  creatorName: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  followButton: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  followButtonText: {
-    color: "#FFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  reelCaption: {
-    color: "#FFF",
-    fontSize: 15,
-    lineHeight: 22,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  hireButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 8,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.4)",
-  },
-  hireButtonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  actionsContainer: {
-    position: "absolute",
-    right: 12,
-    bottom: 200,
-    alignItems: "center",
-    gap: 20,
-  },
-  actionButton: {
-    alignItems: "center",
-    gap: 4,
-  },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#FFF",
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarPlaceholder: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#111111",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  progressContainer: {
-    position: "absolute",
-    right: 12,
-    top: "50%",
-    transform: [{ translateY: -50 }],
-    gap: 8,
-    alignItems: "center",
-  },
-  progressDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.4)",
-  },
-  progressDotActive: {
-    height: 32,
-    backgroundColor: "#FFF",
-  },
-  moreIndicator: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  brandingContainer: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-  },
-  brandingText: {
-    color: "#FFF",
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: 1,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  instructions: {
-    position: "absolute",
-    top: "35%",
-    alignSelf: "center",
-  },
-  instructionsText: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 15,
-    fontWeight: "500",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  // Loading state
-  loadingContainer: {
-    flex: 1,
-    position: "relative",
-  },
-  loadingShimmer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  loadingContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-  },
-  loadingText: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  loadingMoreContainer: {
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  // Error state
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  errorContent: {
-    alignItems: "center",
-  },
-  errorIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  errorTitle: {
-    color: "#FFF",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  errorText: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 15,
-    textAlign: "center",
-    marginBottom: 28,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#111111",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  // Empty state
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  emptyContent: {
-    alignItems: "center",
-  },
-  emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    color: "#FFF",
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  emptyText: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 16,
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 28,
-  },
-  createButton: {
-    backgroundColor: "#111111",
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 25,
-  },
-  createButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+    container: { flex: 1, backgroundColor: BG },
+    headerWrap: { backgroundColor: BG, borderBottomWidth: 1, borderBottomColor: BORDER },
+    header: {
+        flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+        paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16,
+    },
+    welcomeLabel: {
+        color: TEXT_MUTED, fontSize: 12, fontWeight: "600",
+        textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2,
+    },
+    screenTitle: { color: TEXT, fontSize: 28, fontWeight: "900", letterSpacing: -0.6 },
+    headerActions: { flexDirection: "row", gap: 10 },
+    iconBtn: {
+        width: 40, height: 40, borderRadius: 14, backgroundColor: ELEVATED,
+        justifyContent: "center", alignItems: "center",
+        borderWidth: 1, borderColor: BORDER, position: "relative",
+    },
+    notifDot: {
+        position: "absolute", top: 9, right: 9, width: 7, height: 7,
+        borderRadius: 4, backgroundColor: ACCENT,
+        shadowColor: ACCENT, shadowOpacity: 0.9, shadowRadius: 6, elevation: 3,
+    },
+    catScroll: { paddingHorizontal: 20, paddingBottom: 14, gap: 8 },
+    catPill: {
+        paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99,
+        backgroundColor: ELEVATED, borderWidth: 1, borderColor: BORDER,
+    },
+    catPillActive: { backgroundColor: ACCENT, borderColor: ACCENT },
+    catText: { color: TEXT_SEC, fontSize: 13, fontWeight: "700" },
+    catTextActive: { color: "#0b0b0f" },
+    loadingCenter: { flex: 1, justifyContent: "center", alignItems: "center" },
+    scrollContent: { paddingTop: 20 },
+    section: { paddingHorizontal: 20, marginBottom: 32 },
+    sectionHeader: {
+        flexDirection: "row", justifyContent: "space-between",
+        alignItems: "center", marginBottom: 14,
+    },
+    sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    sectionTitle: { color: TEXT, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
+    seeAll: { color: ACCENT, fontSize: 13, fontWeight: "700" },
+
+    // Featured card
+    featuredCard: {
+        borderRadius: 24, overflow: "hidden",
+        shadowColor: "#000", shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.5, shadowRadius: 24, elevation: 8,
+    },
+    featuredImage: { width: "100%", height: 200 },
+    featuredOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
+    featuredBadge: {
+        position: "absolute", top: 14, left: 14,
+        flexDirection: "row", alignItems: "center", gap: 4,
+        backgroundColor: ACCENT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
+    },
+    featuredBadgeText: { color: "#000", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
+    featuredPrice: {
+        position: "absolute", top: 14, right: 14,
+        backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 99,
+        paddingHorizontal: 12, paddingVertical: 6,
+        borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
+    },
+    featuredPriceText: { color: TEXT, fontSize: 13, fontWeight: "900" },
+    featuredContent: { backgroundColor: SURFACE, paddingHorizontal: 16, paddingVertical: 14 },
+    featuredTitle: { color: TEXT, fontSize: 17, fontWeight: "900", marginBottom: 8 },
+    featuredMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
+    avatarXS: {
+        width: 22, height: 22, borderRadius: 11,
+        backgroundColor: ACCENT, justifyContent: "center", alignItems: "center",
+    },
+    avatarXSText: { color: "#000", fontSize: 9, fontWeight: "800" },
+    featuredCreator: { color: TEXT_SEC, fontSize: 13, fontWeight: "600", flex: 1 },
+    ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
+    ratingText: { color: TEXT_MUTED, fontSize: 12, fontWeight: "600" },
+
+    // Creator cards
+    creatorCard: { alignItems: "center", width: 72 },
+    creatorAvatarWrap: { position: "relative", marginBottom: 8 },
+    creatorAvatar: {
+        width: 56, height: 56, borderRadius: 28, backgroundColor: ELEVATED,
+        justifyContent: "center", alignItems: "center",
+        borderWidth: 1, borderColor: BORDER,
+    },
+    creatorInitials: { color: TEXT, fontSize: 16, fontWeight: "700" },
+    verifiedBadge: {
+        position: "absolute", bottom: -2, right: -2,
+        width: 18, height: 18, borderRadius: 9,
+        backgroundColor: ACCENT, borderWidth: 2, borderColor: BG,
+        justifyContent: "center", alignItems: "center",
+    },
+    creatorName: { color: TEXT_SEC, fontSize: 11, fontWeight: "700", textAlign: "center" },
+    creatorCat: { color: TEXT_SUBTLE, fontSize: 10, fontWeight: "500", textAlign: "center" },
+
+    // Trending cards
+    trendingCard: {
+        flexDirection: "row", backgroundColor: SURFACE, borderRadius: 18,
+        borderWidth: 1, borderColor: BORDER, overflow: "hidden", marginBottom: 10,
+    },
+    trendingImgWrap: { width: 90, height: 90, position: "relative" },
+    trendingImg: { width: 90, height: 90 },
+    trendingBadge: {
+        position: "absolute", top: 6, left: 6,
+        backgroundColor: ACCENT, borderRadius: 6,
+        paddingHorizontal: 6, paddingVertical: 2,
+    },
+    trendingBadgeText: { color: "#000", fontSize: 8, fontWeight: "900", letterSpacing: 0.3 },
+    trendingInfo: { flex: 1, padding: 12, justifyContent: "space-between" },
+    trendingTitle: { color: TEXT, fontSize: 14, fontWeight: "900", lineHeight: 18 },
+    trendingCat: { color: TEXT_SUBTLE, fontSize: 11, fontWeight: "600" },
+    trendingMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    trendingPrice: { color: ACCENT, fontSize: 14, fontWeight: "900" },
+    trendingBookmark: {
+        padding: 12, justifyContent: "center", alignItems: "center",
+    },
+
+    // Recently Viewed — horizontal scroll cards
+    recentCard: {
+        width: RECENT_W, height: RECENT_W * 1.25, borderRadius: 18,
+        overflow: "hidden", position: "relative",
+    },
+    recentImg: { width: "100%", height: "100%" },
+    recentOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: "60%" },
+    recentBookmark: {
+        position: "absolute", top: 8, right: 8,
+        width: 28, height: 28, borderRadius: 14,
+        backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center",
+    },
+    recentInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
+    recentTitle: { color: TEXT, fontSize: 12, fontWeight: "800", marginBottom: 4 },
+    recentMeta: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    recentCreator: { color: TEXT_SEC, fontSize: 10, fontWeight: "600", flex: 1, marginRight: 6 },
+    recentPrice: { color: ACCENT, fontSize: 11, fontWeight: "900" },
+
+    // Popular Categories — 2×2 grid
+    catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+    catGridItem: {
+        width: (W - 52) / 2, backgroundColor: SURFACE, borderRadius: 18,
+        padding: 16, borderWidth: 1, borderColor: BORDER,
+    },
+    catGridEmoji: { fontSize: 28, marginBottom: 10 },
+    catGridTitle: { color: TEXT, fontSize: 15, fontWeight: "800", marginBottom: 4 },
+    catGridCount: { color: TEXT_MUTED, fontSize: 13, fontWeight: "600" },
+
+    // Empty state
+    emptyCard: {
+        height: 180, borderRadius: 24, backgroundColor: SURFACE,
+        justifyContent: "center", alignItems: "center",
+        borderWidth: 1, borderColor: BORDER,
+    },
+
+    // FAB
+    fab: {
+        position: "absolute", bottom: 100, right: 20,
+        shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 }, elevation: 8,
+    },
+    fabGrad: {
+        width: 56, height: 56, borderRadius: 28,
+        justifyContent: "center", alignItems: "center",
+    },
 });

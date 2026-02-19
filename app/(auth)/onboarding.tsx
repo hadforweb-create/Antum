@@ -12,65 +12,50 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
-import { ArrowRight, Sparkles, Users, Shield } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
-import { useThemeStore } from "@/lib/store";
+const { width: W } = Dimensions.get("window");
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-interface OnboardingSlide {
-    id: string;
-    renderIcon: (color: string) => React.ReactNode;
-    iconBg: string;
-    headline: string;
-    headlineBold: string;
-    subtext: string;
-}
-
-const slides: OnboardingSlide[] = [
+// Matches Figma: layout.builder 0/1/2 — green, purple, orange
+const slides = [
     {
         id: "1",
-        renderIcon: (color: string) => <Sparkles size={40} color={color} strokeWidth={1.5} />,
-        iconBg: "rgba(17,17,17,0.06)",
-        headline: "Welcome to",
-        headlineBold: "BAYSIS",
-        subtext: "Connect. Offer. Earn.\nThe premium marketplace for modern freelancers.",
+        headline: "Hire Top Talent",
+        subtext: "Connect with elite freelancers and creative professionals worldwide. Build your dream team today.",
+        buttonText: "Continue",
+        gradientColors: ["#84cc16", "#65a30d", "#4d7c0f"] as const,
+        accentColor: "#a3ff3f",
     },
     {
         id: "2",
-        renderIcon: (color: string) => <Users size={40} color={color} strokeWidth={1.5} />,
-        iconBg: "rgba(17,17,17,0.06)",
-        headline: "Offer Your",
-        headlineBold: "Skills",
-        subtext: "Showcase your talent through services and short-form reels that bring your work to life.",
+        headline: "Trusted Platform",
+        subtext: "Secure payments, verified reviews, and professional escrow protection. Your peace of mind guaranteed.",
+        buttonText: "Continue",
+        gradientColors: ["#a855f7", "#9333ea", "#7e22ce"] as const,
+        accentColor: "#c084fc",
     },
     {
         id: "3",
-        renderIcon: (color: string) => <Shield size={40} color={color} strokeWidth={1.5} />,
-        iconBg: "rgba(17,17,17,0.06)",
-        headline: "Find Trusted",
-        headlineBold: "Talent",
-        subtext: "Discover vetted freelancers, browse their portfolio reels, and hire with confidence.",
+        headline: "Build Your Empire",
+        subtext: "Scale your business with premium services. Join thousands of successful companies on Baysis.",
+        buttonText: "Get Started",
+        gradientColors: ["#f97316", "#ea580c", "#c2410c"] as const,
+        accentColor: "#fb923c",
     },
 ];
 
+const BG = "#0b0b0f";
+const SURFACE = "#151518";
+
 export default function OnboardingScreen() {
     const router = useRouter();
-    const { isDark } = useThemeStore();
     const [activeIndex, setActiveIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
-
-    const bgColor = isDark ? "#121210" : "#F5F3EE";
-    const textColor = isDark ? "#F5F3EE" : "#111111";
-    const mutedColor = "#8E8E8A";
-    const primaryBg = isDark ? "#F5F3EE" : "#111111";
-    const primaryText = isDark ? "#111111" : "#F5F3EE";
 
     const handleNext = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (activeIndex < slides.length - 1) {
-            flatListRef.current?.scrollToIndex({ index: activeIndex + 1 });
+            flatListRef.current?.scrollToIndex({ index: activeIndex + 1, animated: true });
         } else {
             router.replace("/(auth)/login");
         }
@@ -82,56 +67,52 @@ export default function OnboardingScreen() {
     };
 
     const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-        if (index !== activeIndex) {
+        const index = Math.round(e.nativeEvent.contentOffset.x / W);
+        if (index !== activeIndex && index >= 0 && index < slides.length) {
             setActiveIndex(index);
         }
     };
 
-    const iconColor = isDark ? "#F5F3EE" : "#111111";
-
-    const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => (
-        <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
-            <View style={styles.slideContent}>
-                {/* Abstract shape / icon area */}
-                <Animated.View entering={FadeIn.delay(200).duration(600)}>
-                    <View style={[styles.iconContainer, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : item.iconBg }]}>
-                        <View style={[styles.iconInner, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(17,17,17,0.04)" }]}>
-                            {item.renderIcon(iconColor)}
-                        </View>
+    const renderSlide = ({ item }: { item: typeof slides[0] }) => (
+        <View style={{ width: W, flex: 1 }}>
+            {/* Large gradient card fills top 60% */}
+            <View style={styles.cardWrapper}>
+                <LinearGradient
+                    colors={item.gradientColors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientCard}
+                >
+                    <View style={styles.glowTop} />
+                    <View style={styles.glowBottom} />
+                    <View style={styles.shapeOuter}>
+                        <View style={styles.shapeInner} />
                     </View>
-                </Animated.View>
+                </LinearGradient>
+            </View>
 
-                {/* Text */}
-                <View style={styles.textContainer}>
-                    <Text style={[styles.headline, { color: mutedColor }]}>
-                        {item.headline}
-                    </Text>
-                    <Text style={[styles.headlineBold, { color: textColor }]}>
-                        {item.headlineBold}
-                    </Text>
-                    <Text style={[styles.subtext, { color: mutedColor }]}>
-                        {item.subtext}
-                    </Text>
-                </View>
+            {/* Bottom content panel */}
+            <View style={[styles.textCard, { backgroundColor: SURFACE }]}>
+                <Text style={styles.headline}>{item.headline}</Text>
+                <Text style={styles.subtext}>{item.subtext}</Text>
+                <Pressable
+                    onPress={handleNext}
+                    style={[styles.ctaButton, { backgroundColor: item.accentColor }]}
+                >
+                    <Text style={styles.ctaText}>{item.buttonText}</Text>
+                </Pressable>
             </View>
         </View>
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: bgColor }]}>
-            <SafeAreaView style={styles.safeArea}>
-                {/* Skip button */}
-                <View style={styles.topRow}>
-                    <View />
-                    {activeIndex < slides.length - 1 && (
-                        <Pressable onPress={handleSkip} style={styles.skipButton}>
-                            <Text style={[styles.skipText, { color: mutedColor }]}>Skip</Text>
-                        </Pressable>
-                    )}
-                </View>
-
-                {/* Slides */}
+        <View style={styles.container}>
+            <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+                {activeIndex < slides.length - 1 && (
+                    <Pressable onPress={handleSkip} style={styles.skipButton}>
+                        <Text style={styles.skipText}>Skip</Text>
+                    </Pressable>
+                )}
                 <FlatList
                     ref={flatListRef}
                     data={slides}
@@ -143,169 +124,96 @@ export default function OnboardingScreen() {
                     onScroll={onScroll}
                     scrollEventThrottle={16}
                     bounces={false}
+                    style={{ flex: 1 }}
                 />
-
-                {/* Bottom area */}
-                <View style={styles.bottomArea}>
-                    {/* Dots */}
-                    <View style={styles.dotsContainer}>
-                        {slides.map((_, i) => (
-                            <View
-                                key={i}
-                                style={[
-                                    styles.dot,
-                                    {
-                                        backgroundColor: i === activeIndex
-                                            ? textColor
-                                            : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
-                                        width: i === activeIndex ? 24 : 8,
-                                    },
-                                ]}
-                            />
-                        ))}
-                    </View>
-
-                    {/* CTA Button */}
-                    <Pressable
-                        onPress={handleNext}
-                        style={[styles.ctaButton, { backgroundColor: primaryBg }]}
-                    >
-                        <Text style={[styles.ctaText, { color: primaryText }]}>
-                            {activeIndex === slides.length - 1 ? "Get Started" : "Continue"}
-                        </Text>
-                        <ArrowRight size={20} color={primaryText} strokeWidth={2.5} />
-                    </Pressable>
-
-                    {/* Login link */}
-                    <View style={styles.loginRow}>
-                        <Text style={[styles.loginText, { color: mutedColor }]}>
-                            Already have an account?{" "}
-                        </Text>
-                        <Pressable onPress={() => router.push("/(auth)/login")}>
-                            <Text style={[styles.loginLink, { color: textColor }]}>Log in</Text>
-                        </Pressable>
-                    </View>
-                </View>
             </SafeAreaView>
+
+            {/* Dots + sign in */}
+            <View style={[styles.bottomBar, { backgroundColor: SURFACE }]}>
+                <View style={styles.dotsRow}>
+                    {slides.map((s, i) => (
+                        <View
+                            key={i}
+                            style={[
+                                styles.dot,
+                                {
+                                    backgroundColor: i === activeIndex
+                                        ? slides[activeIndex].accentColor
+                                        : "rgba(255,255,255,0.15)",
+                                    width: i === activeIndex ? 24 : 7,
+                                },
+                            ]}
+                        />
+                    ))}
+                </View>
+                <Pressable onPress={() => router.push("/(auth)/login")} style={styles.signinRow}>
+                    <Text style={styles.signinPrompt}>Already have an account? </Text>
+                    <Text style={[styles.signinLink, { color: slides[activeIndex].accentColor }]}>
+                        Sign in
+                    </Text>
+                </Pressable>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    safeArea: {
-        flex: 1,
-    },
-    topRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 24,
-        paddingTop: 8,
-        height: 48,
-    },
+    container: { flex: 1, backgroundColor: BG },
     skipButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
+        position: "absolute", top: 0, right: 20, zIndex: 20,
+        paddingVertical: 10, paddingHorizontal: 16,
     },
-    skipText: {
-        fontSize: 16,
-        fontWeight: "500",
-        letterSpacing: 0.5,
+    skipText: { color: "rgba(255,255,255,0.6)", fontSize: 15, fontWeight: "600" },
+    cardWrapper: { flex: 1, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 0 },
+    gradientCard: {
+        flex: 1, borderRadius: 40, overflow: "hidden",
+        justifyContent: "center", alignItems: "center",
     },
-    slide: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+    glowTop: {
+        position: "absolute", top: -50, left: -50,
+        width: 200, height: 200, borderRadius: 100,
+        backgroundColor: "rgba(255,255,255,0.15)",
     },
-    slideContent: {
-        alignItems: "center",
-        paddingHorizontal: 40,
+    glowBottom: {
+        position: "absolute", bottom: -60, right: -50,
+        width: 240, height: 240, borderRadius: 120,
+        backgroundColor: "rgba(0,0,0,0.15)",
     },
-    iconContainer: {
-        width: 180,
-        height: 180,
-        borderRadius: 90,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 56,
+    shapeOuter: {
+        width: 160, height: 160, borderRadius: 80,
+        backgroundColor: "rgba(255,255,255,0.2)",
+        justifyContent: "center", alignItems: "center",
     },
-    iconInner: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        alignItems: "center",
-        justifyContent: "center",
+    shapeInner: {
+        width: 100, height: 100, borderRadius: 50,
+        backgroundColor: "rgba(255,255,255,0.12)",
     },
-    textContainer: {
-        alignItems: "center",
+    textCard: {
+        borderTopLeftRadius: 32, borderTopRightRadius: 32,
+        paddingHorizontal: 28, paddingTop: 28, paddingBottom: 16,
+        marginTop: -28,
     },
     headline: {
-        fontSize: 32,
-        fontWeight: "300",
-        textAlign: "center",
-        marginBottom: 4,
-    },
-    headlineBold: {
-        fontSize: 44,
-        fontWeight: "800",
-        textAlign: "center",
-        letterSpacing: -1,
-        marginBottom: 20,
+        color: "#FFFFFF", fontSize: 36, fontWeight: "900",
+        letterSpacing: -0.8, marginBottom: 12, lineHeight: 42,
     },
     subtext: {
-        fontSize: 17,
-        lineHeight: 26,
-        textAlign: "center",
-        maxWidth: 300,
-    },
-    bottomArea: {
-        paddingHorizontal: 24,
-        paddingBottom: 28,
-    },
-    dotsContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 28,
-    },
-    dot: {
-        height: 7,
-        borderRadius: 4,
+        color: "rgba(255,255,255,0.6)", fontSize: 16,
+        lineHeight: 24, marginBottom: 28,
     },
     ctaButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        paddingVertical: 20,
-        borderRadius: 22,
-        marginBottom: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.10,
-        shadowRadius: 16,
-        elevation: 4,
+        paddingVertical: 18, borderRadius: 18, alignItems: "center",
+        shadowColor: "#a3ff3f", shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
     },
-    ctaText: {
-        fontSize: 18,
-        fontWeight: "700",
-        letterSpacing: 0.2,
+    ctaText: { color: "#0b0b0f", fontSize: 17, fontWeight: "800" },
+    bottomBar: {
+        paddingHorizontal: 28, paddingBottom: 40, paddingTop: 16,
+        alignItems: "center", gap: 16,
     },
-    loginRow: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingBottom: 8,
-    },
-    loginText: {
-        fontSize: 15,
-    },
-    loginLink: {
-        fontSize: 15,
-        fontWeight: "700",
-    },
+    dotsRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    dot: { height: 7, borderRadius: 4 },
+    signinRow: { flexDirection: "row", alignItems: "center" },
+    signinPrompt: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
+    signinLink: { fontSize: 15, fontWeight: "700" },
 });

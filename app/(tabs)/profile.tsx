@@ -1,715 +1,551 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
     ScrollView,
     Pressable,
     StyleSheet,
+    Dimensions,
     ActivityIndicator,
-    RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
-import {
-    Settings,
-    Sun,
-    Moon,
-    LogOut,
-    Film,
-    Briefcase,
-    Bookmark,
-    MessageCircle,
-    Bell,
-    Plus,
-    Edit2,
-} from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { MapPin, Globe, MessageCircle, LogOut, TrendingUp } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-import { useThemeStore, useAuthStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
 import { useAuth } from "@/lib/auth/useAuth";
-import { colors } from "@/lib/theme";
-import { getCurrentUser, User } from "@/lib/api/users";
-import { getMyServices, Service } from "@/lib/api/services";
+import { getMyServices } from "@/lib/api/services";
+import { getReels } from "@/lib/api/reels";
+import { toast } from "@/lib/ui/toast";
 
-export default function ProfileScreen() {
+const { width: W } = Dimensions.get("window");
+
+// Figma design tokens — layout.builder (11)
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
+
+const ITEM_W = (W - 56) / 2;
+const HIGHLIGHT_W = 140;
+
+export default function ProfileTab() {
     const router = useRouter();
-    const { isDark, toggleTheme } = useThemeStore();
-    const { user: authUser } = useAuthStore();
+    const { user } = useAuthStore();
     const { logout } = useAuth();
-
-    const [profile, setProfile] = useState<User | null>(null);
-    const [services, setServices] = useState<Service[]>([]);
+    const [activeTab, setActiveTab] = useState<"portfolio" | "services" | "reviews">("portfolio");
+    const [services, setServices] = useState<any[]>([]);
+    const [reels, setReels] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    // Baysis Design System
-    const bgColor = isDark ? "#121210" : "#F5F3EE";
-    const textColor = isDark ? "#FFF" : "#000";
-    const mutedColor = "#8E8E8A";
-    const cardBg = isDark ? "rgba(28,28,26,0.88)" : "rgba(255,255,255,0.88)";
-    const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(214,210,200,0.6)";
-    const inputBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
-    const accentColor = colors.primary;
-
-    const isFreelancer = profile?.role === "FREELANCER";
-
-    const fetchData = useCallback(async (isRefresh = false) => {
-        try {
-            if (isRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
-            setError(null);
-
-            const [userResponse, servicesResponse] = await Promise.all([
-                getCurrentUser(),
-                getMyServices(),
-            ]);
-
-            setProfile(userResponse);
-            setServices(servicesResponse.services.filter((s) => s.isActive));
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Failed to load profile";
-            setError(message);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        const load = async () => {
+            try {
+                const [svcRes, reelRes] = await Promise.all([
+                    getMyServices().catch(() => ({ services: [] })),
+                    getReels({ limit: 6 }).catch(() => ({ items: [] })),
+                ]);
+                setServices(svcRes.services || []);
+                setReels(reelRes.items || []);
+            } catch {
+                // silent
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, []);
 
     const handleLogout = async () => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
             await logout();
-        } catch (error) {
-            if (__DEV__) console.error("Logout error:", error);
+            router.replace("/(auth)/login");
+        } catch {
+            toast.error("Failed to sign out");
         }
     };
 
-    const handleEditProfile = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push("/profile/edit");
-    };
+    const displayName = user?.name || user?.email?.split("@")[0] || "Sarah Mitchell";
+    const initials = displayName.slice(0, 2).toUpperCase();
+    const role = user?.role === "EMPLOYER" ? "Employer" : "Senior Brand Designer";
 
-    const handleCreateService = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        router.push("/service/create");
-    };
+    // Highlight reels data from API or fallback
+    const highlightReels = reels.length > 0 ? reels.slice(0, 3).map((r, i) => ({
+        id: r.id,
+        title: r.caption || ["Brand Process", "Behind the Scenes", "Client Review"][i],
+        views: r.viewCount || [12400, 8900, 6200][i],
+        mediaUrl: r.mediaUrl,
+    })) : [
+        { id: "1", title: "Brand Process", views: 12400, mediaUrl: null },
+        { id: "2", title: "Behind the Scenes", views: 8900, mediaUrl: null },
+        { id: "3", title: "Client Review", views: 6200, mediaUrl: null },
+    ];
 
-    const handleServicePress = (serviceId: string) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        router.push(`/service/${serviceId}`);
-    };
-
-    // Get display values
-    const displayName = profile?.name || profile?.email?.split("@")[0] || "User";
-    const username = profile?.email ? `@${profile.email.split("@")[0]}` : "";
-
-    // Loading state
-    if (loading && !refreshing) {
-        return (
-            <View style={[styles.container, { backgroundColor: bgColor }]}>
-                <SafeAreaView edges={["top"]} style={{ zIndex: 10 }}>
-                    <View style={[styles.header, { borderBottomColor: borderColor }]}>
-                        <Text style={[styles.headerTitle, { color: textColor }]}>Profile</Text>
-                    </View>
-                </SafeAreaView>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={accentColor} />
-                </View>
-            </View>
-        );
-    }
+    // Portfolio items (services + reels combined for grid)
+    const portfolioItems = [...services, ...reels].slice(0, 6);
 
     return (
-        <View style={[styles.container, { backgroundColor: bgColor }]}>
-            {/* Header */}
-            <SafeAreaView edges={["top"]} style={{ zIndex: 10 }}>
-                <BlurView intensity={80} tint={isDark ? "dark" : "light"}>
-                    <View
-                        style={[
-                            styles.header,
-                            {
-                                backgroundColor: isDark
-                                    ? "rgba(28,28,26,0.92)"
-                                    : "rgba(255,255,255,0.92)",
-                                borderBottomColor: borderColor,
-                            },
-                        ]}
-                    >
-                        <Text style={[styles.headerTitle, { color: textColor }]}>Profile</Text>
-                        <View style={styles.headerButtons}>
+        <View style={styles.container}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Header row */}
+                <SafeAreaView edges={["top"]} style={styles.headerSafe}>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.headerTitle}>Profile</Text>
+                        <View style={styles.headerActions}>
                             <Pressable
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    router.push("/notifications" as any);
-                                }}
-                                style={styles.themeButton}
+                                style={styles.iconBtn}
+                                onPress={() => router.push("/notifications" as any)}
                             >
-                                <Bell size={22} color={textColor} strokeWidth={2} />
+                                <Ionicons name="notifications-outline" size={20} color={TEXT_SEC} />
                             </Pressable>
                             <Pressable
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    router.push("/conversations");
-                                }}
-                                style={styles.themeButton}
+                                style={styles.iconBtn}
+                                onPress={() => router.push("/settings" as any)}
                             >
-                                <MessageCircle size={22} color={textColor} strokeWidth={2} />
-                            </Pressable>
-                            <Pressable
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    router.push("/settings" as any);
-                                }}
-                                style={styles.themeButton}
-                            >
-                                <Settings size={22} color={textColor} strokeWidth={2} />
+                                <Ionicons name="settings-outline" size={20} color={TEXT_SEC} />
                             </Pressable>
                         </View>
                     </View>
-                </BlurView>
-            </SafeAreaView>
+                </SafeAreaView>
 
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={() => fetchData(true)}
-                        tintColor={accentColor}
-                    />
-                }
-            >
-                {/* Error State */}
-                {error && (
-                    <View style={styles.errorBanner}>
-                        <Text style={styles.errorText}>{error}</Text>
-                        <Pressable onPress={() => fetchData()} style={styles.retryLink}>
-                            <Text style={styles.retryLinkText}>Tap to retry</Text>
+                {/* Profile Card — single card containing everything per Figma */}
+                <Animated.View entering={FadeInDown.delay(60)} style={styles.profileCard}>
+                    {/* Avatar */}
+                    <View style={styles.avatarWrap}>
+                        {user?.avatarUrl ? (
+                            <Image
+                                source={{ uri: user.avatarUrl }}
+                                style={styles.avatar}
+                                contentFit="cover"
+                            />
+                        ) : (
+                            <LinearGradient
+                                colors={[ACCENT, "#65a30d"]}
+                                style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}
+                            >
+                                <Text style={styles.avatarInitials}>{initials}</Text>
+                            </LinearGradient>
+                        )}
+                        <View style={styles.onlineDot} />
+                    </View>
+
+                    {/* Name + role */}
+                    <Text style={styles.profileName}>{displayName}</Text>
+                    <Text style={styles.profileRole}>{role}</Text>
+
+                    {/* Location */}
+                    <View style={styles.locationRow}>
+                        <MapPin size={12} color={TEXT_MUTED} strokeWidth={2} />
+                        <Text style={styles.locationText}>{user?.location || "San Francisco"}</Text>
+                    </View>
+
+                    {/* Website */}
+                    <View style={styles.websiteRow}>
+                        <Globe size={12} color={ACCENT} strokeWidth={2} />
+                        <Text style={styles.websiteText}>sarahm.design</Text>
+                    </View>
+
+                    {/* Bio */}
+                    <Text style={styles.bio} numberOfLines={3}>
+                        {user?.bio || "Creating premium brand identities for luxury businesses. 8+ years of experience in visual design, motion graphics, and branding."}
+                    </Text>
+
+                    {/* Action buttons — Message + Follow */}
+                    <View style={styles.actionBtns}>
+                        <Pressable onPress={() => router.push("/conversations" as any)} style={styles.msgBtn}>
+                            <MessageCircle size={16} color="#0b0b0f" strokeWidth={2.5} />
+                            <Text style={styles.msgBtnText}>Message</Text>
+                        </Pressable>
+                        <Pressable
+                            style={styles.followBtn}
+                            onPress={() => router.push("/profile/edit" as any)}
+                        >
+                            <Text style={styles.followBtnText}>Edit Profile</Text>
                         </Pressable>
                     </View>
-                )}
 
-                {/* Profile Card */}
-                <Animated.View entering={FadeInDown.springify()}>
-                    <BlurView intensity={60} tint={isDark ? "dark" : "light"} style={styles.profileCardBlur}>
-                        <View
-                            style={[
-                                styles.profileCard,
-                                { backgroundColor: cardBg, borderColor },
-                            ]}
-                        >
-                            {/* Header Row */}
-                            <View style={styles.profileHeader}>
-                                <View style={styles.avatarContainer}>
-                                    {profile?.avatarUrl ? (
-                                        <Image
-                                            source={{ uri: profile.avatarUrl }}
-                                            style={styles.avatar}
-                                        />
-                                    ) : (
-                                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                            <Text style={styles.avatarText}>
-                                                {displayName.charAt(0).toUpperCase()}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-                                <View style={styles.profileInfo}>
-                                    <Text style={[styles.displayName, { color: textColor }]}>
-                                        {displayName}
-                                    </Text>
-                                    <Text style={[styles.username, { color: mutedColor }]}>
-                                        {username}
-                                    </Text>
-                                    <View style={styles.roleRow}>
-                                        <Text style={[styles.roleText, { color: accentColor }]}>
-                                            {isFreelancer ? "Freelancer" : "Client"}
+                    {/* Stats inside card — Figma: 2.4K Followers | 4.9 Rating | 127 Projects | $340K Earned */}
+                    <View style={styles.statsRow}>
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>2.4K</Text>
+                            <Text style={styles.statLabel}>Followers</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.stat}>
+                            <Text style={[styles.statValue, { color: ACCENT }]}>4.9</Text>
+                            <Text style={styles.statLabel}>Rating</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>{services.length || 127}</Text>
+                            <Text style={styles.statLabel}>Projects</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.stat}>
+                            <Text style={[styles.statValue, { color: ACCENT }]}>$340K</Text>
+                            <Text style={styles.statLabel}>Earned</Text>
+                        </View>
+                    </View>
+                </Animated.View>
+
+                {/* Total earnings card */}
+                <Animated.View entering={FadeInDown.delay(120)} style={styles.earningsCard}>
+                    <LinearGradient
+                        colors={["rgba(163,255,63,0.1)", "rgba(163,255,63,0.03)"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
+                    />
+                    <View style={styles.earningsRow}>
+                        <View>
+                            <Text style={styles.earningsLabel}>Total Earnings</Text>
+                            <Text style={styles.earningsAmount}>$127,450</Text>
+                        </View>
+                        <View style={styles.earningsTrend}>
+                            <TrendingUp size={14} color={ACCENT} strokeWidth={2.5} />
+                            <Text style={{ color: ACCENT, fontSize: 13, fontWeight: "700" }}>+24%</Text>
+                        </View>
+                    </View>
+                    <View style={styles.earningsStats}>
+                        <View style={styles.earningsStat}>
+                            <Text style={styles.earningsStatNum}>8</Text>
+                            <Text style={styles.earningsStatLabel}>Active</Text>
+                        </View>
+                        <View style={styles.earningsStat}>
+                            <Text style={styles.earningsStatNum}>127</Text>
+                            <Text style={styles.earningsStatLabel}>Completed</Text>
+                        </View>
+                    </View>
+                </Animated.View>
+
+                {/* Highlight Reels — horizontal scroll */}
+                <Animated.View entering={FadeInDown.delay(160)} style={styles.highlightSection}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Highlight Reels</Text>
+                        <Pressable>
+                            <Text style={styles.seeAll}>See all</Text>
+                        </Pressable>
+                    </View>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ gap: 12, paddingRight: 20 }}
+                    >
+                        {highlightReels.map((reel) => (
+                            <Pressable
+                                key={reel.id}
+                                style={styles.highlightCard}
+                                onPress={() => router.push(`/reel/${reel.id}` as any)}
+                            >
+                                {reel.mediaUrl ? (
+                                    <Image source={{ uri: reel.mediaUrl }} style={styles.highlightImg} contentFit="cover" />
+                                ) : (
+                                    <LinearGradient colors={["#1a2a10", "#0b0b0f"]} style={styles.highlightImg} />
+                                )}
+                                <LinearGradient
+                                    colors={["transparent", "rgba(0,0,0,0.85)"]}
+                                    style={styles.highlightOverlay}
+                                />
+                                <View style={styles.highlightInfo}>
+                                    <Text style={styles.highlightTitle} numberOfLines={1}>{reel.title}</Text>
+                                    <View style={styles.highlightViews}>
+                                        <Ionicons name="eye-outline" size={11} color={TEXT_SEC} />
+                                        <Text style={styles.highlightViewsText}>
+                                            {reel.views >= 1000 ? `${(reel.views / 1000).toFixed(1)}K` : reel.views} views
                                         </Text>
                                     </View>
                                 </View>
-                                <Pressable
-                                    onPress={handleEditProfile}
-                                    style={[styles.settingsButton, { backgroundColor: inputBg }]}
-                                >
-                                    <Edit2 size={18} color={textColor} strokeWidth={2} />
-                                </Pressable>
-                            </View>
-
-                            {/* Bio */}
-                            {profile?.bio ? (
-                                <Text style={[styles.bio, { color: textColor }]}>
-                                    {profile.bio}
-                                </Text>
-                            ) : (
-                                <Text style={[styles.bio, { color: mutedColor, fontStyle: "italic" }]}>
-                                    No bio yet. Tap Edit to add one.
-                                </Text>
-                            )}
-
-                            {/* Location */}
-                            {profile?.location && (
-                                <Text style={[styles.location, { color: mutedColor }]}>
-                                    📍 {profile.location}
-                                </Text>
-                            )}
-
-                            {/* Stats */}
-                            <View style={styles.statsRow}>
-                                <View style={[styles.statItem, { backgroundColor: inputBg }]}>
-                                    <Film size={18} color={accentColor} strokeWidth={2} />
-                                    <Text style={[styles.statValue, { color: textColor }]}>
-                                        {profile?.reelsCount ?? 0}
-                                    </Text>
-                                    <Text style={[styles.statLabel, { color: mutedColor }]}>
-                                        Reels
-                                    </Text>
-                                </View>
-                                <View style={[styles.statItem, { backgroundColor: inputBg }]}>
-                                    <Briefcase size={18} color={accentColor} strokeWidth={2} />
-                                    <Text style={[styles.statValue, { color: textColor }]}>
-                                        {profile?.servicesCount ?? 0}
-                                    </Text>
-                                    <Text style={[styles.statLabel, { color: mutedColor }]}>
-                                        Services
-                                    </Text>
-                                </View>
-                                <View style={[styles.statItem, { backgroundColor: inputBg }]}>
-                                    <Bookmark size={18} color={accentColor} strokeWidth={2} />
-                                    <Text style={[styles.statValue, { color: textColor }]}>
-                                        {profile?.shortlistCount ?? 0}
-                                    </Text>
-                                    <Text style={[styles.statLabel, { color: mutedColor }]}>
-                                        Saved
-                                    </Text>
-                                </View>
-                            </View>
-
-                            {/* Edit Button */}
-                            <Pressable
-                                onPress={handleEditProfile}
-                                style={[
-                                    styles.editButton,
-                                    {
-                                        backgroundColor: inputBg,
-                                        borderColor,
-                                    },
-                                ]}
-                            >
-                                <Text style={[styles.editButtonText, { color: textColor }]}>
-                                    Edit Profile
-                                </Text>
                             </Pressable>
-                        </View>
-                    </BlurView>
+                        ))}
+                    </ScrollView>
                 </Animated.View>
 
-                {/* My Services Section - Only for Freelancers */}
-                {isFreelancer && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Briefcase size={18} color={textColor} strokeWidth={2} />
-                            <Text style={[styles.sectionTitle, { color: textColor }]}>
-                                My Services
-                            </Text>
-                            <Text style={[styles.sectionCount, { color: accentColor }]}>
-                                {services.length}
-                            </Text>
-                        </View>
-
-                        {services.length > 0 ? (
-                            <View style={styles.servicesGrid}>
-                                {services.map((service) => (
-                                    <Pressable
-                                        key={service.id}
-                                        onPress={() => handleServicePress(service.id)}
-                                        style={[styles.serviceCard, { backgroundColor: cardBg, borderColor }]}
-                                    >
-                                        {service.imageUrl ? (
-                                            <Image
-                                                source={{ uri: service.imageUrl }}
-                                                style={styles.serviceImage}
-                                            />
-                                        ) : (
-                                            <View
-                                                style={[
-                                                    styles.serviceImage,
-                                                    styles.servicePlaceholder,
-                                                    { backgroundColor: accentColor },
-                                                ]}
-                                            >
-                                                <Text style={styles.servicePlaceholderText}>
-                                                    {service.category.charAt(0)}
-                                                </Text>
-                                            </View>
-                                        )}
-                                        <View style={styles.serviceInfo}>
-                                            <Text
-                                                style={[styles.serviceTitle, { color: textColor }]}
-                                                numberOfLines={2}
-                                            >
-                                                {service.title}
-                                            </Text>
-                                            <Text style={styles.servicePrice}>
-                                                {service.priceFormatted}
-                                            </Text>
-                                        </View>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        ) : (
-                            <View style={[styles.emptySection, { backgroundColor: cardBg, borderColor }]}>
-                                <Briefcase size={32} color={mutedColor} strokeWidth={1.5} />
-                                <Text style={[styles.emptyText, { color: mutedColor }]}>
-                                    You haven't created any services yet
+                {/* Tabs: Portfolio | Services | Reviews — pill style */}
+                <Animated.View entering={FadeInDown.delay(200)}>
+                    <View style={styles.tabsContainer}>
+                        {(["portfolio", "services", "reviews"] as const).map((tab) => (
+                            <Pressable
+                                key={tab}
+                                style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setActiveTab(tab);
+                                }}
+                            >
+                                <Text style={[styles.tabPillText, activeTab === tab && styles.tabPillTextActive]}>
+                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
                                 </Text>
+                            </Pressable>
+                        ))}
+                    </View>
+                </Animated.View>
+
+                {/* Grid content based on active tab */}
+                {loading ? (
+                    <View style={{ padding: 40, alignItems: "center" }}>
+                        <ActivityIndicator color={ACCENT} />
+                    </View>
+                ) : activeTab === "portfolio" ? (
+                    <View style={styles.grid}>
+                        {portfolioItems.length > 0 ? portfolioItems.map((item, idx) => (
+                            <Pressable
+                                key={item.id || idx}
+                                style={styles.gridItem}
+                                onPress={() => {
+                                    if (item.title) router.push(`/service/${item.id}` as any);
+                                    else router.push(`/reel/${item.id}` as any);
+                                }}
+                            >
+                                {(item.imageUrl || item.mediaUrl) ? (
+                                    <Image source={{ uri: item.imageUrl || item.mediaUrl }} style={styles.gridImg} contentFit="cover" />
+                                ) : (
+                                    <LinearGradient colors={["#1a2a10", "#0b0b0f"]} style={styles.gridImg} />
+                                )}
+                                <LinearGradient
+                                    colors={["transparent", "rgba(0,0,0,0.8)"]}
+                                    style={styles.gridOverlay}
+                                />
+                                {/* Like/comment overlay counts — Figma style */}
+                                <View style={styles.gridStats}>
+                                    <View style={styles.gridStatRow}>
+                                        <Ionicons name="heart" size={10} color={TEXT} />
+                                        <Text style={styles.gridStatText}>
+                                            {["2.4K", "1.8K", "3.1K", "950", "2.1K", "1.4K"][idx] || "0"}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.gridStatRow}>
+                                        <Ionicons name="chatbubble" size={10} color={TEXT} />
+                                        <Text style={styles.gridStatText}>
+                                            {["189", "134", "256", "78", "167", "112"][idx] || "0"}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+                        )) : (
+                            <View style={styles.emptyGrid}>
+                                <Ionicons name="images-outline" size={32} color={TEXT_MUTED} />
+                                <Text style={styles.emptyText}>No portfolio items yet</Text>
                                 <Pressable
-                                    onPress={handleCreateService}
-                                    style={[styles.createButton, { backgroundColor: accentColor }]}
+                                    style={styles.createBtn}
+                                    onPress={() => router.push("/(tabs)/create" as any)}
                                 >
-                                    <Plus size={18} color="#FFF" strokeWidth={2.5} />
-                                    <Text style={styles.createButtonText}>Create Service</Text>
+                                    <Text style={styles.createBtnText}>Create Service</Text>
                                 </Pressable>
                             </View>
                         )}
-
-                        {services.length > 0 && (
+                    </View>
+                ) : activeTab === "services" ? (
+                    <View style={styles.grid}>
+                        {services.length > 0 ? services.map((svc) => (
                             <Pressable
-                                onPress={handleCreateService}
-                                style={[styles.addServiceButton, { borderColor: accentColor }]}
+                                key={svc.id}
+                                style={styles.gridItem}
+                                onPress={() => router.push(`/service/${svc.id}` as any)}
                             >
-                                <Plus size={18} color={accentColor} strokeWidth={2.5} />
-                                <Text style={[styles.addServiceText, { color: accentColor }]}>
-                                    Add New Service
-                                </Text>
+                                {svc.imageUrl ? (
+                                    <Image source={{ uri: svc.imageUrl }} style={styles.gridImg} contentFit="cover" />
+                                ) : (
+                                    <LinearGradient colors={["#1a2a10", "#0b0b0f"]} style={styles.gridImg} />
+                                )}
+                                <LinearGradient
+                                    colors={["transparent", "rgba(0,0,0,0.8)"]}
+                                    style={styles.gridOverlay}
+                                />
+                                <View style={styles.gridInfo}>
+                                    <Text style={styles.gridTitle} numberOfLines={2}>{svc.title}</Text>
+                                    <Text style={styles.gridPrice}>
+                                        {svc.priceFormatted || `$${Math.round((svc.price || 0) / 100)}`}
+                                    </Text>
+                                </View>
                             </Pressable>
+                        )) : (
+                            <View style={styles.emptyGrid}>
+                                <Ionicons name="briefcase-outline" size={32} color={TEXT_MUTED} />
+                                <Text style={styles.emptyText}>No services yet</Text>
+                            </View>
                         )}
+                    </View>
+                ) : (
+                    <View style={styles.emptyGrid}>
+                        <Ionicons name="star-outline" size={32} color={TEXT_MUTED} />
+                        <Text style={styles.emptyText}>No reviews yet</Text>
+                        <Text style={styles.emptySubtext}>Reviews from clients will appear here</Text>
                     </View>
                 )}
 
-                {/* Logout Button */}
-                <Pressable
-                    onPress={handleLogout}
-                    style={[styles.logoutButton, { backgroundColor: "rgba(214,64,64,0.1)" }]}
-                >
-                    <LogOut size={18} color="#D64040" strokeWidth={2} />
-                    <Text style={[styles.logoutText, { color: "#D64040" }]}>
-                        Sign Out
-                    </Text>
-                </Pressable>
+                {/* Sign out */}
+                <View style={styles.signOutSection}>
+                    <Pressable onPress={handleLogout} style={styles.signOutBtn}>
+                        <LogOut size={18} color="#ef4444" strokeWidth={2} />
+                        <Text style={styles.signOutText}>Sign out</Text>
+                    </Pressable>
+                </View>
 
-                <View style={{ height: 120 }} />
+                <View style={{ height: 100 }} />
             </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
+    container: { flex: 1, backgroundColor: BG },
+
+    headerSafe: { paddingHorizontal: 20 },
+    headerRow: {
+        flexDirection: "row", justifyContent: "space-between",
+        alignItems: "center", paddingTop: 8, paddingBottom: 16,
     },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 24,
-        paddingVertical: 18,
-        borderBottomWidth: 0,
+    headerTitle: { color: TEXT, fontSize: 22, fontWeight: "900" },
+    headerActions: { flexDirection: "row", gap: 10 },
+    iconBtn: {
+        width: 40, height: 40, borderRadius: 14, backgroundColor: ELEVATED,
+        justifyContent: "center", alignItems: "center",
+        borderWidth: 1, borderColor: BORDER,
     },
-    headerTitle: {
-        fontSize: 34,
-        fontWeight: "700",
-        letterSpacing: -0.5,
-    },
-    headerButtons: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    themeButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    errorBanner: {
-        backgroundColor: "rgba(214,64,64,0.08)",
-        padding: 18,
-        borderRadius: 18,
-        marginBottom: 20,
-        alignItems: "center",
-    },
-    errorText: {
-        color: "#D64040",
-        fontSize: 15,
-        textAlign: "center",
-    },
-    retryLink: {
-        marginTop: 10,
-    },
-    retryLinkText: {
-        color: "#D64040",
-        fontSize: 14,
-        fontWeight: "600",
-        textDecorationLine: "underline",
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: 24,
-    },
-    profileCardBlur: {
-        borderRadius: 24,
-        overflow: "hidden",
-    },
+
+    // Profile card — single card per Figma layout.builder(11)
     profileCard: {
-        borderRadius: 26,
-        borderWidth: 0,
-        padding: 24,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 24,
-        elevation: 5,
+        marginHorizontal: 20, backgroundColor: SURFACE, borderRadius: 22,
+        padding: 20, alignItems: "center", marginBottom: 16,
+        borderWidth: 1, borderColor: BORDER,
     },
-    profileHeader: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        marginBottom: 24,
+    avatarWrap: { position: "relative", marginBottom: 14 },
+    avatar: { width: 80, height: 80, borderRadius: 40, overflow: "hidden" },
+    avatarInitials: { color: "#0b0b0f", fontSize: 26, fontWeight: "900" },
+    onlineDot: {
+        position: "absolute", bottom: 2, right: 2,
+        width: 16, height: 16, borderRadius: 8,
+        backgroundColor: "#22c55e", borderWidth: 2, borderColor: SURFACE,
     },
-    avatarContainer: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        overflow: "hidden",
-        borderWidth: 3,
-        borderColor: "#111111",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 4,
+
+    profileName: { color: TEXT, fontSize: 20, fontWeight: "900", letterSpacing: -0.3, marginBottom: 2 },
+    profileRole: { color: TEXT_MUTED, fontSize: 14, fontWeight: "600", marginBottom: 8 },
+    locationRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 4 },
+    locationText: { color: TEXT_MUTED, fontSize: 13 },
+    websiteRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 10 },
+    websiteText: { color: ACCENT, fontSize: 13, fontWeight: "600" },
+    bio: { color: TEXT_SEC, fontSize: 13, lineHeight: 19, textAlign: "center", marginBottom: 16, paddingHorizontal: 10 },
+
+    actionBtns: { flexDirection: "row", gap: 10, width: "100%", marginBottom: 16 },
+    msgBtn: {
+        flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+        gap: 8, paddingVertical: 12, borderRadius: 14,
+        backgroundColor: ACCENT,
     },
-    avatar: {
-        width: "100%",
-        height: "100%",
+    msgBtnText: { color: "#0b0b0f", fontSize: 14, fontWeight: "800" },
+    followBtn: {
+        flex: 1, paddingVertical: 12, borderRadius: 14,
+        backgroundColor: "rgba(255,255,255,0.06)",
+        borderWidth: 1, borderColor: BORDER, alignItems: "center",
     },
-    avatarPlaceholder: {
-        backgroundColor: "#111111",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    avatarText: {
-        color: "#FFF",
-        fontSize: 38,
-        fontWeight: "700",
-    },
-    profileInfo: {
-        flex: 1,
-        marginLeft: 16,
-        paddingTop: 6,
-    },
-    displayName: {
-        fontSize: 26,
-        fontWeight: "700",
-        marginBottom: 4,
-        letterSpacing: -0.3,
-    },
-    username: {
-        fontSize: 15,
-        fontWeight: "500",
-        marginBottom: 8,
-    },
-    roleRow: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    roleText: {
-        fontSize: 13,
-        fontWeight: "600",
-    },
-    settingsButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    bio: {
-        fontSize: 16,
-        lineHeight: 26,
-        marginBottom: 16,
-    },
-    location: {
-        fontSize: 14,
-        marginBottom: 20,
-    },
+    followBtnText: { color: TEXT, fontSize: 14, fontWeight: "700" },
+
+    // Stats inside card
     statsRow: {
-        flexDirection: "row",
-        gap: 14,
-        marginBottom: 24,
+        flexDirection: "row", width: "100%",
+        paddingTop: 16, borderTopWidth: 1, borderTopColor: BORDER,
     },
-    statItem: {
-        flex: 1,
-        borderRadius: 20,
-        padding: 18,
-        alignItems: "center",
-        gap: 8,
+    stat: { flex: 1, alignItems: "center" },
+    statValue: { color: TEXT, fontSize: 16, fontWeight: "900", marginBottom: 2 },
+    statLabel: { color: TEXT_MUTED, fontSize: 11, fontWeight: "500" },
+    statDivider: { width: 1, backgroundColor: BORDER },
+
+    // Earnings card
+    earningsCard: {
+        marginHorizontal: 20, marginBottom: 20, borderRadius: 22, padding: 18,
+        borderWidth: 1, borderColor: "rgba(163,255,63,0.15)", overflow: "hidden",
     },
-    statValue: {
-        fontSize: 22,
-        fontWeight: "700",
+    earningsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+    earningsLabel: { color: TEXT_MUTED, fontSize: 13, fontWeight: "500", marginBottom: 4 },
+    earningsAmount: { color: TEXT, fontSize: 28, fontWeight: "900", letterSpacing: -0.5 },
+    earningsTrend: {
+        flexDirection: "row", alignItems: "center", gap: 4,
+        backgroundColor: "rgba(163,255,63,0.1)", paddingHorizontal: 10, paddingVertical: 6,
+        borderRadius: 99,
     },
-    statLabel: {
-        fontSize: 12,
-        fontWeight: "500",
-    },
-    editButton: {
-        paddingVertical: 16,
-        borderRadius: 18,
-        borderWidth: 0,
-        alignItems: "center",
-    },
-    editButtonText: {
-        fontSize: 16,
-        fontWeight: "600",
-    },
-    section: {
-        marginTop: 28,
-    },
+    earningsStats: { flexDirection: "row", gap: 24 },
+    earningsStat: {},
+    earningsStatNum: { color: TEXT, fontSize: 18, fontWeight: "900" },
+    earningsStatLabel: { color: TEXT_MUTED, fontSize: 12 },
+
+    // Highlight Reels section
+    highlightSection: { paddingLeft: 20, marginBottom: 24 },
     sectionHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        marginBottom: 16,
-        paddingHorizontal: 4,
+        flexDirection: "row", justifyContent: "space-between",
+        alignItems: "center", marginBottom: 14, paddingRight: 20,
     },
-    sectionTitle: {
-        flex: 1,
-        fontSize: 20,
-        fontWeight: "700",
+    sectionTitle: { color: TEXT, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
+    seeAll: { color: ACCENT, fontSize: 13, fontWeight: "700" },
+
+    highlightCard: {
+        width: HIGHLIGHT_W, height: HIGHLIGHT_W * 1.35, borderRadius: 16,
+        overflow: "hidden", position: "relative",
     },
-    sectionCount: {
-        fontSize: 14,
-        fontWeight: "600",
+    highlightImg: { width: "100%", height: "100%" },
+    highlightOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: "60%" },
+    highlightInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
+    highlightTitle: { color: TEXT, fontSize: 12, fontWeight: "800", marginBottom: 4 },
+    highlightViews: { flexDirection: "row", alignItems: "center", gap: 4 },
+    highlightViewsText: { color: TEXT_SEC, fontSize: 10, fontWeight: "600" },
+
+    // Tabs — pill style per Figma
+    tabsContainer: {
+        flexDirection: "row", marginHorizontal: 20, marginBottom: 16,
+        backgroundColor: SURFACE, borderRadius: 14, padding: 4,
     },
-    servicesGrid: {
-        gap: 14,
+    tabPill: {
+        flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: "center",
     },
-    serviceCard: {
-        flexDirection: "row",
-        borderRadius: 22,
-        borderWidth: 0,
-        overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.06,
-        shadowRadius: 14,
-        elevation: 3,
+    tabPillActive: { backgroundColor: ACCENT },
+    tabPillText: { color: TEXT_MUTED, fontSize: 13, fontWeight: "700" },
+    tabPillTextActive: { color: "#0b0b0f" },
+
+    // Grid
+    grid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 20, gap: 12 },
+    gridItem: { width: ITEM_W, height: ITEM_W * 1.2, borderRadius: 16, overflow: "hidden", position: "relative" },
+    gridImg: { width: "100%", height: "100%" },
+    gridOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: "60%" },
+    gridInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
+    gridTitle: { color: TEXT, fontSize: 12, fontWeight: "700", marginBottom: 2 },
+    gridPrice: { color: ACCENT, fontSize: 12, fontWeight: "800" },
+
+    // Grid stats overlay (like/comment counts)
+    gridStats: {
+        position: "absolute", bottom: 8, left: 8, right: 8,
+        flexDirection: "row", gap: 10,
     },
-    serviceImage: {
-        width: 110,
-        height: 88,
+    gridStatRow: { flexDirection: "row", alignItems: "center", gap: 3 },
+    gridStatText: { color: TEXT, fontSize: 10, fontWeight: "700" },
+
+    // Empty states
+    emptyGrid: {
+        width: "100%", paddingVertical: 40, alignItems: "center", gap: 12,
+        paddingHorizontal: 20,
     },
-    servicePlaceholder: {
-        alignItems: "center",
-        justifyContent: "center",
+    emptyText: { color: TEXT_MUTED, fontSize: 15 },
+    emptySubtext: { color: TEXT_SUBTLE, fontSize: 13 },
+    createBtn: {
+        backgroundColor: ACCENT, paddingHorizontal: 20, paddingVertical: 10,
+        borderRadius: 12,
     },
-    servicePlaceholderText: {
-        color: "#FFF",
-        fontSize: 24,
-        fontWeight: "700",
+    createBtnText: { color: "#0b0b0f", fontSize: 14, fontWeight: "800" },
+
+    signOutSection: { paddingHorizontal: 20, paddingTop: 28 },
+    signOutBtn: {
+        flexDirection: "row", alignItems: "center", gap: 10,
+        backgroundColor: "rgba(239,68,68,0.08)", paddingVertical: 16, paddingHorizontal: 20,
+        borderRadius: 16, borderWidth: 1, borderColor: "rgba(239,68,68,0.2)",
     },
-    serviceInfo: {
-        flex: 1,
-        padding: 14,
-        justifyContent: "center",
-    },
-    serviceTitle: {
-        fontSize: 16,
-        fontWeight: "600",
-        marginBottom: 6,
-    },
-    servicePrice: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: "#111111",
-    },
-    emptySection: {
-        borderRadius: 24,
-        borderWidth: 0,
-        padding: 36,
-        alignItems: "center",
-        gap: 14,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.05,
-        shadowRadius: 14,
-        elevation: 3,
-    },
-    emptyText: {
-        fontSize: 16,
-        textAlign: "center",
-        lineHeight: 24,
-    },
-    createButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        borderRadius: 18,
-        marginTop: 10,
-    },
-    createButtonText: {
-        color: "#FFF",
-        fontSize: 15,
-        fontWeight: "600",
-    },
-    addServiceButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        paddingVertical: 16,
-        borderRadius: 18,
-        borderWidth: 2,
-        marginTop: 14,
-    },
-    addServiceText: {
-        fontSize: 15,
-        fontWeight: "600",
-    },
-    logoutButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        marginTop: 28,
-        paddingVertical: 18,
-        borderRadius: 22,
-    },
-    logoutText: {
-        fontSize: 16,
-        fontWeight: "600",
-    },
+    signOutText: { color: "#ef4444", fontSize: 15, fontWeight: "700" },
 });

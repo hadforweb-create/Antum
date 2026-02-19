@@ -24,21 +24,26 @@ import {
 import { useThemeStore, useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { clearToken } from "@/lib/auth/token";
-import { colors, shadows } from "@/lib/theme";
 import { toast } from "@/lib/ui/toast";
+import * as Haptics from "expo-haptics";
+
+// Design system constants
+const BG = "#0b0b0f";
+const SURFACE = "#131316";
+const ELEVATED = "#1a1a1e";
+const ACCENT = "#a3ff3f";
+const TEXT = "#FFFFFF";
+const TEXT_SEC = "rgba(255,255,255,0.7)";
+const TEXT_MUTED = "rgba(255,255,255,0.5)";
+const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
+const BORDER = "rgba(255,255,255,0.06)";
+const INPUT_BG = "rgba(255,255,255,0.06)";
 
 export default function SettingsScreen() {
     const { isDark, toggleTheme } = useThemeStore();
     const { user, logout } = useAuthStore();
     const router = useRouter();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-
-    const bg = isDark ? "#121210" : "#F5F3EE";
-    const cardBg = isDark ? "#1C1C1A" : "#FFFFFF";
-    const textColor = isDark ? "#F5F3EE" : "#111111";
-    const subtitleColor = isDark ? "#8E8E8A" : "#6B6B67";
-    const borderColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-    const accentColor = colors.primary;
 
     const handleLogout = () => {
         Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -51,7 +56,7 @@ export default function SettingsScreen() {
                         await supabase.auth.signOut();
                         await clearToken();
                         logout();
-                        router.replace("/(auth)/onboarding" as any);
+                        router.replace("/(auth)/SignInScreen" as any);
                     } catch {
                         toast.error("Failed to log out");
                     }
@@ -92,23 +97,28 @@ export default function SettingsScreen() {
         delay: number
     ) => (
         <Animated.View entering={FadeInDown.delay(delay).duration(400)} style={{ marginBottom: 24 }}>
-            <Text style={[styles.sectionTitle, { color: subtitleColor }]}>{title}</Text>
-            <View style={[styles.card, { backgroundColor: cardBg }, shadows.md]}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={styles.card}>
                 {items.map((item, i) => (
                     <Pressable
                         key={i}
                         style={[
                             styles.row,
-                            i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: borderColor },
+                            i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: BORDER },
                         ]}
-                        onPress={item.onPress}
+                        onPress={() => {
+                            if (item.onPress) {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                item.onPress();
+                            }
+                        }}
                         disabled={!!item.toggle}
                     >
                         <View style={styles.rowLeft}>
-                            <View style={[styles.iconBox, { backgroundColor: item.danger ? "rgba(214,64,64,0.1)" : (isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)") }]}>
+                            <View style={[styles.iconBox, { backgroundColor: item.danger ? "rgba(239,68,68,0.1)" : INPUT_BG }]}>
                                 {item.icon}
                             </View>
-                            <Text style={[styles.rowLabel, { color: item.danger ? "#D64040" : textColor }]}>
+                            <Text style={[styles.rowLabel, item.danger && { color: "#EF4444" }]}>
                                 {item.label}
                             </Text>
                         </View>
@@ -116,13 +126,13 @@ export default function SettingsScreen() {
                             <Switch
                                 value={item.toggleValue}
                                 onValueChange={item.onToggle}
-                                trackColor={{ false: "#767577", true: accentColor }}
-                                thumbColor="#FFF"
+                                trackColor={{ false: "#767577", true: ACCENT }}
+                                thumbColor={TEXT}
                             />
                         ) : item.value ? (
-                            <Text style={[styles.rowValue, { color: subtitleColor }]}>{item.value}</Text>
+                            <Text style={styles.rowValue}>{item.value}</Text>
                         ) : (
-                            <ChevronRight size={18} color={subtitleColor} />
+                            <ChevronRight size={18} color={TEXT_SUBTLE} />
                         )}
                     </Pressable>
                 ))}
@@ -131,20 +141,26 @@ export default function SettingsScreen() {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
             {/* Header */}
             <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.backButton}>
-                    <ArrowLeft size={22} color={textColor} strokeWidth={2} />
+                <Pressable
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        router.back();
+                    }}
+                    style={styles.backButton}
+                >
+                    <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
                 </Pressable>
-                <Text style={[styles.headerTitle, { color: textColor }]}>Settings</Text>
+                <Text style={styles.headerTitle}>Settings</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 {renderSection("Account", [
                     {
-                        icon: <User size={18} color={accentColor} strokeWidth={2} />,
+                        icon: <User size={18} color={ACCENT} strokeWidth={2} />,
                         label: "Display Name",
                         value: user?.name || user?.displayName || "Not set",
                         onPress: () => router.push("/profile/edit" as any),
@@ -153,14 +169,14 @@ export default function SettingsScreen() {
 
                 {renderSection("Preferences", [
                     {
-                        icon: <Moon size={18} color={accentColor} strokeWidth={2} />,
+                        icon: <Moon size={18} color={ACCENT} strokeWidth={2} />,
                         label: "Dark Mode",
                         toggle: true,
                         toggleValue: isDark,
                         onToggle: toggleTheme,
                     },
                     {
-                        icon: <Bell size={18} color={accentColor} strokeWidth={2} />,
+                        icon: <Bell size={18} color={ACCENT} strokeWidth={2} />,
                         label: "Push Notifications",
                         toggle: true,
                         toggleValue: notificationsEnabled,
@@ -170,7 +186,7 @@ export default function SettingsScreen() {
 
                 {renderSection("Privacy & Security", [
                     {
-                        icon: <Shield size={18} color={accentColor} strokeWidth={2} />,
+                        icon: <Shield size={18} color={ACCENT} strokeWidth={2} />,
                         label: "Blocked Users",
                         onPress: () => toast.info("Blocked users management coming soon"),
                     },
@@ -178,20 +194,20 @@ export default function SettingsScreen() {
 
                 {renderSection("Danger Zone", [
                     {
-                        icon: <LogOut size={18} color="#D64040" strokeWidth={2} />,
+                        icon: <LogOut size={18} color="#EF4444" strokeWidth={2} />,
                         label: "Log Out",
                         onPress: handleLogout,
                         danger: true,
                     },
                     {
-                        icon: <Trash2 size={18} color="#D64040" strokeWidth={2} />,
+                        icon: <Trash2 size={18} color="#EF4444" strokeWidth={2} />,
                         label: "Delete Account",
                         onPress: handleDeleteAccount,
                         danger: true,
                     },
                 ], 400)}
 
-                <Text style={[styles.version, { color: subtitleColor }]}>BAYSIS v1.0.0</Text>
+                <Text style={styles.version}>BAYSIS v1.0.0</Text>
             </ScrollView>
         </SafeAreaView>
     );
@@ -200,6 +216,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: BG,
     },
     header: {
         flexDirection: "row",
@@ -207,21 +224,28 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         paddingHorizontal: 20,
         paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER,
     },
     backButton: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: 14,
         alignItems: "center",
         justifyContent: "center",
+        backgroundColor: ELEVATED,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     headerTitle: {
         fontSize: 20,
-        fontWeight: "700",
-        letterSpacing: -0.2,
+        fontWeight: "900",
+        color: TEXT,
+        letterSpacing: -0.3,
     },
     content: {
         paddingHorizontal: 20,
+        paddingTop: 24,
         paddingBottom: 40,
     },
     sectionTitle: {
@@ -231,10 +255,14 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
         marginBottom: 10,
         marginLeft: 4,
+        color: TEXT_SUBTLE,
     },
     card: {
         borderRadius: 22,
         overflow: "hidden",
+        backgroundColor: SURFACE,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
     row: {
         flexDirection: "row",
@@ -258,13 +286,16 @@ const styles = StyleSheet.create({
     rowLabel: {
         fontSize: 16,
         fontWeight: "500",
+        color: TEXT,
     },
     rowValue: {
         fontSize: 15,
+        color: TEXT_MUTED,
     },
     version: {
         textAlign: "center",
         fontSize: 13,
         marginTop: 32,
+        color: TEXT_SUBTLE,
     },
 });
