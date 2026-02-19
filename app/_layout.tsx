@@ -72,7 +72,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <View style={{ flex: 1, backgroundColor: isDark ? "#121210" : "#F5F3EE" }}>
+          <View style={{ flex: 1, backgroundColor: isDark ? "#0b0b0f" : "#F5F3EE" }}>
             <Slot />
             <GlobalToast />
             <OfflineBanner />

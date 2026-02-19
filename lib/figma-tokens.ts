@@ -1,6 +1,6 @@
 /**
  * Auto-generated from Figma — BAYSIS LAST DESIGN
- * Generated: 2026-02-17T22:55:40.206Z
+ * Generated: 2026-02-17T23:30:10.121Z
  * File ID: 6DJl6TjKsqDOA49z3A8vBv
  *
  * DO NOT EDIT MANUALLY — run `npm run figma:sync` to regenerate
@@ -133,8 +133,8 @@ export const figmaRadii = {
   "3xl": 22,
   "4xl": 24,
   "pill": 28,
-  "jumbo": 40,
-  full: 9999,
+  "r40": 40,
+  "full": 9999,
 } as const;
 
 // ── Font Families ───────────────────────────────────────────────────
@@ -143,11 +143,11 @@ export const figmaFonts = ["Inter"] as const;
 // ── Gradients ───────────────────────────────────────────────────────
 export const figmaGradients = {
   accentPrimary: ["#84cc16", "#65a30d", "#4d7c0f"],
-  accentSecondary: ["#f97316", "#ea580c", "#c2410c"],
-  accentTertiary: ["#84cc16", "#4d7c0f"],
-  purple: ["#84cc16", "#65a30d"],
-  orange: ["#a3ff3f", "#65a30d"],
-  warmDark: ["#1a2a0e", "#0f1a08"],
+  accentSecondary: ["#a855f7", "#9333ea", "#7e22ce"],
+  accentTertiary: ["#f97316", "#ea580c", "#c2410c"],
+  purple: ["#84cc16", "#4d7c0f"],
+  orange: ["#84cc16", "#65a30d"],
+  warmDark: ["#a3ff3f", "#65a30d"],
 } as const;
 
 // ── Shadows (React Native) ───────────────────────────────────────────

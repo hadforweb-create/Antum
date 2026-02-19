@@ -27,7 +27,7 @@ import {
     markAllRead,
     NotificationItem,
 } from "@/lib/api/notifications";
-import { colors, shadows } from "@/lib/theme";
+import { useFigmaColors } from "@/lib/figma-colors";
 import { toast } from "@/lib/ui/toast";
 
 const ICON_MAP: Record<string, { icon: typeof Heart; color: string }> = {
@@ -41,14 +41,15 @@ const ICON_MAP: Record<string, { icon: typeof Heart; color: string }> = {
 export default function NotificationsScreen() {
     const { isDark } = useThemeStore();
     const router = useRouter();
+    const c = useFigmaColors();
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const bg = isDark ? "#121210" : "#F5F3EE";
-    const cardBg = isDark ? "#1C1C1A" : "#FFFFFF";
-    const textColor = isDark ? "#F5F3EE" : "#111111";
-    const subtitleColor = isDark ? "#8E8E8A" : "#6B6B67";
+    const bg = c.bg;
+    const cardBg = c.cardBg;
+    const textColor = c.text;
+    const subtitleColor = c.textMuted;
     const unreadBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)";
 
     const fetchNotifications = useCallback(async () => {
@@ -151,7 +152,7 @@ export default function NotificationsScreen() {
                             {formatTime(item.created_at)}
                         </Text>
                     </View>
-                    {isUnread && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
+                    {isUnread && <View style={[styles.unreadDot, { backgroundColor: c.accent }]} />}
                 </Pressable>
             </Animated.View>
         );
@@ -177,13 +178,13 @@ export default function NotificationsScreen() {
                 </Pressable>
                 <Text style={[styles.headerTitle, { color: textColor }]}>Notifications</Text>
                 <Pressable onPress={handleMarkAllRead} style={styles.markReadButton}>
-                    <CheckCheck size={20} color={colors.primary} strokeWidth={2} />
+                    <CheckCheck size={20} color={c.accent} strokeWidth={2} />
                 </Pressable>
             </View>
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size="large" color={c.accent} />
                 </View>
             ) : (
                 <FlatList
@@ -192,7 +193,7 @@ export default function NotificationsScreen() {
                     renderItem={renderItem}
                     ListEmptyComponent={renderEmpty}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={c.accent} />
                     }
                     contentContainerStyle={notifications.length === 0 ? styles.emptyList : undefined}
                 />
