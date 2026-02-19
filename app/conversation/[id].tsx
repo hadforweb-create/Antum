@@ -15,8 +15,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Send, AlertCircle } from "lucide-react-native";
+import { ArrowLeft, Send, AlertCircle, ImagePlus, Check, CheckCheck } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import Animated, { FadeIn, FadeInUp, SlideInRight } from "react-native-reanimated";
 import { useAuthStore, useThemeStore } from "@/lib/store";
 import {
@@ -27,10 +28,13 @@ import {
     MessageResponse,
 } from "@/lib/api/conversations";
 import { colors } from "@/lib/theme";
+import { toast } from "@/lib/ui/toast";
+import { useTranslation } from "@/lib/i18n";
 
 export default function ChatScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const { t } = useTranslation();
     const { user } = useAuthStore();
     const { isDark } = useThemeStore();
 
@@ -258,14 +262,23 @@ export default function ChatScreen() {
                         >
                             {item.text}
                         </Text>
-                        <Text
-                            style={[
-                                styles.messageTime,
-                                isOwnMessage ? styles.ownMessageTime : styles.otherMessageTime,
-                            ]}
-                        >
-                            {formatTime(item.createdAt)}
-                        </Text>
+                        <View style={styles.messageFooter}>
+                            <Text
+                                style={[
+                                    styles.messageTime,
+                                    isOwnMessage ? styles.ownMessageTime : styles.otherMessageTime,
+                                ]}
+                            >
+                                {formatTime(item.createdAt)}
+                            </Text>
+                            {isOwnMessage && (
+                                item.id.startsWith("temp-") ? (
+                                    <Check size={14} color="rgba(255,255,255,0.5)" strokeWidth={2} />
+                                ) : (
+                                    <CheckCheck size={14} color="#a3ff3f" strokeWidth={2} />
+                                )
+                            )}
+                        </View>
                     </View>
                 </Animated.View>
             </View>
@@ -388,9 +401,25 @@ export default function ChatScreen() {
 
                 {/* Input */}
                 <View style={[styles.inputContainer, isDark && styles.inputContainerDark]}>
+                    <Pressable
+                        onPress={async () => {
+                            const result = await ImagePicker.launchImageLibraryAsync({
+                                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                quality: 0.8,
+                                allowsEditing: true,
+                            });
+                            if (!result.canceled && result.assets[0]) {
+                                // TODO: Upload image and send as message
+                                toast.info("Image sharing coming soon!");
+                            }
+                        }}
+                        style={styles.attachButton}
+                    >
+                        <ImagePlus size={22} color={isDark ? "#8E8E8A" : "#888"} strokeWidth={2} />
+                    </Pressable>
                     <TextInput
                         style={[styles.input, isDark && styles.inputDark]}
-                        placeholder="Type a message..."
+                        placeholder={t("messages.typeMessage")}
                         placeholderTextColor={isDark ? "#8E8E8A" : "#C7C7CC"}
                         value={inputText}
                         onChangeText={setInputText}
@@ -610,6 +639,13 @@ const styles = StyleSheet.create({
         fontSize: 11,
         marginTop: 4,
     },
+    messageFooter: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: 4,
+        marginTop: 4,
+    },
     ownMessageTime: {
         color: "rgba(255,255,255,0.7)",
         textAlign: "right",
@@ -656,5 +692,12 @@ const styles = StyleSheet.create({
     },
     sendButtonDisabled: {
         opacity: 0.5,
+    },
+    attachButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
     },
 });

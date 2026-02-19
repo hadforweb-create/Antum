@@ -19,21 +19,14 @@ import * as Haptics from "expo-haptics";
 import { useAuthStore } from "@/lib/store";
 import { getServices } from "@/lib/api/services";
 import { toast } from "@/lib/ui/toast";
+import { useTranslation } from "@/lib/i18n";
+
+import { useThemeColors } from "@/lib/hooks/useThemeColors";
 
 const { width: W } = Dimensions.get("window");
 
-// Figma Premium Freelance Marketplace design tokens
-const BG = "#0b0b0f";
-const SURFACE = "#131316";
-const ELEVATED = "#1a1a1e";
-const ACCENT = "#a3ff3f";
-const TEXT = "#FFFFFF";
-const TEXT_SEC = "rgba(255,255,255,0.7)";
-const TEXT_MUTED = "rgba(255,255,255,0.5)";
-const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
-const BORDER = "rgba(255,255,255,0.06)";
+const CATEGORY_KEYS = ["all", "design", "dev", "marketing", "writing", "video", "3d", "ai"];
 
-const CATEGORIES = ["All", "Design", "Dev", "Marketing", "Writing", "Video", "3D", "AI"];
 
 const TOP_CREATORS = [
     { id: "1", name: "Sarah M.", category: "Brand", initials: "SM", verified: true },
@@ -44,21 +37,26 @@ const TOP_CREATORS = [
     { id: "6", name: "Alex R.", category: "AI", initials: "AR", verified: true },
 ];
 
+
 // Popular Categories from Figma layout.builder (7)
 const POPULAR_CATEGORIES = [
-    { emoji: "🎨", title: "Brand Design", count: "2.4K" },
-    { emoji: "💻", title: "Web Dev", count: "1.8K" },
-    { emoji: "🤖", title: "AI / ML", count: "956" },
-    { emoji: "🎬", title: "Video Edit", count: "1.2K" },
+    { emoji: "🎨", key: "design", count: "2.4K" },
+    { emoji: "💻", key: "dev", count: "1.8K" },
+    { emoji: "🤖", key: "ai", count: "956" },
+    { emoji: "🎬", key: "video", count: "1.2K" },
 ];
 
 // Trending badge types from Figma
-const BADGE_TYPES = ["Trending", "Hot", "New"] as const;
+const BADGE_KEYS = ["trending", "hot", "new"] as const;
+
 
 export default function DiscoverTab() {
     const router = useRouter();
     const { user } = useAuthStore();
-    const [selectedCat, setSelectedCat] = useState("All");
+    const { t } = useTranslation();
+    const c = useThemeColors();
+    const [selectedCat, setSelectedCat] = useState("all");
+
     const [services, setServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -66,7 +64,8 @@ export default function DiscoverTab() {
     const fetchServices = useCallback(async (category?: string) => {
         try {
             const params: any = { page: 1, limit: 10 };
-            if (category && category !== "All") params.category = category.toUpperCase();
+            if (category && category !== "all") params.category = category.toUpperCase();
+
             const res = await getServices(params);
             setServices(res.services || []);
         } catch (e: any) {
@@ -96,63 +95,78 @@ export default function DiscoverTab() {
     const recentlyViewed = services.slice(0, 5);
 
     return (
-        <View style={styles.container}>
-            <SafeAreaView edges={["top"]} style={styles.headerWrap}>
+        <View style={[styles.container, { backgroundColor: c.bg }]}>
+            <SafeAreaView edges={["top"]} style={[styles.headerWrap, { backgroundColor: c.bg, borderBottomColor: c.border }]}>
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.welcomeLabel}>Welcome back</Text>
-                        <Text style={styles.screenTitle}>Discover</Text>
+                        <Text style={[styles.welcomeLabel, { color: c.textMuted }]}>{t("home.welcomeBack")}</Text>
+                        <Text style={[styles.screenTitle, { color: c.text }]}>{t("home.discover")}</Text>
                     </View>
                     <View style={styles.headerActions}>
-                        <Pressable style={styles.iconBtn} onPress={() => router.push("/search" as any)}>
-                            <Ionicons name="search-outline" size={20} color={TEXT_SEC} />
+                        <Pressable style={[styles.iconBtn, { backgroundColor: c.elevated, borderColor: c.border }]} onPress={() => router.push("/search" as any)}>
+                            <Ionicons name="search-outline" size={20} color={c.textSecondary} />
                         </Pressable>
-                        <Pressable style={styles.iconBtn} onPress={() => router.push("/notifications" as any)}>
-                            <Ionicons name="notifications-outline" size={20} color={TEXT_SEC} />
-                            <View style={styles.notifDot} />
+                        <Pressable style={[styles.iconBtn, { backgroundColor: c.elevated, borderColor: c.border }]} onPress={() => router.push("/notifications" as any)}>
+                            <Ionicons name="notifications-outline" size={20} color={c.textSecondary} />
+                            <View style={[styles.notifDot, { backgroundColor: c.accent, shadowColor: c.accent }]} />
                         </Pressable>
                     </View>
                 </View>
+
 
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.catScroll}
                 >
-                    {CATEGORIES.map((cat) => (
-                        <Pressable
-                            key={cat}
-                            onPress={() => handleCategoryPress(cat)}
-                            style={[styles.catPill, selectedCat === cat && styles.catPillActive]}
-                        >
-                            <Text style={[styles.catText, selectedCat === cat && styles.catTextActive]}>
-                                {cat}
-                            </Text>
-                        </Pressable>
-                    ))}
+                    {CATEGORY_KEYS.map((catKey) => {
+                        const isActive = selectedCat === catKey;
+                        return (
+                            <Pressable
+                                key={catKey}
+                                onPress={() => handleCategoryPress(catKey)}
+                                style={[
+                                    styles.catPill,
+                                    { backgroundColor: c.elevated, borderColor: c.border },
+                                    isActive && { backgroundColor: c.accent, borderColor: c.accent }
+                                ]}
+                            >
+                                <Text style={[
+                                    styles.catText,
+                                    { color: c.textSecondary },
+                                    isActive && { color: "#0b0b0f" }
+                                ]}>
+                                    {t(`home.categories.${catKey}`)}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
                 </ScrollView>
+
             </SafeAreaView>
 
             {loading ? (
                 <View style={styles.loadingCenter}>
-                    <ActivityIndicator color={ACCENT} size="large" />
+                    <ActivityIndicator color={c.accent} size="large" />
                 </View>
             ) : (
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />
                     }
+
                     contentContainerStyle={styles.scrollContent}
                 >
                     {/* Featured */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionTitleRow}>
-                                <Ionicons name="sparkles" size={14} color={ACCENT} />
-                                <Text style={styles.sectionTitle}>Featured</Text>
+                                <Ionicons name="sparkles" size={14} color={c.accent} />
+                                <Text style={[styles.sectionTitle, { color: c.text }]}>{t("home.featured")}</Text>
                             </View>
                         </View>
+
 
                         {featured ? (
                             <Pressable
@@ -162,46 +176,47 @@ export default function DiscoverTab() {
                                 {featured.imageUrl ? (
                                     <Image source={{ uri: featured.imageUrl }} style={styles.featuredImage} resizeMode="cover" />
                                 ) : (
-                                    <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.featuredImage} />
+                                    <View style={[styles.featuredImage, { backgroundColor: c.elevated }]} />
                                 )}
                                 <LinearGradient
                                     colors={["transparent", "rgba(0,0,0,0.7)"]}
                                     style={styles.featuredOverlay}
                                 />
-                                <View style={styles.featuredBadge}>
+                                <View style={[styles.featuredBadge, { backgroundColor: c.accent }]}>
                                     <Ionicons name="flash" size={8} color="#000" />
-                                    <Text style={styles.featuredBadgeText}>FEATURED</Text>
+                                    <Text style={styles.featuredBadgeText}>{t("home.featured").toUpperCase()}</Text>
                                 </View>
-                                <View style={styles.featuredPrice}>
-                                    <Text style={styles.featuredPriceText}>
+                                <View style={[styles.featuredPrice, { borderColor: "rgba(255,255,255,0.15)" }]}>
+                                    <Text style={[styles.featuredPriceText, { color: "#FFFFFF" }]}>
                                         {featured.priceFormatted || `$${featured.price}`}
                                     </Text>
                                 </View>
-                                <View style={styles.featuredContent}>
-                                    <Text style={styles.featuredTitle} numberOfLines={1}>{featured.title}</Text>
+                                <View style={[styles.featuredContent, { backgroundColor: c.surface }]}>
+                                    <Text style={[styles.featuredTitle, { color: c.text }]} numberOfLines={1}>{featured.title}</Text>
                                     <View style={styles.featuredMeta}>
-                                        <View style={styles.avatarXS}>
+                                        <View style={[styles.avatarXS, { backgroundColor: c.accent }]}>
                                             <Text style={styles.avatarXSText}>
                                                 {(featured.user?.displayName || "U")[0]}
                                             </Text>
                                         </View>
-                                        <Text style={styles.featuredCreator}>
+                                        <Text style={[styles.featuredCreator, { color: c.textSecondary }]}>
                                             {featured.user?.displayName || "Creator"}
                                         </Text>
-                                        <Ionicons name="checkmark-circle" size={14} color={ACCENT} />
+                                        <Ionicons name="checkmark-circle" size={14} color={c.accent} />
                                         <View style={styles.ratingRow}>
-                                            <Ionicons name="star" size={12} color={ACCENT} />
-                                            <Text style={styles.ratingText}>4.9</Text>
+                                            <Ionicons name="star" size={12} color={c.accent} />
+                                            <Text style={[styles.ratingText, { color: c.textMuted }]}>4.9</Text>
                                         </View>
                                     </View>
                                 </View>
                             </Pressable>
                         ) : (
-                            <View style={styles.emptyCard}>
-                                <Ionicons name="briefcase-outline" size={28} color={TEXT_MUTED} />
-                                <Text style={{ color: TEXT_MUTED, marginTop: 8, fontSize: 14 }}>
-                                    No services yet
+                            <View style={[styles.emptyCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+                                <Ionicons name="briefcase-outline" size={28} color={c.textMuted} />
+                                <Text style={{ color: c.textMuted, marginTop: 8, fontSize: 14 }}>
+                                    {t("home.noServices")}
                                 </Text>
+
                             </View>
                         )}
                     </View>
@@ -209,9 +224,9 @@ export default function DiscoverTab() {
                     {/* Top Creators */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Top Creators</Text>
+                            <Text style={[styles.sectionTitle, { color: c.text }]}>{t("home.topCreators")}</Text>
                             <Pressable>
-                                <Text style={styles.seeAll}>See all</Text>
+                                <Text style={[styles.seeAll, { color: c.accent }]}>{t("common.seeAll")}</Text>
                             </Pressable>
                         </View>
                         <ScrollView
@@ -222,20 +237,21 @@ export default function DiscoverTab() {
                             {TOP_CREATORS.map((creator) => (
                                 <Pressable key={creator.id} style={styles.creatorCard}>
                                     <View style={styles.creatorAvatarWrap}>
-                                        <View style={styles.creatorAvatar}>
-                                            <Text style={styles.creatorInitials}>{creator.initials}</Text>
+                                        <View style={[styles.creatorAvatar, { backgroundColor: c.elevated, borderColor: c.border }]}>
+                                            <Text style={[styles.creatorInitials, { color: c.text }]}>{creator.initials}</Text>
                                         </View>
                                         {creator.verified && (
-                                            <View style={styles.verifiedBadge}>
+                                            <View style={[styles.verifiedBadge, { backgroundColor: c.accent, borderColor: c.bg }]}>
                                                 <Ionicons name="checkmark-sharp" size={8} color="#000" />
                                             </View>
                                         )}
                                     </View>
-                                    <Text style={styles.creatorName}>{creator.name}</Text>
-                                    <Text style={styles.creatorCat}>{creator.category}</Text>
+                                    <Text style={[styles.creatorName, { color: c.textSecondary }]}>{creator.name}</Text>
+                                    <Text style={[styles.creatorCat, { color: c.textSubtle }]}>{creator.category}</Text>
                                 </Pressable>
                             ))}
                         </ScrollView>
+
                     </View>
 
                     {/* Trending Now — with badges */}
@@ -243,57 +259,60 @@ export default function DiscoverTab() {
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionTitleRow}>
                                 <Ionicons name="flame" size={14} color="#f97316" />
-                                <Text style={styles.sectionTitle}>Trending Now</Text>
+                                <Text style={[styles.sectionTitle, { color: c.text }]}>{t("home.trendingNow")}</Text>
                             </View>
                             <Pressable onPress={() => router.push("/(tabs)/services" as any)}>
-                                <Text style={styles.seeAll}>View all</Text>
+                                <Text style={[styles.seeAll, { color: c.accent }]}>{t("common.viewAll")}</Text>
                             </Pressable>
                         </View>
+
 
                         {trending.length > 0 ? trending.map((svc, idx) => (
                             <Pressable
                                 key={svc.id}
-                                style={styles.trendingCard}
+                                style={[styles.trendingCard, { backgroundColor: c.surface, borderColor: c.border }]}
                                 onPress={() => router.push(`/service/${svc.id}` as any)}
                             >
                                 <View style={styles.trendingImgWrap}>
                                     {svc.imageUrl ? (
                                         <Image source={{ uri: svc.imageUrl }} style={styles.trendingImg} resizeMode="cover" />
                                     ) : (
-                                        <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.trendingImg} />
+                                        <View style={[styles.trendingImg, { backgroundColor: c.elevated }]} />
                                     )}
                                     {/* Trending badge */}
                                     <View style={[
                                         styles.trendingBadge,
+                                        { backgroundColor: c.accent },
                                         idx === 1 && { backgroundColor: "#ef4444" },
                                         idx === 2 && { backgroundColor: "#3b82f6" },
                                     ]}>
                                         <Text style={styles.trendingBadgeText}>
-                                            {BADGE_TYPES[idx % BADGE_TYPES.length]}
+                                            {t(`home.badges.${BADGE_KEYS[idx % BADGE_KEYS.length]}`)}
                                         </Text>
                                     </View>
                                 </View>
                                 <View style={styles.trendingInfo}>
-                                    <Text style={styles.trendingTitle} numberOfLines={2}>{svc.title}</Text>
-                                    <Text style={styles.trendingCat}>{svc.category}</Text>
+                                    <Text style={[styles.trendingTitle, { color: c.text }]} numberOfLines={2}>{svc.title}</Text>
+                                    <Text style={[styles.trendingCat, { color: c.textSubtle }]}>{svc.category}</Text>
                                     <View style={styles.trendingMeta}>
                                         <View style={styles.ratingRow}>
-                                            <Ionicons name="star" size={11} color={ACCENT} />
-                                            <Text style={styles.ratingText}>4.8</Text>
+                                            <Ionicons name="star" size={11} color={c.accent} />
+                                            <Text style={[styles.ratingText, { color: c.textMuted }]}>4.8</Text>
                                         </View>
-                                        <Text style={styles.trendingPrice}>
+                                        <Text style={[styles.trendingPrice, { color: c.accent }]}>
                                             {svc.priceFormatted || `$${Math.round(svc.price / 100)}`}
                                         </Text>
                                     </View>
                                 </View>
                                 {/* Bookmark button */}
                                 <Pressable style={styles.trendingBookmark}>
-                                    <Ionicons name="bookmark-outline" size={16} color={TEXT_MUTED} />
+                                    <Ionicons name="bookmark-outline" size={16} color={c.textMuted} />
                                 </Pressable>
                             </Pressable>
                         )) : (
-                            <Text style={{ color: TEXT_MUTED }}>No services in this category</Text>
+                            <Text style={{ color: c.textMuted }}>{t("home.noServicesCategory")}</Text>
                         )}
+
                     </View>
 
                     {/* Recently Viewed */}
@@ -301,13 +320,14 @@ export default function DiscoverTab() {
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
                                 <View style={styles.sectionTitleRow}>
-                                    <Ionicons name="time-outline" size={14} color={TEXT_SEC} />
-                                    <Text style={styles.sectionTitle}>Recently Viewed</Text>
+                                    <Ionicons name="time-outline" size={14} color={c.textSecondary} />
+                                    <Text style={[styles.sectionTitle, { color: c.text }]}>{t("home.recentlyViewed")}</Text>
                                 </View>
                                 <Pressable>
-                                    <Text style={styles.seeAll}>See all</Text>
+                                    <Text style={[styles.seeAll, { color: c.accent }]}>{t("common.seeAll")}</Text>
                                 </Pressable>
                             </View>
+
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
@@ -322,7 +342,7 @@ export default function DiscoverTab() {
                                         {svc.imageUrl ? (
                                             <Image source={{ uri: svc.imageUrl }} style={styles.recentImg} resizeMode="cover" />
                                         ) : (
-                                            <LinearGradient colors={["#1a2a10", "#0b150a"]} style={styles.recentImg} />
+                                            <View style={[styles.recentImg, { backgroundColor: c.elevated }]} />
                                         )}
                                         <LinearGradient
                                             colors={["transparent", "rgba(0,0,0,0.75)"]}
@@ -330,20 +350,21 @@ export default function DiscoverTab() {
                                         />
                                         {/* Bookmark */}
                                         <Pressable style={styles.recentBookmark}>
-                                            <Ionicons name="bookmark-outline" size={14} color={TEXT} />
+                                            <Ionicons name="bookmark-outline" size={14} color="#FFFFFF" />
                                         </Pressable>
                                         <View style={styles.recentInfo}>
-                                            <Text style={styles.recentTitle} numberOfLines={2}>{svc.title}</Text>
+                                            <Text style={[styles.recentTitle, { color: "#FFFFFF" }]} numberOfLines={2}>{svc.title}</Text>
                                             <View style={styles.recentMeta}>
-                                                <Text style={styles.recentCreator} numberOfLines={1}>
+                                                <Text style={[styles.recentCreator, { color: "rgba(255,255,255,0.7)" }]} numberOfLines={1}>
                                                     {svc.user?.displayName || "Creator"}
                                                 </Text>
-                                                <Text style={styles.recentPrice}>
+                                                <Text style={[styles.recentPrice, { color: c.accent }]}>
                                                     {svc.priceFormatted || `$${Math.round((svc.price || 0) / 100)}`}
                                                 </Text>
                                             </View>
                                         </View>
                                     </Pressable>
+
                                 ))}
                             </ScrollView>
                         </View>
@@ -352,18 +373,19 @@ export default function DiscoverTab() {
                     {/* Popular Categories — 2×2 grid from Figma */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Popular Categories</Text>
+                            <Text style={[styles.sectionTitle, { color: c.text }]}>{t("home.popularCategories")}</Text>
                         </View>
                         <View style={styles.catGrid}>
                             {POPULAR_CATEGORIES.map((cat) => (
-                                <Pressable key={cat.title} style={styles.catGridItem}>
+                                <Pressable key={cat.key} style={[styles.catGridItem, { backgroundColor: c.surface, borderColor: c.border }]}>
                                     <Text style={styles.catGridEmoji}>{cat.emoji}</Text>
-                                    <Text style={styles.catGridTitle}>{cat.title}</Text>
-                                    <Text style={styles.catGridCount}>{cat.count}</Text>
+                                    <Text style={[styles.catGridTitle, { color: c.text }]}>{t(`home.categories.${cat.key}`)}</Text>
+                                    <Text style={[styles.catGridCount, { color: c.textMuted }]}>{cat.count}</Text>
                                 </Pressable>
                             ))}
                         </View>
                     </View>
+
 
                     {/* FAB for Create */}
                     <View style={{ height: 100 }} />
@@ -379,12 +401,13 @@ export default function DiscoverTab() {
                 }}
             >
                 <LinearGradient
-                    colors={[ACCENT, "#84cc16"]}
+                    colors={[c.accent, c.accentDark]}
                     style={styles.fabGrad}
                 >
                     <Ionicons name="add" size={28} color="#0b0b0f" />
                 </LinearGradient>
             </Pressable>
+
         </View>
     );
 }
@@ -392,36 +415,38 @@ export default function DiscoverTab() {
 const RECENT_W = 160;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: BG },
-    headerWrap: { backgroundColor: BG, borderBottomWidth: 1, borderBottomColor: BORDER },
+    container: { flex: 1 },
+    headerWrap: { borderBottomWidth: 1 },
     header: {
         flexDirection: "row", justifyContent: "space-between", alignItems: "center",
         paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16,
     },
     welcomeLabel: {
-        color: TEXT_MUTED, fontSize: 12, fontWeight: "600",
+        fontSize: 12, fontWeight: "600",
         textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2,
     },
-    screenTitle: { color: TEXT, fontSize: 28, fontWeight: "900", letterSpacing: -0.6 },
+    screenTitle: { fontSize: 28, fontWeight: "900", letterSpacing: -0.6 },
     headerActions: { flexDirection: "row", gap: 10 },
     iconBtn: {
-        width: 40, height: 40, borderRadius: 14, backgroundColor: ELEVATED,
+        width: 40, height: 40, borderRadius: 14,
         justifyContent: "center", alignItems: "center",
-        borderWidth: 1, borderColor: BORDER, position: "relative",
+        borderWidth: 1, position: "relative",
     },
     notifDot: {
         position: "absolute", top: 9, right: 9, width: 7, height: 7,
-        borderRadius: 4, backgroundColor: ACCENT,
-        shadowColor: ACCENT, shadowOpacity: 0.9, shadowRadius: 6, elevation: 3,
+        borderRadius: 4,
+        shadowOpacity: 0.9, shadowRadius: 6, elevation: 3,
     },
     catScroll: { paddingHorizontal: 20, paddingBottom: 14, gap: 8 },
     catPill: {
         paddingHorizontal: 16, paddingVertical: 8, borderRadius: 99,
-        backgroundColor: ELEVATED, borderWidth: 1, borderColor: BORDER,
+        borderWidth: 1,
     },
-    catPillActive: { backgroundColor: ACCENT, borderColor: ACCENT },
-    catText: { color: TEXT_SEC, fontSize: 13, fontWeight: "700" },
-    catTextActive: { color: "#0b0b0f" },
+    //@ts-ignore - unused but kept for potential revert or ref
+    catPillActive: {},
+    catText: { fontSize: 13, fontWeight: "700" },
+    //@ts-ignore
+    catTextActive: {},
     loadingCenter: { flex: 1, justifyContent: "center", alignItems: "center" },
     scrollContent: { paddingTop: 20 },
     section: { paddingHorizontal: 20, marginBottom: 32 },
@@ -430,8 +455,8 @@ const styles = StyleSheet.create({
         alignItems: "center", marginBottom: 14,
     },
     sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-    sectionTitle: { color: TEXT, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
-    seeAll: { color: ACCENT, fontSize: 13, fontWeight: "700" },
+    sectionTitle: { fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
+    seeAll: { fontSize: 13, fontWeight: "700" },
 
     // Featured card
     featuredCard: {
@@ -444,64 +469,64 @@ const styles = StyleSheet.create({
     featuredBadge: {
         position: "absolute", top: 14, left: 14,
         flexDirection: "row", alignItems: "center", gap: 4,
-        backgroundColor: ACCENT, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
+        borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4,
     },
     featuredBadgeText: { color: "#000", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
     featuredPrice: {
         position: "absolute", top: 14, right: 14,
         backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 99,
         paddingHorizontal: 12, paddingVertical: 6,
-        borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
+        borderWidth: 1,
     },
-    featuredPriceText: { color: TEXT, fontSize: 13, fontWeight: "900" },
-    featuredContent: { backgroundColor: SURFACE, paddingHorizontal: 16, paddingVertical: 14 },
-    featuredTitle: { color: TEXT, fontSize: 17, fontWeight: "900", marginBottom: 8 },
+    featuredPriceText: { fontSize: 13, fontWeight: "900" },
+    featuredContent: { paddingHorizontal: 16, paddingVertical: 14 },
+    featuredTitle: { fontSize: 17, fontWeight: "900", marginBottom: 8 },
     featuredMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
     avatarXS: {
         width: 22, height: 22, borderRadius: 11,
-        backgroundColor: ACCENT, justifyContent: "center", alignItems: "center",
+        justifyContent: "center", alignItems: "center",
     },
     avatarXSText: { color: "#000", fontSize: 9, fontWeight: "800" },
-    featuredCreator: { color: TEXT_SEC, fontSize: 13, fontWeight: "600", flex: 1 },
+    featuredCreator: { fontSize: 13, fontWeight: "600", flex: 1 },
     ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-    ratingText: { color: TEXT_MUTED, fontSize: 12, fontWeight: "600" },
+    ratingText: { fontSize: 12, fontWeight: "600" },
 
     // Creator cards
     creatorCard: { alignItems: "center", width: 72 },
     creatorAvatarWrap: { position: "relative", marginBottom: 8 },
     creatorAvatar: {
-        width: 56, height: 56, borderRadius: 28, backgroundColor: ELEVATED,
+        width: 56, height: 56, borderRadius: 28,
         justifyContent: "center", alignItems: "center",
-        borderWidth: 1, borderColor: BORDER,
+        borderWidth: 1,
     },
-    creatorInitials: { color: TEXT, fontSize: 16, fontWeight: "700" },
+    creatorInitials: { fontSize: 16, fontWeight: "700" },
     verifiedBadge: {
         position: "absolute", bottom: -2, right: -2,
         width: 18, height: 18, borderRadius: 9,
-        backgroundColor: ACCENT, borderWidth: 2, borderColor: BG,
+        borderWidth: 2,
         justifyContent: "center", alignItems: "center",
     },
-    creatorName: { color: TEXT_SEC, fontSize: 11, fontWeight: "700", textAlign: "center" },
-    creatorCat: { color: TEXT_SUBTLE, fontSize: 10, fontWeight: "500", textAlign: "center" },
+    creatorName: { fontSize: 11, fontWeight: "700", textAlign: "center" },
+    creatorCat: { fontSize: 10, fontWeight: "500", textAlign: "center" },
 
     // Trending cards
     trendingCard: {
-        flexDirection: "row", backgroundColor: SURFACE, borderRadius: 18,
-        borderWidth: 1, borderColor: BORDER, overflow: "hidden", marginBottom: 10,
+        flexDirection: "row", borderRadius: 18,
+        borderWidth: 1, overflow: "hidden", marginBottom: 10,
     },
     trendingImgWrap: { width: 90, height: 90, position: "relative" },
     trendingImg: { width: 90, height: 90 },
     trendingBadge: {
         position: "absolute", top: 6, left: 6,
-        backgroundColor: ACCENT, borderRadius: 6,
+        borderRadius: 6,
         paddingHorizontal: 6, paddingVertical: 2,
     },
     trendingBadgeText: { color: "#000", fontSize: 8, fontWeight: "900", letterSpacing: 0.3 },
     trendingInfo: { flex: 1, padding: 12, justifyContent: "space-between" },
-    trendingTitle: { color: TEXT, fontSize: 14, fontWeight: "900", lineHeight: 18 },
-    trendingCat: { color: TEXT_SUBTLE, fontSize: 11, fontWeight: "600" },
+    trendingTitle: { fontSize: 14, fontWeight: "900", lineHeight: 18 },
+    trendingCat: { fontSize: 11, fontWeight: "600" },
     trendingMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    trendingPrice: { color: ACCENT, fontSize: 14, fontWeight: "900" },
+    trendingPrice: { fontSize: 14, fontWeight: "900" },
     trendingBookmark: {
         padding: 12, justifyContent: "center", alignItems: "center",
     },
@@ -519,32 +544,32 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center",
     },
     recentInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 10 },
-    recentTitle: { color: TEXT, fontSize: 12, fontWeight: "800", marginBottom: 4 },
+    recentTitle: { fontSize: 12, fontWeight: "800", marginBottom: 4 },
     recentMeta: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    recentCreator: { color: TEXT_SEC, fontSize: 10, fontWeight: "600", flex: 1, marginRight: 6 },
-    recentPrice: { color: ACCENT, fontSize: 11, fontWeight: "900" },
+    recentCreator: { fontSize: 10, fontWeight: "600", flex: 1, marginRight: 6 },
+    recentPrice: { fontSize: 11, fontWeight: "900" },
 
     // Popular Categories — 2×2 grid
     catGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
     catGridItem: {
-        width: (W - 52) / 2, backgroundColor: SURFACE, borderRadius: 18,
-        padding: 16, borderWidth: 1, borderColor: BORDER,
+        width: (W - 52) / 2, borderRadius: 18,
+        padding: 16, borderWidth: 1,
     },
     catGridEmoji: { fontSize: 28, marginBottom: 10 },
-    catGridTitle: { color: TEXT, fontSize: 15, fontWeight: "800", marginBottom: 4 },
-    catGridCount: { color: TEXT_MUTED, fontSize: 13, fontWeight: "600" },
+    catGridTitle: { fontSize: 15, fontWeight: "800", marginBottom: 4 },
+    catGridCount: { fontSize: 13, fontWeight: "600" },
 
     // Empty state
     emptyCard: {
-        height: 180, borderRadius: 24, backgroundColor: SURFACE,
+        height: 180, borderRadius: 24,
         justifyContent: "center", alignItems: "center",
-        borderWidth: 1, borderColor: BORDER,
+        borderWidth: 1,
     },
 
     // FAB
     fab: {
         position: "absolute", bottom: 100, right: 20,
-        shadowColor: ACCENT, shadowOpacity: 0.4, shadowRadius: 12,
+        shadowOpacity: 0.4, shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 }, elevation: 8,
     },
     fabGrad: {

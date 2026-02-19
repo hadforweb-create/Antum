@@ -11,6 +11,7 @@ export interface User {
     avatarUrl: string | null;
     bio: string | null;
     location: string | null;
+    website?: string | null;
     role: string;
     createdAt: string;
     servicesCount?: number;
@@ -23,6 +24,7 @@ export interface UpdateProfileData {
     bio?: string | null;
     location?: string | null;
     avatarUrl?: string | null;
+    website?: string | null;
 }
 
 // ============================================

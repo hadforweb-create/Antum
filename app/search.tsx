@@ -27,6 +27,7 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeIn, FadeOut } from "react-native-reanimated";
 import { getServices, getCategories, Service } from "@/lib/api/services";
 import { toast } from "@/lib/ui/toast";
+import { useTranslation } from "@/lib/i18n";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -72,6 +73,7 @@ const RECENT_SEARCHES = [
 export default function SearchScreen() {
     const router = useRouter();
     const searchInputRef = useRef<TextInput>(null);
+    const { t } = useTranslation();
 
     const [query, setQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
@@ -81,6 +83,10 @@ export default function SearchScreen() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     const [totalResults, setTotalResults] = useState(0);
+    const [sortBy, setSortBy] = useState<"rating" | "newest" | "popular">("popular");
+    const [showPriceFilter, setShowPriceFilter] = useState(false);
+    const [priceMin, setPriceMin] = useState("");
+    const [priceMax, setPriceMax] = useState("");
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch categories on mount
@@ -113,9 +119,11 @@ export default function SearchScreen() {
         setHasSearched(true);
 
         try {
-            const params: any = { limit: 20 };
+            const params: any = { limit: 20, sort: sortBy };
             if (searchQuery.trim()) params.search = searchQuery.trim();
             if (category) params.category = category;
+            if (priceMin) params.minPrice = Number(priceMin);
+            if (priceMax) params.maxPrice = Number(priceMax);
 
             const data = await getServices(params);
             setResults(data.services);
@@ -125,7 +133,7 @@ export default function SearchScreen() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [sortBy, priceMin, priceMax]);
 
     const handleQueryChange = (text: string) => {
         setQuery(text);
@@ -211,7 +219,7 @@ export default function SearchScreen() {
                         ref={searchInputRef}
                         value={query}
                         onChangeText={handleQueryChange}
-                        placeholder="Search services, creators..."
+                        placeholder={t("search.placeholder")}
                         placeholderTextColor={TEXT_SUBTLE}
                         style={styles.searchInput}
                         returnKeyType="search"
@@ -249,6 +257,61 @@ export default function SearchScreen() {
                 ))}
             </ScrollView>
 
+            {/* Sort & Filter Row */}
+            <View style={styles.sortFilterRow}>
+                <View style={styles.sortPills}>
+                    {(["popular", "newest", "rating"] as const).map((opt) => (
+                        <Pressable
+                            key={opt}
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setSortBy(opt);
+                                if (hasSearched) performSearch(query, selectedCategory);
+                            }}
+                            style={[styles.sortPill, sortBy === opt && styles.sortPillActive]}
+                        >
+                            <Text style={[styles.sortPillText, sortBy === opt && styles.sortPillTextActive]}>
+                                {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                            </Text>
+                        </Pressable>
+                    ))}
+                </View>
+                <Pressable
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setShowPriceFilter(p => !p);
+                    }}
+                    style={[styles.filterBtn, showPriceFilter && { backgroundColor: ACCENT }]}
+                >
+                    <Sliders size={16} color={showPriceFilter ? BG : TEXT_MUTED} strokeWidth={2} />
+                </Pressable>
+            </View>
+
+            {/* Price Range Filter */}
+            {showPriceFilter && (
+                <Animated.View entering={FadeInDown.duration(200)} style={styles.priceFilterRow}>
+                    <TextInput
+                        value={priceMin}
+                        onChangeText={setPriceMin}
+                        placeholder="Min $"
+                        placeholderTextColor={TEXT_SUBTLE}
+                        keyboardType="numeric"
+                        style={styles.priceInput}
+                        onEndEditing={() => performSearch(query, selectedCategory)}
+                    />
+                    <Text style={{ color: TEXT_MUTED }}>—</Text>
+                    <TextInput
+                        value={priceMax}
+                        onChangeText={setPriceMax}
+                        placeholder="Max $"
+                        placeholderTextColor={TEXT_SUBTLE}
+                        keyboardType="numeric"
+                        style={styles.priceInput}
+                        onEndEditing={() => performSearch(query, selectedCategory)}
+                    />
+                </Animated.View>
+            )}
+
             {/* Content */}
             {!hasSearched ? (
                 <ScrollView
@@ -260,7 +323,7 @@ export default function SearchScreen() {
                     {/* Recent Searches */}
                     {RECENT_SEARCHES.length > 0 && (
                         <Animated.View entering={FadeInDown.delay(100).duration(300)}>
-                            <Text style={styles.sectionTitle}>Recent Searches</Text>
+                            <Text style={styles.sectionTitle}>{t("search.recent")}</Text>
                             {RECENT_SEARCHES.map((term, idx) => (
                                 <Pressable
                                     key={idx}
@@ -278,7 +341,7 @@ export default function SearchScreen() {
                     <Animated.View entering={FadeInDown.delay(200).duration(300)}>
                         <View style={styles.sectionHeader}>
                             <TrendingUp size={18} color={ACCENT} strokeWidth={2} />
-                            <Text style={styles.sectionTitle}>Trending Searches</Text>
+                            <Text style={styles.sectionTitle}>{t("search.trending")}</Text>
                         </View>
                         <View style={styles.trendingGrid}>
                             {TRENDING_SEARCHES.map((term, idx) => (
@@ -301,9 +364,9 @@ export default function SearchScreen() {
             ) : results.length === 0 ? (
                 <View style={styles.emptyWrap}>
                     <SearchIcon size={48} color={TEXT_SUBTLE} strokeWidth={1.5} />
-                    <Text style={styles.emptyTitle}>No results found</Text>
+                    <Text style={styles.emptyTitle}>{t("common.noResults")}</Text>
                     <Text style={styles.emptyText}>
-                        Try adjusting your search or browse categories
+                        {t("search.clearAll")}
                     </Text>
                 </View>
             ) : (
@@ -570,5 +633,67 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "500",
         color: TEXT_MUTED,
+    },
+    // Sort & Filter
+    sortFilterRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingBottom: 10,
+        gap: 8,
+    },
+    sortPills: {
+        flexDirection: "row",
+        flex: 1,
+        gap: 8,
+    },
+    sortPill: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 10,
+        backgroundColor: SURFACE,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    sortPillActive: {
+        backgroundColor: ACCENT,
+        borderColor: ACCENT,
+    },
+    sortPillText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: TEXT_MUTED,
+    },
+    sortPillTextActive: {
+        color: BG,
+    },
+    filterBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: SURFACE,
+        borderWidth: 1,
+        borderColor: BORDER,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    priceFilterRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        gap: 12,
+    },
+    priceInput: {
+        flex: 1,
+        height: 40,
+        backgroundColor: INPUT_BG,
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        fontSize: 14,
+        fontWeight: "600",
+        color: TEXT,
+        borderWidth: 1,
+        borderColor: BORDER,
     },
 });

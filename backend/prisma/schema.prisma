@@ -8,16 +8,20 @@ datasource db {
 }
 
 model User {
-  id           String      @id            // Supabase auth user id (sub)
-  email        String      @unique
-  displayName  String?
-  username     String?     @unique
-  bio          String?
-  avatarUrl    String?
-  location     String?
-  role         String      @default("FREELANCER")
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id                 String    @id            // Supabase auth user id (sub)
+  email              String    @unique
+  displayName        String?
+  username           String?   @unique
+  bio                String?
+  avatarUrl          String?
+  location           String?
+  website            String?
+  role               String    @default("FREELANCER")
+  isPro              Boolean   @default(false)
+  completedOrderCount Int      @default(0)
+  pushToken          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   reels                    Reel[]
   skills                   UserSkill[]
@@ -26,12 +30,26 @@ model User {
   shortlists               Shortlist[]              @relation("ShortlistOwner")
   conversationParticipants ConversationParticipant[]
   messagesSent             Message[]
-  
+
+  // Order relations
+  ordersAsClient      Order[]        @relation("ClientOrders")
+  ordersAsFreelancer  Order[]        @relation("FreelancerOrders")
+
+  // Review relations
+  reviewsGiven        Review[]       @relation("ReviewsGiven")
+  reviewsReceived     Review[]       @relation("ReviewsReceived")
+
+  // Wallet
+  wallet              Wallet?
+
+  // Notifications
+  notifications       Notification[]
+
   // Security & Safety
-  blockedUsers             Block[]                  @relation("Blocker")
-  blockedBy                Block[]                  @relation("Blocked")
-  reportsFiled             Report[]                 @relation("Reporter")
-  reportsReceived          Report[]                 @relation("Reported")
+  blockedUsers        Block[]        @relation("Blocker")
+  blockedBy           Block[]        @relation("Blocked")
+  reportsFiled        Report[]       @relation("Reporter")
+  reportsReceived     Report[]       @relation("Reported")
 }
 
 model Reel {
@@ -40,12 +58,15 @@ model Reel {
   caption   String?
   mediaUrl  String
   mediaType String   @default("IMAGE")
+  serviceId String?
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([createdAt])
+  @@index([serviceId])
 }
 
 model Skill {
@@ -98,6 +119,9 @@ model Message {
   conversationId String
   senderId       String
   text           String
+  mediaUrl       String?
+  mediaType      String?  // "image" | null
+  isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -121,15 +145,207 @@ model Service {
   category     String
   deliveryDays Int      @default(7)
   imageUrl     String?
+  galleryUrls  String[] @default([])
+  viewCount    Int      @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tiers   ServiceTier[]
+  orders  Order[]
+  reviews Review[]
+  reels   Reel[]
 
   @@index([userId])
   @@index([category])
   @@index([isActive, createdAt])
+}
+
+model ServiceTier {
+  id           String   @id @default(cuid())
+  serviceId    String
+  name         String   // "Basic" | "Standard" | "Premium"
+  description  String
+  price        Int      // cents
+  deliveryDays Int
+  revisions    Int      @default(1)
+  features     String[] @default([])
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  orders  Order[]
+
+  @@index([serviceId])
+}
+
+// ============================================
+// ORDER MODELS
+// ============================================
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  DELIVERED
+  REVISION_REQUESTED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  clientId       String
+  freelancerId   String
+  serviceId      String
+  tierId         String?
+  status         OrderStatus @default(PENDING)
+  price          Int         // cents at time of order
+  currency       String      @default("USD")
+  requirements   String?
+  conversationId String?
+  deliveryDays   Int
+  dueAt          DateTime?
+  deliveredAt    DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  client       User         @relation("ClientOrders", fields: [clientId], references: [id])
+  freelancer   User         @relation("FreelancerOrders", fields: [freelancerId], references: [id])
+  service      Service      @relation(fields: [serviceId], references: [id])
+  tier         ServiceTier? @relation(fields: [tierId], references: [id])
+  milestones   OrderMilestone[]
+  review       Review?
+  transactions Transaction[]
+
+  @@index([clientId])
+  @@index([freelancerId])
+  @@index([status])
+  @@index([serviceId])
+}
+
+model OrderMilestone {
+  id          String    @id @default(cuid())
+  orderId     String
+  title       String
+  description String?
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  dueAt       DateTime?
+  createdAt   DateTime  @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// ============================================
+// REVIEW MODELS
+// ============================================
+
+model Review {
+  id         String    @id @default(cuid())
+  orderId    String    @unique
+  serviceId  String
+  reviewerId String
+  revieweeId String
+  rating     Int       // 1-5
+  body       String?
+  mediaUrls  String[]  @default([])
+  reply      String?
+  repliedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  order    Order   @relation(fields: [orderId], references: [id])
+  service  Service @relation(fields: [serviceId], references: [id])
+  reviewer User    @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee User    @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@index([serviceId])
+  @@index([revieweeId])
+  @@index([reviewerId])
+}
+
+// ============================================
+// WALLET & TRANSACTION MODELS
+// ============================================
+
+enum TransactionType {
+  ORDER_PAYMENT
+  FREELANCER_EARN
+  WITHDRAWAL
+  REFUND
+  PLATFORM_FEE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+model Wallet {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  balance        Int      @default(0)  // available cents
+  pendingBalance Int      @default(0)  // in escrow
+  totalEarned    Int      @default(0)
+  currency       String   @default("USD")
+  updatedAt      DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  walletId    String
+  orderId     String?
+  type        TransactionType
+  amount      Int               // cents, always positive
+  fee         Int               @default(0)
+  net         Int               // amount - fee
+  currency    String            @default("USD")
+  status      TransactionStatus @default(PENDING)
+  description String?
+  processedAt DateTime?
+  createdAt   DateTime          @default(now())
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  order  Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([walletId])
+  @@index([type])
+  @@index([status])
+  @@index([orderId])
+}
+
+// ============================================
+// NOTIFICATION MODEL
+// ============================================
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  actorId    String?
+  type       String    // "order_placed"|"order_status_changed"|"review_received"|"withdrawal_processed"
+  targetType String?   // "order"|"review"|"transaction"
+  targetId   String?
+  body       String
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
 }
 
 // ============================================
@@ -159,9 +375,9 @@ model Block {
   blockerId String
   blockedId String
   createdAt DateTime @default(now())
-  
-  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
-  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
   @@index([blockerId])
@@ -176,8 +392,8 @@ model Report {
   status      String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
   createdAt   DateTime @default(now())
 
-  reporter    User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  reported    User     @relation("Reported", fields: [reportedId], references: [id], onDelete: Cascade)
+  reporter User @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported User @relation("Reported", fields: [reportedId], references: [id], onDelete: Cascade)
 
   @@index([reportedId])
   @@index([status])

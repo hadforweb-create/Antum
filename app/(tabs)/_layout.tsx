@@ -7,18 +7,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/lib/store";
 import { getToken, clearToken } from "@/lib/auth/token";
 import { getMe } from "@/lib/api/authClient";
+import { useFigmaColors } from "@/lib/figma-colors";
+import { useTranslation } from "@/lib/i18n";
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.preventAutoHideAsync().catch(() => { });
 
-// Figma design tokens
+// Fallback tokens (used before hook available in static config)
 const ACCENT = "#a3ff3f";
 const INACTIVE = "rgba(255,255,255,0.35)";
-const TAB_BG = "rgba(11,11,15,0.96)";
 
 export default function TabsLayout() {
     const { setUser, setLoading } = useAuthStore();
     const router = useRouter();
     const initDone = useRef(false);
+    const c = useFigmaColors();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (initDone.current) return;
@@ -53,7 +56,7 @@ export default function TabsLayout() {
                 router.replace("/(auth)/login");
             } finally {
                 setLoading(false);
-                SplashScreen.hideAsync().catch(() => {});
+                SplashScreen.hideAsync().catch(() => { });
             }
         })();
     }, []);
@@ -71,21 +74,21 @@ export default function TabsLayout() {
                     paddingBottom: 28,
                 },
                 tabBarBackground: () => (
-                    <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
+                    <BlurView intensity={80} tint={c.isDark ? "dark" : "light"} style={StyleSheet.absoluteFill}>
                         <View
                             style={[
                                 StyleSheet.absoluteFill,
                                 {
-                                    backgroundColor: TAB_BG,
+                                    backgroundColor: c.tabBarBg,
                                     borderTopWidth: 1,
-                                    borderTopColor: "rgba(255,255,255,0.06)",
+                                    borderTopColor: c.border,
                                 },
                             ]}
                         />
                     </BlurView>
                 ),
-                tabBarActiveTintColor: ACCENT,
-                tabBarInactiveTintColor: INACTIVE,
+                tabBarActiveTintColor: c.tabActive,
+                tabBarInactiveTintColor: c.tabInactive,
                 tabBarLabelStyle: {
                     fontSize: 10,
                     fontWeight: "700",
@@ -97,7 +100,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: "Home",
+                    title: t("tabs.home"),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="home" size={size} color={color} />
                     ),
@@ -107,7 +110,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="services"
                 options={{
-                    title: "Reels",
+                    title: t("tabs.reels"),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="play-circle" size={size} color={color} />
                     ),
@@ -117,7 +120,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="saved"
                 options={{
-                    title: "Stats",
+                    title: t("tabs.stats"),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="bar-chart" size={size} color={color} />
                     ),
@@ -127,7 +130,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: "Profile",
+                    title: t("tabs.profile"),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person" size={size} color={color} />
                     ),
@@ -138,7 +141,7 @@ export default function TabsLayout() {
                 name="create"
                 options={{
                     href: null,
-                    title: "Create",
+                    title: t("tabs.create"),
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="add-circle" size={size} color={color} />
                     ),

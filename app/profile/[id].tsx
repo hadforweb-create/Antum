@@ -36,7 +36,10 @@ import { createConversation } from "@/lib/api/conversations";
 import { checkShortlist, addToShortlist, removeFromShortlist } from "@/lib/api/shortlist";
 import { getServices, Service } from "@/lib/api/services";
 import { getUser } from "@/lib/api/users";
+import { getUserReviews, type Review } from "@/lib/api/reviews";
+import { getUserSkills } from "@/lib/api/skills";
 import { PortfolioGrid, PortfolioItem } from "@/components/PortfolioGrid";
+import ReviewCard from "@/components/ReviewCard";
 import { toast } from "@/lib/ui/toast";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -82,6 +85,10 @@ export default function ProfileDetailScreen() {
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
     const [activeTab, setActiveTab] = useState<"portfolio" | "services" | "reviews">("portfolio");
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [reviewsFetched, setReviewsFetched] = useState(false);
+    const [skills, setSkills] = useState<{ id: string; name: string }[]>([]);
 
     const isOwnProfile = currentUser?.id === id;
 
@@ -108,6 +115,11 @@ export default function ProfileDetailScreen() {
                 setFollowerCount(followers);
                 setFollowingCount(following);
 
+                // Fetch skills
+                getUserSkills(id)
+                    .then((res) => setSkills(res.skills || []))
+                    .catch(() => { });
+
                 if (!isOwnProfile) {
                     try {
                         const [shortlistStatus, followStatus] = await Promise.all([
@@ -130,6 +142,19 @@ export default function ProfileDetailScreen() {
 
         fetchData();
     }, [id, isOwnProfile]);
+
+    // Lazy-load reviews on first tab switch
+    useEffect(() => {
+        if (activeTab !== "reviews" || reviewsFetched || !id) return;
+        setReviewsLoading(true);
+        getUserReviews(id)
+            .then((res) => setReviews(res.reviews || []))
+            .catch(() => { })
+            .finally(() => {
+                setReviewsLoading(false);
+                setReviewsFetched(true);
+            });
+    }, [activeTab, reviewsFetched, id]);
 
     const handleBack = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -499,10 +524,20 @@ export default function ProfileDetailScreen() {
 
                 {activeTab === "reviews" && (
                     <Animated.View entering={FadeIn.duration(300)} style={styles.tabContent}>
-                        <View style={styles.emptyState}>
-                            <Star size={32} color={TEXT_MUTED} strokeWidth={1.5} />
-                            <Text style={styles.emptyText}>No reviews yet</Text>
-                        </View>
+                        {reviewsLoading ? (
+                            <View style={{ padding: 40, alignItems: "center" }}>
+                                <ActivityIndicator color={ACCENT} />
+                            </View>
+                        ) : reviews.length > 0 ? (
+                            reviews.map((review) => (
+                                <ReviewCard key={review.id} review={review} />
+                            ))
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <Star size={32} color={TEXT_MUTED} strokeWidth={1.5} />
+                                <Text style={styles.emptyText}>No reviews yet</Text>
+                            </View>
+                        )}
                     </Animated.View>
                 )}
             </ScrollView>

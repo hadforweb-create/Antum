@@ -21,6 +21,10 @@ import shortlistRoutes from "./routes/shortlist";
 import storageRoutes from "./routes/storage";
 import securityRoutes from "./routes/security";
 import passwordRoutes from "./routes/password";
+import ordersRoutes from "./routes/orders";
+import reviewsRoutes from "./routes/reviews";
+import walletRoutes from "./routes/wallet";
+import orderNotifRoutes from "./routes/notifications-order";
 
 // Initialize Sentry
 if (process.env.SENTRY_DSN) {
@@ -137,6 +141,10 @@ app.use("/api/skills", skillsRoutes);
 app.use("/api/conversations", conversationsRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/shortlist", shortlistRoutes);
+app.use("/api/orders", ordersRoutes);
+app.use("/api/reviews", reviewsRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/notifications", orderNotifRoutes);
 
 // 404 handler
 app.use((_req, res) => {

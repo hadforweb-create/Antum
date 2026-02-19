@@ -20,12 +20,14 @@ import { useFigmaColors } from "@/lib/figma-colors";
 import { useAuth } from "@/lib/auth/useAuth";
 import { isValidEmail, isValidPassword } from "@/lib/utils";
 import { toast } from "@/lib/ui/toast";
+import { useTranslation } from "@/lib/i18n";
 
 type UserRole = "FREELANCER" | "EMPLOYER";
 
 export default function SignupScreen() {
   const router = useRouter();
   const c = useFigmaColors();
+  const { t } = useTranslation();
   const { register } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,19 +38,19 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!displayName || !email || !password) {
-      toast.error("Please fill in all fields");
+      toast.error(t("auth.fillAllFields"));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     if (!isValidEmail(email)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t("auth.invalidEmail"));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
 
     if (!isValidPassword(password)) {
-      toast.error("Password must be at least 8 characters");
+      toast.error(t("auth.passwordLength"));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -59,11 +61,11 @@ export default function SignupScreen() {
     try {
       await register(email, password, displayName, role);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      toast.success("Account created successfully!");
+      toast.success(t("auth.accountCreated"));
       router.replace("/(tabs)");
     } catch (error: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      toast.error(error.message || "Failed to create account");
+      toast.error(error.message || t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -88,9 +90,9 @@ export default function SignupScreen() {
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             {/* Header */}
             <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
-              <Text style={[styles.title, { color: c.text }]}>Create account</Text>
+              <Text style={[styles.title, { color: c.text }]}>{t("auth.createAccount")}</Text>
               <Text style={[styles.subtitle, { color: c.textMuted }]}>
-                Join Baysis and connect with talent
+                {t("auth.joinBaysis")}
               </Text>
             </Animated.View>
 
@@ -111,7 +113,7 @@ export default function SignupScreen() {
               >
                 <User size={20} color={role === "FREELANCER" ? "#0b0b0f" : c.textMuted} strokeWidth={2} />
                 <Text style={[styles.roleText, { color: role === "FREELANCER" ? "#0b0b0f" : c.text }]}>
-                  Freelancer
+                  {t("auth.freelancer")}
                 </Text>
               </Pressable>
 
@@ -130,7 +132,7 @@ export default function SignupScreen() {
               >
                 <Briefcase size={20} color={role === "EMPLOYER" ? "#0b0b0f" : c.textMuted} strokeWidth={2} />
                 <Text style={[styles.roleText, { color: role === "EMPLOYER" ? "#0b0b0f" : c.text }]}>
-                  Employer
+                  {t("auth.employer")}
                 </Text>
               </Pressable>
             </Animated.View>
@@ -145,7 +147,7 @@ export default function SignupScreen() {
                   <Briefcase size={20} color={c.textMuted} strokeWidth={2} />
                 )}
                 <TextInput
-                  placeholder={role === "FREELANCER" ? "Full name" : "Company name"}
+                  placeholder={role === "FREELANCER" ? t("auth.fullName") : t("auth.companyName")}
                   placeholderTextColor={c.textMuted}
                   value={displayName}
                   onChangeText={setDisplayName}
@@ -158,7 +160,7 @@ export default function SignupScreen() {
               <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.inputBorder }]}>
                 <Mail size={20} color={c.textMuted} strokeWidth={2} />
                 <TextInput
-                  placeholder="Email"
+                  placeholder={t("auth.emailPlaceholder")}
                   placeholderTextColor={c.textMuted}
                   value={email}
                   onChangeText={setEmail}
@@ -173,7 +175,7 @@ export default function SignupScreen() {
               <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.inputBorder }]}>
                 <Lock size={20} color={c.textMuted} strokeWidth={2} />
                 <TextInput
-                  placeholder="Password (8+ characters)"
+                  placeholder={t("auth.passwordRequirements")}
                   placeholderTextColor={c.textMuted}
                   value={password}
                   onChangeText={setPassword}
@@ -194,9 +196,9 @@ export default function SignupScreen() {
             {/* Terms */}
             <Animated.View entering={FadeInDown.delay(300)} style={styles.termsRow}>
               <Text style={[styles.termsText, { color: c.textMuted }]}>
-                By signing up, you agree to our{" "}
-                <Text style={{ color: c.accentDark }}>Terms of Service</Text> and{" "}
-                <Text style={{ color: c.accentDark }}>Privacy Policy</Text>
+                {t("auth.termsAgree")}{" "}
+                <Text style={{ color: c.accentDark }}>{t("auth.terms")}</Text> {t("auth.and")}{" "}
+                <Text style={{ color: c.accentDark }}>{t("auth.privacy")}</Text>
               </Text>
             </Animated.View>
 
@@ -211,19 +213,18 @@ export default function SignupScreen() {
                 ]}
               >
                 <Text style={[styles.signupButtonText, { color: "#0b0b0f" }]}>
-                  {loading ? "Creating account..." : "Create Account"}
+                  {loading ? t("auth.creatingAccount") : t("auth.createAccountAction")}
                 </Text>
               </Pressable>
             </Animated.View>
 
-            {/* Login Link */}
             <Animated.View entering={FadeInDown.delay(400)} style={styles.loginRow}>
               <Text style={[styles.loginText, { color: c.textMuted }]}>
-                Already have an account?{" "}
+                {t("auth.alreadyHaveAccount")}{" "}
               </Text>
               <Link href="/(auth)/login" asChild>
                 <Pressable>
-                  <Text style={[styles.loginLink, { color: c.accentDark }]}>Sign in</Text>
+                  <Text style={[styles.loginLink, { color: c.accentDark }]}>{t("auth.signInAction")}</Text>
                 </Pressable>
               </Link>
             </Animated.View>

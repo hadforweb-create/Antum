@@ -14,43 +14,49 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
+import { useTranslation } from "@/lib/i18n";
+
 const { width: W } = Dimensions.get("window");
 
 // Matches Figma: layout.builder 0/1/2 — green, purple, orange
-const slides = [
-    {
-        id: "1",
-        headline: "Hire Top Talent",
-        subtext: "Connect with elite freelancers and creative professionals worldwide. Build your dream team today.",
-        buttonText: "Continue",
-        gradientColors: ["#84cc16", "#65a30d", "#4d7c0f"] as const,
-        accentColor: "#a3ff3f",
-    },
-    {
-        id: "2",
-        headline: "Trusted Platform",
-        subtext: "Secure payments, verified reviews, and professional escrow protection. Your peace of mind guaranteed.",
-        buttonText: "Continue",
-        gradientColors: ["#a855f7", "#9333ea", "#7e22ce"] as const,
-        accentColor: "#c084fc",
-    },
-    {
-        id: "3",
-        headline: "Build Your Empire",
-        subtext: "Scale your business with premium services. Join thousands of successful companies on Baysis.",
-        buttonText: "Get Started",
-        gradientColors: ["#f97316", "#ea580c", "#c2410c"] as const,
-        accentColor: "#fb923c",
-    },
-];
+
 
 const BG = "#0b0b0f";
 const SURFACE = "#151518";
 
 export default function OnboardingScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [activeIndex, setActiveIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
+
+    // Matches Figma: layout.builder 0/1/2 — green, purple, orange
+    const slides = [
+        {
+            id: "1",
+            headline: t("onboarding.slide1Title"),
+            subtext: t("onboarding.slide1Sub"),
+            buttonText: t("onboarding.slide1Btn"),
+            gradientColors: ["#84cc16", "#65a30d", "#4d7c0f"] as const,
+            accentColor: "#a3ff3f",
+        },
+        {
+            id: "2",
+            headline: t("onboarding.slide2Title"),
+            subtext: t("onboarding.slide2Sub"),
+            buttonText: t("onboarding.slide2Btn"),
+            gradientColors: ["#a855f7", "#9333ea", "#7e22ce"] as const,
+            accentColor: "#c084fc",
+        },
+        {
+            id: "3",
+            headline: t("onboarding.slide3Title"),
+            subtext: t("onboarding.slide3Sub"),
+            buttonText: t("onboarding.slide3Btn"),
+            gradientColors: ["#f97316", "#ea580c", "#c2410c"] as const,
+            accentColor: "#fb923c",
+        },
+    ];
 
     const handleNext = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -75,24 +81,18 @@ export default function OnboardingScreen() {
 
     const renderSlide = ({ item }: { item: typeof slides[0] }) => (
         <View style={{ width: W, flex: 1 }}>
-            {/* Large gradient card fills top 60% */}
-            <View style={styles.cardWrapper}>
+            {/* Top colored section - fills 65% of screen */}
+            <View style={{ flex: 0.65, width: "100%" }}>
                 <LinearGradient
                     colors={item.gradientColors}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.gradientCard}
-                >
-                    <View style={styles.glowTop} />
-                    <View style={styles.glowBottom} />
-                    <View style={styles.shapeOuter}>
-                        <View style={styles.shapeInner} />
-                    </View>
-                </LinearGradient>
+                    style={{ flex: 1, width: "100%" }}
+                />
             </View>
 
-            {/* Bottom content panel */}
-            <View style={[styles.textCard, { backgroundColor: SURFACE }]}>
+            {/* Bottom black section - fills remaining space with overlap look */}
+            <View style={[styles.bottomSheet, { backgroundColor: SURFACE }]}>
                 <Text style={styles.headline}>{item.headline}</Text>
                 <Text style={styles.subtext}>{item.subtext}</Text>
                 <Pressable
@@ -107,10 +107,10 @@ export default function OnboardingScreen() {
 
     return (
         <View style={styles.container}>
-            <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+            <View style={{ flex: 1 }}>
                 {activeIndex < slides.length - 1 && (
                     <Pressable onPress={handleSkip} style={styles.skipButton}>
-                        <Text style={styles.skipText}>Skip</Text>
+                        <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
                     </Pressable>
                 )}
                 <FlatList
@@ -125,11 +125,18 @@ export default function OnboardingScreen() {
                     scrollEventThrottle={16}
                     bounces={false}
                     style={{ flex: 1 }}
+                    initialNumToRender={1}
                 />
-            </SafeAreaView>
+            </View>
 
-            {/* Dots + sign in */}
-            <View style={[styles.bottomBar, { backgroundColor: SURFACE }]}>
+            {/* Dots + sign in - positioned absolute or within bottom sheet area? 
+               Actually the design has the button inside the black area. 
+               The dots usually sit below the button or are part of the bottom sheet.
+               I'll put the dots inside the bottom sheet logic or overlay them.
+               The previous code had a separate absolute bottom bar.
+               Let's keep the dots overlaying the black section at the very bottom.
+            */}
+            <View style={styles.paginationContainer}>
                 <View style={styles.dotsRow}>
                     {slides.map((s, i) => (
                         <View
@@ -146,74 +153,45 @@ export default function OnboardingScreen() {
                         />
                     ))}
                 </View>
-                <Pressable onPress={() => router.push("/(auth)/login")} style={styles.signinRow}>
-                    <Text style={styles.signinPrompt}>Already have an account? </Text>
-                    <Text style={[styles.signinLink, { color: slides[activeIndex].accentColor }]}>
-                        Sign in
-                    </Text>
-                </Pressable>
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: BG },
+    container: { flex: 1, backgroundColor: SURFACE },
     skipButton: {
-        position: "absolute", top: 0, right: 20, zIndex: 20,
+        position: "absolute", top: 60, right: 20, zIndex: 20,
         paddingVertical: 10, paddingHorizontal: 16,
     },
-    skipText: { color: "rgba(255,255,255,0.6)", fontSize: 15, fontWeight: "600" },
-    cardWrapper: { flex: 1, paddingHorizontal: 20, paddingTop: 52, paddingBottom: 0 },
-    gradientCard: {
-        flex: 1, borderRadius: 40, overflow: "hidden",
-        justifyContent: "center", alignItems: "center",
-    },
-    glowTop: {
-        position: "absolute", top: -50, left: -50,
-        width: 200, height: 200, borderRadius: 100,
-        backgroundColor: "rgba(255,255,255,0.15)",
-    },
-    glowBottom: {
-        position: "absolute", bottom: -60, right: -50,
-        width: 240, height: 240, borderRadius: 120,
-        backgroundColor: "rgba(0,0,0,0.15)",
-    },
-    shapeOuter: {
-        width: 160, height: 160, borderRadius: 80,
-        backgroundColor: "rgba(255,255,255,0.2)",
-        justifyContent: "center", alignItems: "center",
-    },
-    shapeInner: {
-        width: 100, height: 100, borderRadius: 50,
-        backgroundColor: "rgba(255,255,255,0.12)",
-    },
-    textCard: {
-        borderTopLeftRadius: 32, borderTopRightRadius: 32,
-        paddingHorizontal: 28, paddingTop: 28, paddingBottom: 16,
-        marginTop: -28,
+    skipText: { color: "rgba(255,255,255,0.8)", fontSize: 16, fontWeight: "600" },
+
+    bottomSheet: {
+        flex: 0.35,
+        backgroundColor: SURFACE,
+        paddingHorizontal: 32,
+        paddingTop: 40,
+        alignItems: "flex-start", // Left align text
     },
     headline: {
-        color: "#FFFFFF", fontSize: 36, fontWeight: "900",
-        letterSpacing: -0.8, marginBottom: 12, lineHeight: 42,
+        color: "#FFFFFF", fontSize: 32, fontWeight: "800",
+        marginBottom: 16, lineHeight: 40, textAlign: "left",
     },
     subtext: {
         color: "rgba(255,255,255,0.6)", fontSize: 16,
-        lineHeight: 24, marginBottom: 28,
+        lineHeight: 24, marginBottom: 32, textAlign: "left",
     },
     ctaButton: {
-        paddingVertical: 18, borderRadius: 18, alignItems: "center",
-        shadowColor: "#a3ff3f", shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
+        width: "100%",
+        paddingVertical: 18, borderRadius: 16, alignItems: "center",
+        justifyContent: "center",
     },
-    ctaText: { color: "#0b0b0f", fontSize: 17, fontWeight: "800" },
-    bottomBar: {
-        paddingHorizontal: 28, paddingBottom: 40, paddingTop: 16,
-        alignItems: "center", gap: 16,
+    ctaText: { color: "#0b0b0f", fontSize: 16, fontWeight: "700" },
+
+    paginationContainer: {
+        position: "absolute", bottom: 40, left: 0, right: 0,
+        alignItems: "center", justifyContent: "center",
     },
     dotsRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-    dot: { height: 7, borderRadius: 4 },
-    signinRow: { flexDirection: "row", alignItems: "center" },
-    signinPrompt: { color: "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: "500" },
-    signinLink: { fontSize: 15, fontWeight: "700" },
+    dot: { height: 6, borderRadius: 3 },
 });

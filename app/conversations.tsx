@@ -16,9 +16,10 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useAuthStore } from "@/lib/store";
 import { getConversations, ConversationResponse } from "@/lib/api/conversations";
+import { useFigmaColors } from "@/lib/figma-colors";
+import { useTranslation } from "@/lib/i18n";
 
-// Figma design tokens
-const BG = "#0b0b0f";
+// Fallback tokens for static styles
 const SURFACE = "#131316";
 const ELEVATED = "#1a1a1e";
 const ACCENT = "#a3ff3f";
@@ -31,6 +32,8 @@ const BORDER = "rgba(255,255,255,0.06)";
 export default function ConversationsScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
+    const c = useFigmaColors();
+    const { t } = useTranslation();
 
     const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -133,12 +136,12 @@ export default function ConversationsScreen() {
 
                         {item.lastMessage ? (
                             <Text style={styles.lastMessage} numberOfLines={2}>
-                                {item.lastMessage.senderId === user?.id ? "You: " : ""}
+                                {item.lastMessage.senderId === user?.id ? t("messages.you") : ""}
                                 {item.lastMessage.text}
                             </Text>
                         ) : (
                             <Text style={[styles.lastMessage, { fontStyle: "italic" }]}>
-                                No messages yet
+                                {t("messages.noMessages")}
                             </Text>
                         )}
                     </View>
@@ -149,50 +152,50 @@ export default function ConversationsScreen() {
 
     const renderEmptyState = () => (
         <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
-            <View style={styles.emptyIconContainer}>
-                <MessageCircle size={48} color={TEXT_MUTED} strokeWidth={1.5} />
+            <View style={[styles.emptyIconContainer, { backgroundColor: c.inputBg }]}>
+                <MessageCircle size={48} color={c.textMuted} strokeWidth={1.5} />
             </View>
-            <Text style={styles.emptyTitle}>Start chatting</Text>
-            <Text style={styles.emptySubtitle}>
-                Message freelancers from their reels or profile to start a conversation.
+            <Text style={[styles.emptyTitle, { color: c.text }]}>{t("messages.startChatting")}</Text>
+            <Text style={[styles.emptySubtitle, { color: c.textMuted }]}>
+                {t("messages.startChattingSubtitle")}
             </Text>
             <Pressable
                 onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     router.push("/(tabs)");
                 }}
-                style={styles.retryButton}
+                style={[styles.retryButton, { backgroundColor: c.accent }]}
             >
-                <Text style={styles.retryText}>Browse Reels</Text>
+                <Text style={styles.retryText}>{t("messages.browseReels")}</Text>
             </Pressable>
         </Animated.View>
     );
 
     const renderError = () => (
         <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Something went wrong</Text>
+            <Text style={styles.emptyTitle}>{t("common.error")}</Text>
             <Text style={styles.emptySubtitle}>{error}</Text>
             <Pressable onPress={() => fetchConversations()} style={styles.retryButton}>
-                <Text style={styles.retryText}>Try Again</Text>
+                <Text style={styles.retryText}>{t("common.retry")}</Text>
             </Pressable>
         </Animated.View>
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: c.bg }]} edges={["top"]}>
             {/* Header */}
-            <View style={styles.header}>
-                <Pressable onPress={handleBack} style={styles.backButton}>
-                    <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
+            <View style={[styles.header, { borderBottomColor: c.border }]}>
+                <Pressable onPress={handleBack} style={[styles.backButton, { backgroundColor: c.elevated, borderColor: c.border }]}>
+                    <ArrowLeft size={22} color={c.text} strokeWidth={2} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Messages</Text>
+                <Text style={[styles.headerTitle, { color: c.text }]}>{t("messages.title")}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             {/* Content */}
             {loading && !refreshing ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={ACCENT} />
+                    <ActivityIndicator size="large" color={c.accent} />
                 </View>
             ) : error ? (
                 renderError()
@@ -210,7 +213,7 @@ export default function ConversationsScreen() {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={() => fetchConversations(true)}
-                            tintColor={ACCENT}
+                            tintColor={c.accent}
                         />
                     }
                     showsVerticalScrollIndicator={false}
@@ -223,7 +226,6 @@ export default function ConversationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: BG,
     },
     header: {
         flexDirection: "row",
@@ -232,7 +234,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: BORDER,
     },
     backButton: {
         width: 40,
@@ -240,14 +241,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 14,
-        backgroundColor: ELEVATED,
         borderWidth: 1,
-        borderColor: BORDER,
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: "900",
-        color: TEXT,
         letterSpacing: -0.3,
     },
     loadingContainer: {

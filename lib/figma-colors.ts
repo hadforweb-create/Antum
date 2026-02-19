@@ -51,11 +51,11 @@ export function useFigmaColors() {
         overlayDark: "rgba(0,0,0,0.5)",
     };
 
-    // Light mode keeps same structure, different values
+    // Light mode - White & Green as requested
     const light = {
-        bg: "#F5F3EE",
-        surface: "#FFFFFF",
-        elevated: "#FAFAF7",
+        bg: "#FFFFFF",
+        surface: "#F8F8F8",
+        elevated: "#FFFFFF",
         cardBg: "rgba(255,255,255,0.95)",
 
         text: "#111111",

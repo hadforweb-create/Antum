@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     View,
     Text,
@@ -27,7 +27,7 @@ import {
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useAuthStore } from "@/lib/store";
-import { getMyServiceRequests } from "@/lib/api/social";
+import { getMyWallet, getTransactions, type WalletInfo, type Transaction as ApiTransaction, type TransactionType } from "@/lib/api/wallet";
 import { toast } from "@/lib/ui/toast";
 
 // Design system constants
@@ -43,78 +43,27 @@ const TEXT_MUTED = "rgba(255,255,255,0.5)";
 const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
 const BORDER = "rgba(255,255,255,0.06)";
 
-interface Transaction {
-    id: string;
-    type: "incoming" | "outgoing" | "pending";
-    title: string;
-    description: string;
-    amount: string;
-    date: string;
-    status: "completed" | "pending" | "processing";
+// Map API transaction types to display categories
+type TxCategory = "incoming" | "outgoing" | "pending";
+
+function txCategory(type: TransactionType, status: string): TxCategory {
+    if (status === "PENDING") return "pending";
+    if (type === "WITHDRAWAL" || type === "ORDER_PAYMENT" || type === "PLATFORM_FEE") return "outgoing";
+    return "incoming"; // FREELANCER_EARN, REFUND
 }
 
-// Mock data matching Figma design
-const MOCK_BALANCE = "$12,450";
-const MOCK_EARNINGS = "$127,450";
-const MOCK_GROWTH = "+24%";
-const MOCK_COMPLETED_PROJECTS = 127;
+function formatCents(cents: number, currency = "USD"): string {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+}
 
-const MOCK_TRANSACTIONS: Transaction[] = [
-    {
-        id: "1",
-        type: "incoming",
-        title: "Brand Identity Project",
-        description: "Sarah Mitchell",
-        amount: "+$4,500",
-        date: "Today",
-        status: "completed",
-    },
-    {
-        id: "2",
-        type: "incoming",
-        title: "Full Stack Development",
-        description: "Marcus Chen",
-        amount: "+$8,000",
-        date: "Yesterday",
-        status: "completed",
-    },
-    {
-        id: "3",
-        type: "outgoing",
-        title: "Withdrawal to Bank",
-        description: "Chase ****4821",
-        amount: "-$5,200",
-        date: "Dec 15",
-        status: "completed",
-    },
-    {
-        id: "4",
-        type: "pending",
-        title: "Social Media Campaign",
-        description: "Emma Davis",
-        amount: "+$2,200",
-        date: "Dec 14",
-        status: "pending",
-    },
-    {
-        id: "5",
-        type: "incoming",
-        title: "Motion Graphics Pack",
-        description: "Jordan Lee",
-        amount: "+$3,200",
-        date: "Dec 12",
-        status: "completed",
-    },
-    {
-        id: "6",
-        type: "outgoing",
-        title: "Withdrawal to PayPal",
-        description: "alex@email.com",
-        amount: "-$2,800",
-        date: "Dec 10",
-        status: "completed",
-    },
-];
+function formatDate(iso: string): string {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000);
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 const PAYOUT_METHODS = [
     { id: "1", type: "bank", label: "Chase Bank", detail: "****4821", icon: Building2 },
@@ -125,7 +74,28 @@ export default function WalletScreen() {
     const router = useRouter();
     const { user } = useAuthStore();
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"all" | "incoming" | "outgoing">("all");
+    const [wallet, setWallet] = useState<WalletInfo | null>(null);
+    const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
+
+    const fetchData = useCallback(async () => {
+        try {
+            const [w, txRes] = await Promise.all([
+                getMyWallet().catch(() => null),
+                getTransactions({ limit: 20 }).catch(() => ({ transactions: [] })),
+            ]);
+            if (w) setWallet(w);
+            setTransactions(txRes.transactions || []);
+        } catch {
+            // silent
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleBack = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -134,9 +104,7 @@ export default function WalletScreen() {
 
     const handleRefresh = async () => {
         setRefreshing(true);
-        // Simulate refresh
-        await new Promise((r) => setTimeout(r, 1000));
-        setRefreshing(false);
+        await fetchData();
     };
 
     const handleWithdraw = () => {
@@ -149,9 +117,14 @@ export default function WalletScreen() {
         toast.info("Add payout method coming soon");
     };
 
-    const filteredTransactions = MOCK_TRANSACTIONS.filter((t) => {
+    const balance = wallet ? formatCents(wallet.balance, wallet.currency) : "$0.00";
+    const totalEarned = wallet ? formatCents(wallet.totalEarned, wallet.currency) : "$0.00";
+    const pendingBalance = wallet ? formatCents(wallet.pendingBalance, wallet.currency) : "$0.00";
+
+    const filteredTransactions = transactions.filter((t) => {
         if (activeTab === "all") return true;
-        return t.type === activeTab || (activeTab === "incoming" && t.type === "pending");
+        const cat = txCategory(t.type, t.status);
+        return cat === activeTab || (activeTab === "incoming" && cat === "pending");
     });
 
     return (
@@ -191,7 +164,7 @@ export default function WalletScreen() {
                             </View>
                             <View style={styles.balanceInfo}>
                                 <Text style={styles.balanceLabel}>Available Balance</Text>
-                                <Text style={styles.balanceAmount}>{MOCK_BALANCE}</Text>
+                                <Text style={styles.balanceAmount}>{loading ? "..." : balance}</Text>
                             </View>
                         </View>
                         <Pressable onPress={handleWithdraw} style={styles.withdrawButton}>
@@ -208,21 +181,21 @@ export default function WalletScreen() {
                             <View style={styles.statIconWrap}>
                                 <DollarSign size={16} color={ACCENT} strokeWidth={2} />
                             </View>
-                            <Text style={styles.statValue}>{MOCK_EARNINGS}</Text>
+                            <Text style={styles.statValue}>{loading ? "..." : totalEarned}</Text>
                             <Text style={styles.statLabel}>Total Earnings</Text>
                         </View>
                         <View style={styles.statCard}>
                             <View style={styles.statIconWrap}>
                                 <TrendingUp size={16} color={ACCENT} strokeWidth={2} />
                             </View>
-                            <Text style={styles.statValue}>{MOCK_GROWTH}</Text>
-                            <Text style={styles.statLabel}>This Month</Text>
+                            <Text style={styles.statValue}>{loading ? "..." : pendingBalance}</Text>
+                            <Text style={styles.statLabel}>Pending</Text>
                         </View>
                         <View style={styles.statCard}>
                             <View style={styles.statIconWrap}>
                                 <Clock size={16} color={ACCENT} strokeWidth={2} />
                             </View>
-                            <Text style={styles.statValue}>{MOCK_COMPLETED_PROJECTS}</Text>
+                            <Text style={styles.statValue}>{loading ? "..." : transactions.length}</Text>
                             <Text style={styles.statLabel}>Completed</Text>
                         </View>
                     </View>
@@ -289,43 +262,56 @@ export default function WalletScreen() {
 
                     {/* Transaction List */}
                     <View style={styles.transactionList}>
-                        {filteredTransactions.map((tx, idx) => (
-                            <View
-                                key={tx.id}
-                                style={[
-                                    styles.transactionItem,
-                                    idx < filteredTransactions.length - 1 && { borderBottomWidth: 1, borderBottomColor: BORDER },
-                                ]}
-                            >
-                                <View style={[
-                                    styles.txIcon,
-                                    tx.type === "incoming" && { backgroundColor: "rgba(34,197,94,0.1)" },
-                                    tx.type === "outgoing" && { backgroundColor: "rgba(239,68,68,0.1)" },
-                                    tx.type === "pending" && { backgroundColor: "rgba(251,191,36,0.1)" },
-                                ]}>
-                                    {tx.type === "incoming" && <ArrowDownLeft size={16} color="#22C55E" strokeWidth={2} />}
-                                    {tx.type === "outgoing" && <ArrowUpRight size={16} color="#EF4444" strokeWidth={2} />}
-                                    {tx.type === "pending" && <Clock size={16} color="#FBBF24" strokeWidth={2} />}
-                                </View>
-                                <View style={styles.txInfo}>
-                                    <Text style={styles.txTitle}>{tx.title}</Text>
-                                    <Text style={styles.txDesc}>{tx.description} · {tx.date}</Text>
-                                </View>
-                                <View style={styles.txAmountWrap}>
-                                    <Text style={[
-                                        styles.txAmount,
-                                        tx.type === "incoming" && { color: "#22C55E" },
-                                        tx.type === "outgoing" && { color: "#EF4444" },
-                                        tx.type === "pending" && { color: "#FBBF24" },
-                                    ]}>
-                                        {tx.amount}
-                                    </Text>
-                                    {tx.status === "pending" && (
-                                        <Text style={styles.txStatus}>Pending</Text>
-                                    )}
-                                </View>
+                        {loading ? (
+                            <View style={{ padding: 30, alignItems: "center" }}>
+                                <ActivityIndicator color={ACCENT} />
                             </View>
-                        ))}
+                        ) : filteredTransactions.length === 0 ? (
+                            <View style={{ padding: 30, alignItems: "center" }}>
+                                <Text style={{ color: TEXT_MUTED, fontSize: 14 }}>No transactions yet</Text>
+                            </View>
+                        ) : filteredTransactions.map((tx, idx) => {
+                            const cat = txCategory(tx.type, tx.status);
+                            const sign = cat === "outgoing" ? "-" : "+";
+                            const amountStr = `${sign}${formatCents(tx.amount, tx.currency)}`;
+                            return (
+                                <View
+                                    key={tx.id}
+                                    style={[
+                                        styles.transactionItem,
+                                        idx < filteredTransactions.length - 1 && { borderBottomWidth: 1, borderBottomColor: BORDER },
+                                    ]}
+                                >
+                                    <View style={[
+                                        styles.txIcon,
+                                        cat === "incoming" && { backgroundColor: "rgba(34,197,94,0.1)" },
+                                        cat === "outgoing" && { backgroundColor: "rgba(239,68,68,0.1)" },
+                                        cat === "pending" && { backgroundColor: "rgba(251,191,36,0.1)" },
+                                    ]}>
+                                        {cat === "incoming" && <ArrowDownLeft size={16} color="#22C55E" strokeWidth={2} />}
+                                        {cat === "outgoing" && <ArrowUpRight size={16} color="#EF4444" strokeWidth={2} />}
+                                        {cat === "pending" && <Clock size={16} color="#FBBF24" strokeWidth={2} />}
+                                    </View>
+                                    <View style={styles.txInfo}>
+                                        <Text style={styles.txTitle}>{tx.description || tx.type.replace(/_/g, " ")}</Text>
+                                        <Text style={styles.txDesc}>{formatDate(tx.createdAt)}</Text>
+                                    </View>
+                                    <View style={styles.txAmountWrap}>
+                                        <Text style={[
+                                            styles.txAmount,
+                                            cat === "incoming" && { color: "#22C55E" },
+                                            cat === "outgoing" && { color: "#EF4444" },
+                                            cat === "pending" && { color: "#FBBF24" },
+                                        ]}>
+                                            {amountStr}
+                                        </Text>
+                                        {cat === "pending" && (
+                                            <Text style={styles.txStatus}>Pending</Text>
+                                        )}
+                                    </View>
+                                </View>
+                            );
+                        })}
                     </View>
                 </Animated.View>
 

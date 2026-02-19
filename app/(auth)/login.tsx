@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { useAuth } from "@/lib/auth/useAuth";
 import { toast } from "@/lib/ui/toast";
+import { useTranslation } from "@/lib/i18n";
 
 const BG = "#0b0b0f";
 const SURFACE = "#131316";
@@ -28,6 +29,7 @@ const TEXT_MUTED = "rgba(255,255,255,0.5)";
 
 export default function LoginScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { login, isLoading } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -36,7 +38,7 @@ export default function LoginScreen() {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            toast.error("Please fill in all fields");
+            toast.error(t("auth.fillAllFields"));
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             return;
         }
@@ -48,7 +50,7 @@ export default function LoginScreen() {
             router.replace("/(tabs)");
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            toast.error(error.message || "Failed to sign in");
+            toast.error(error.message || t("common.error"));
         } finally {
             setSubmitting(false);
         }
@@ -84,25 +86,25 @@ export default function LoginScreen() {
 
                     {/* Headline */}
                     <Animated.View entering={FadeInDown.delay(140)} style={styles.headingBlock}>
-                        <Text style={styles.heading}>Welcome back</Text>
+                        <Text style={styles.heading}>{t("auth.welcomeBack")}</Text>
                     </Animated.View>
 
                     {/* Social buttons — Apple / Google */}
                     <Animated.View entering={FadeInDown.delay(200)} style={styles.socialRow}>
                         <Pressable style={styles.socialBtn}>
                             <Text style={styles.socialIcon}></Text>
-                            <Text style={styles.socialLabel}>Continue with Apple</Text>
+                            <Text style={styles.socialLabel}>{t("auth.continueApple")}</Text>
                         </Pressable>
                         <Pressable style={styles.socialBtn}>
                             <Text style={styles.socialIcon}>G</Text>
-                            <Text style={styles.socialLabel}>Continue with Google</Text>
+                            <Text style={styles.socialLabel}>{t("auth.continueGoogle")}</Text>
                         </Pressable>
                     </Animated.View>
 
                     {/* Divider */}
                     <Animated.View entering={FadeInDown.delay(240)} style={styles.dividerRow}>
                         <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>OR</Text>
+                        <Text style={styles.dividerText}>{t("auth.or")}</Text>
                         <View style={styles.dividerLine} />
                     </Animated.View>
 
@@ -111,7 +113,7 @@ export default function LoginScreen() {
                         <View style={styles.inputWrap}>
                             <Mail size={18} color={TEXT_MUTED} strokeWidth={2} />
                             <TextInput
-                                placeholder="Email address"
+                                placeholder={t("auth.emailPlaceholder")}
                                 placeholderTextColor={TEXT_MUTED}
                                 value={email}
                                 onChangeText={setEmail}
@@ -129,7 +131,7 @@ export default function LoginScreen() {
                         <View style={styles.inputWrap}>
                             <Lock size={18} color={TEXT_MUTED} strokeWidth={2} />
                             <TextInput
-                                placeholder="Password"
+                                placeholder={t("auth.passwordPlaceholder")}
                                 placeholderTextColor={TEXT_MUTED}
                                 value={password}
                                 onChangeText={setPassword}
@@ -153,7 +155,7 @@ export default function LoginScreen() {
                             onPress={() => router.push("/(auth)/forgot-password")}
                             style={styles.forgotBtn}
                         >
-                            <Text style={styles.forgotText}>Forgot password?</Text>
+                            <Text style={styles.forgotText}>{t("auth.forgotPassword")}</Text>
                         </Pressable>
                     </Animated.View>
 
@@ -171,18 +173,17 @@ export default function LoginScreen() {
                                 style={styles.signInGrad}
                             >
                                 <Text style={styles.signInText}>
-                                    {submitting ? "Signing in…" : "Sign In"}
+                                    {submitting ? t("auth.signingIn") : t("auth.signIn")}
                                 </Text>
                             </LinearGradient>
                         </Pressable>
                     </Animated.View>
 
-                    {/* Create account */}
                     <Animated.View entering={FadeInDown.delay(400)} style={styles.createRow}>
-                        <Text style={styles.createPrompt}>New to Baysis? </Text>
+                        <Text style={styles.createPrompt}>{t("auth.newToBaysis")} </Text>
                         <Link href="/(auth)/signup" asChild>
                             <Pressable>
-                                <Text style={styles.createLink}>Create account</Text>
+                                <Text style={styles.createLink}>{t("auth.createAccount")}</Text>
                             </Pressable>
                         </Link>
                     </Animated.View>

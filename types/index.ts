@@ -61,6 +61,7 @@ export interface User {
   avatarUrl?: string | null;
   bio?: string | null;
   location?: string | null;
+  website?: string | null;
   createdAt?: string;
   servicesCount?: number;
   reelsCount?: number;
@@ -184,4 +185,134 @@ export interface ShortlistResponse {
 export interface AuthResponse {
   token?: string;  // Legacy — Supabase Auth issues tokens now
   user: User;
+}
+
+// ============================================
+// ORDER TYPES
+// ============================================
+
+export type OrderStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "DELIVERED"
+  | "REVISION_REQUESTED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "DISPUTED";
+
+export interface OrderMilestone {
+  id: string;
+  title: string;
+  description?: string | null;
+  isCompleted: boolean;
+  completedAt?: string | null;
+  dueAt?: string | null;
+  createdAt: string;
+}
+
+export interface Order {
+  id: string;
+  clientId: string;
+  freelancerId: string;
+  serviceId: string;
+  tierId?: string | null;
+  status: OrderStatus;
+  price: number;
+  currency: string;
+  requirements?: string | null;
+  conversationId?: string | null;
+  deliveryDays: number;
+  dueAt?: string | null;
+  deliveredAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  client?: { id: string; displayName?: string | null; name?: string | null; avatarUrl?: string | null };
+  freelancer?: { id: string; displayName?: string | null; name?: string | null; avatarUrl?: string | null };
+  service?: { id: string; title: string; imageUrl?: string | null };
+  tier?: { id: string; name: string; price: number } | null;
+  milestones?: OrderMilestone[];
+  review?: Review | null;
+}
+
+// ============================================
+// REVIEW TYPES
+// ============================================
+
+export interface Review {
+  id: string;
+  orderId: string;
+  serviceId: string;
+  reviewerId: string;
+  revieweeId: string;
+  rating: number;
+  body?: string | null;
+  mediaUrls?: string[];
+  reply?: string | null;
+  repliedAt?: string | null;
+  createdAt: string;
+  reviewer?: { id: string; displayName?: string | null; name?: string | null; avatarUrl?: string | null };
+  service?: { id: string; title: string };
+}
+
+// ============================================
+// WALLET & TRANSACTION TYPES
+// ============================================
+
+export type TransactionType =
+  | "ORDER_PAYMENT"
+  | "FREELANCER_EARN"
+  | "WITHDRAWAL"
+  | "REFUND"
+  | "PLATFORM_FEE";
+
+export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED" | "REVERSED";
+
+export interface WalletInfo {
+  id: string;
+  userId: string;
+  balance: number;
+  pendingBalance: number;
+  totalEarned: number;
+  currency: string;
+  updatedAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  walletId: string;
+  orderId?: string | null;
+  type: TransactionType;
+  amount: number;
+  fee: number;
+  net: number;
+  currency: string;
+  status: TransactionStatus;
+  description?: string | null;
+  processedAt?: string | null;
+  createdAt: string;
+}
+
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+// ============================================
+// NOTIFICATION TYPES
+// ============================================
+
+export interface Notification {
+  id: string;
+  userId: string;
+  actorId?: string | null;
+  type: string;
+  targetType?: string | null;
+  targetId?: string | null;
+  body: string;
+  isRead: boolean;
+  readAt?: string | null;
+  createdAt: string;
 }

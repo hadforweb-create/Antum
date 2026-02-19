@@ -14,42 +14,49 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import {
     ArrowLeft,
     User,
+    Sun,
     Moon,
+    Monitor,
     Bell,
     Shield,
     LogOut,
     ChevronRight,
     Trash2,
+    Check,
+    Languages,
 } from "lucide-react-native";
-import { useThemeStore, useAuthStore } from "@/lib/store";
+import { useThemeStore, useAuthStore, useLanguageStore } from "@/lib/store";
+import { useFigmaColors } from "@/lib/figma-colors";
 import { supabase } from "@/lib/supabase";
 import { clearToken } from "@/lib/auth/token";
 import { toast } from "@/lib/ui/toast";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "@/lib/i18n";
 
-// Design system constants
-const BG = "#0b0b0f";
-const SURFACE = "#131316";
-const ELEVATED = "#1a1a1e";
-const ACCENT = "#a3ff3f";
-const TEXT = "#FFFFFF";
-const TEXT_SEC = "rgba(255,255,255,0.7)";
-const TEXT_MUTED = "rgba(255,255,255,0.5)";
-const TEXT_SUBTLE = "rgba(255,255,255,0.3)";
-const BORDER = "rgba(255,255,255,0.06)";
-const INPUT_BG = "rgba(255,255,255,0.06)";
+type ThemeMode = "system" | "light" | "dark";
+
+// Theme labels are resolved dynamically via t() inside the component
 
 export default function SettingsScreen() {
-    const { isDark, toggleTheme } = useThemeStore();
+    const { mode, setMode } = useThemeStore();
     const { user, logout } = useAuthStore();
+    const { languageMode, setLanguage } = useLanguageStore();
+    const c = useFigmaColors();
+    const { t } = useTranslation();
     const router = useRouter();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+    const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: typeof Sun }[] = [
+        { mode: "system", label: t("settings.system"), icon: Monitor },
+        { mode: "light", label: t("settings.light"), icon: Sun },
+        { mode: "dark", label: t("settings.dark"), icon: Moon },
+    ];
+
     const handleLogout = () => {
-        Alert.alert("Log Out", "Are you sure you want to log out?", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("settings.logOut"), t("settings.logOutConfirm"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Log Out",
+                text: t("settings.logOut"),
                 style: "destructive",
                 onPress: async () => {
                     try {
@@ -67,15 +74,15 @@ export default function SettingsScreen() {
 
     const handleDeleteAccount = () => {
         Alert.alert(
-            "Delete Account",
-            "This action cannot be undone. All your data will be permanently deleted.",
+            t("settings.deleteAccount"),
+            t("settings.deleteConfirm"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("common.cancel"), style: "cancel" },
                 {
-                    text: "Delete",
+                    text: t("common.delete"),
                     style: "destructive",
                     onPress: () => {
-                        toast.info("Account deletion is not yet available. Contact support.");
+                        toast.info(t("settings.deleteNotAvailable"));
                     },
                 },
             ]
@@ -97,14 +104,14 @@ export default function SettingsScreen() {
         delay: number
     ) => (
         <Animated.View entering={FadeInDown.delay(delay).duration(400)} style={{ marginBottom: 24 }}>
-            <Text style={styles.sectionTitle}>{title}</Text>
-            <View style={styles.card}>
+            <Text style={[styles.sectionTitle, { color: c.textSubtle }]}>{title}</Text>
+            <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
                 {items.map((item, i) => (
                     <Pressable
                         key={i}
                         style={[
                             styles.row,
-                            i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: BORDER },
+                            i < items.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border },
                         ]}
                         onPress={() => {
                             if (item.onPress) {
@@ -115,10 +122,10 @@ export default function SettingsScreen() {
                         disabled={!!item.toggle}
                     >
                         <View style={styles.rowLeft}>
-                            <View style={[styles.iconBox, { backgroundColor: item.danger ? "rgba(239,68,68,0.1)" : INPUT_BG }]}>
+                            <View style={[styles.iconBox, { backgroundColor: item.danger ? "rgba(239,68,68,0.1)" : c.inputBg }]}>
                                 {item.icon}
                             </View>
-                            <Text style={[styles.rowLabel, item.danger && { color: "#EF4444" }]}>
+                            <Text style={[styles.rowLabel, { color: c.text }, item.danger && { color: c.destructive }]}>
                                 {item.label}
                             </Text>
                         </View>
@@ -126,13 +133,13 @@ export default function SettingsScreen() {
                             <Switch
                                 value={item.toggleValue}
                                 onValueChange={item.onToggle}
-                                trackColor={{ false: "#767577", true: ACCENT }}
-                                thumbColor={TEXT}
+                                trackColor={{ false: "#767577", true: c.accent }}
+                                thumbColor={c.text}
                             />
                         ) : item.value ? (
-                            <Text style={styles.rowValue}>{item.value}</Text>
+                            <Text style={[styles.rowValue, { color: c.textMuted }]}>{item.value}</Text>
                         ) : (
-                            <ChevronRight size={18} color={TEXT_SUBTLE} />
+                            <ChevronRight size={18} color={c.textSubtle} />
                         )}
                     </Pressable>
                 ))}
@@ -141,73 +148,130 @@ export default function SettingsScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: c.bg }]} edges={["top"]}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { borderBottomColor: c.border }]}>
                 <Pressable
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         router.back();
                     }}
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: c.elevated, borderColor: c.border }]}
                 >
-                    <ArrowLeft size={22} color={TEXT} strokeWidth={2} />
+                    <ArrowLeft size={22} color={c.text} strokeWidth={2} />
                 </Pressable>
-                <Text style={styles.headerTitle}>Settings</Text>
+                <Text style={[styles.headerTitle, { color: c.text }]}>{t("settings.title")}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                {renderSection("Account", [
+                {renderSection(t("settings.account"), [
                     {
-                        icon: <User size={18} color={ACCENT} strokeWidth={2} />,
-                        label: "Display Name",
-                        value: user?.name || user?.displayName || "Not set",
+                        icon: <User size={18} color={c.accent} strokeWidth={2} />,
+                        label: t("settings.displayName"),
+                        value: user?.name || user?.displayName || t("settings.notSet"),
                         onPress: () => router.push("/profile/edit" as any),
                     },
                 ], 100)}
 
-                {renderSection("Preferences", [
+                {/* Appearance — 3-way picker */}
+                <Animated.View entering={FadeInDown.delay(200).duration(400)} style={{ marginBottom: 24 }}>
+                    <Text style={[styles.sectionTitle, { color: c.textSubtle }]}>{t("settings.appearance")}</Text>
+                    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+                        {THEME_OPTIONS.map((opt, i) => {
+                            const Icon = opt.icon;
+                            const isActive = mode === opt.mode;
+                            return (
+                                <Pressable
+                                    key={opt.mode}
+                                    style={[
+                                        styles.row,
+                                        i < THEME_OPTIONS.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border },
+                                    ]}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setMode(opt.mode);
+                                    }}
+                                >
+                                    <View style={styles.rowLeft}>
+                                        <View style={[styles.iconBox, { backgroundColor: c.inputBg }]}>
+                                            <Icon size={18} color={c.accent} strokeWidth={2} />
+                                        </View>
+                                        <Text style={[styles.rowLabel, { color: c.text }]}>{opt.label}</Text>
+                                    </View>
+                                    {isActive && <Check size={18} color={c.accent} strokeWidth={2.5} />}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </Animated.View>
+
+                {/* Language — 3-way picker */}
+                <Animated.View entering={FadeInDown.delay(250).duration(400)} style={{ marginBottom: 24 }}>
+                    <Text style={[styles.sectionTitle, { color: c.textSubtle }]}>{t("settings.language")}</Text>
+                    <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+                        {(["system", "en", "ar"] as const).map((lang, i, arr) => {
+                            const labels: Record<string, string> = { system: t("settings.system"), en: t("settings.english"), ar: t("settings.arabic") };
+                            const isActive = languageMode === lang;
+                            return (
+                                <Pressable
+                                    key={lang}
+                                    style={[
+                                        styles.row,
+                                        i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border },
+                                    ]}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setLanguage(lang);
+                                    }}
+                                >
+                                    <View style={styles.rowLeft}>
+                                        <View style={[styles.iconBox, { backgroundColor: c.inputBg }]}>
+                                            <Languages size={18} color={c.accent} strokeWidth={2} />
+                                        </View>
+                                        <Text style={[styles.rowLabel, { color: c.text }]}>{labels[lang]}</Text>
+                                    </View>
+                                    {isActive && <Check size={18} color={c.accent} strokeWidth={2.5} />}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </Animated.View>
+
+                {renderSection(t("settings.notifications"), [
                     {
-                        icon: <Moon size={18} color={ACCENT} strokeWidth={2} />,
-                        label: "Dark Mode",
-                        toggle: true,
-                        toggleValue: isDark,
-                        onToggle: toggleTheme,
-                    },
-                    {
-                        icon: <Bell size={18} color={ACCENT} strokeWidth={2} />,
-                        label: "Push Notifications",
+                        icon: <Bell size={18} color={c.accent} strokeWidth={2} />,
+                        label: t("settings.pushNotifications"),
                         toggle: true,
                         toggleValue: notificationsEnabled,
                         onToggle: setNotificationsEnabled,
                     },
-                ], 200)}
-
-                {renderSection("Privacy & Security", [
-                    {
-                        icon: <Shield size={18} color={ACCENT} strokeWidth={2} />,
-                        label: "Blocked Users",
-                        onPress: () => toast.info("Blocked users management coming soon"),
-                    },
                 ], 300)}
 
-                {renderSection("Danger Zone", [
+                {renderSection(t("settings.privacy"), [
                     {
-                        icon: <LogOut size={18} color="#EF4444" strokeWidth={2} />,
-                        label: "Log Out",
+                        icon: <Shield size={18} color={c.accent} strokeWidth={2} />,
+                        label: t("settings.blockedUsers"),
+                        onPress: () => toast.info(t("settings.blockedComingSoon")),
+                    },
+                ], 400)}
+
+                {renderSection(t("settings.dangerZone"), [
+                    {
+                        icon: <LogOut size={18} color={c.destructive} strokeWidth={2} />,
+                        label: t("settings.logOut"),
                         onPress: handleLogout,
                         danger: true,
                     },
                     {
-                        icon: <Trash2 size={18} color="#EF4444" strokeWidth={2} />,
-                        label: "Delete Account",
+                        icon: <Trash2 size={18} color={c.destructive} strokeWidth={2} />,
+                        label: t("settings.deleteAccount"),
                         onPress: handleDeleteAccount,
                         danger: true,
                     },
-                ], 400)}
+                ], 500)}
 
-                <Text style={styles.version}>BAYSIS v1.0.0</Text>
+                <Text style={[styles.version, { color: c.textSubtle }]}>{t("settings.version")}</Text>
             </ScrollView>
         </SafeAreaView>
     );
@@ -216,7 +280,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: BG,
     },
     header: {
         flexDirection: "row",
@@ -225,7 +288,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: BORDER,
     },
     backButton: {
         width: 40,
@@ -233,14 +295,11 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: ELEVATED,
         borderWidth: 1,
-        borderColor: BORDER,
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: "900",
-        color: TEXT,
         letterSpacing: -0.3,
     },
     content: {
@@ -255,14 +314,11 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
         marginBottom: 10,
         marginLeft: 4,
-        color: TEXT_SUBTLE,
     },
     card: {
         borderRadius: 22,
         overflow: "hidden",
-        backgroundColor: SURFACE,
         borderWidth: 1,
-        borderColor: BORDER,
     },
     row: {
         flexDirection: "row",
@@ -286,16 +342,14 @@ const styles = StyleSheet.create({
     rowLabel: {
         fontSize: 16,
         fontWeight: "500",
-        color: TEXT,
     },
     rowValue: {
         fontSize: 15,
-        color: TEXT_MUTED,
     },
     version: {
         textAlign: "center",
         fontSize: 13,
         marginTop: 32,
-        color: TEXT_SUBTLE,
     },
 });
+

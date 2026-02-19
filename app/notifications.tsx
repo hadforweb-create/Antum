@@ -28,6 +28,7 @@ import {
     NotificationItem,
 } from "@/lib/api/notifications";
 import { useFigmaColors } from "@/lib/figma-colors";
+import { useTranslation } from "@/lib/i18n";
 import { toast } from "@/lib/ui/toast";
 
 const ICON_MAP: Record<string, { icon: typeof Heart; color: string }> = {
@@ -42,6 +43,7 @@ export default function NotificationsScreen() {
     const { isDark } = useThemeStore();
     const router = useRouter();
     const c = useFigmaColors();
+    const { t } = useTranslation();
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -163,9 +165,9 @@ export default function NotificationsScreen() {
             <View style={[styles.emptyIcon, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }]}>
                 <Bell size={40} color={subtitleColor} strokeWidth={1.5} />
             </View>
-            <Text style={[styles.emptyTitle, { color: textColor }]}>No notifications yet</Text>
+            <Text style={[styles.emptyTitle, { color: textColor }]}>{t("notifications.empty")}</Text>
             <Text style={[styles.emptySubtitle, { color: subtitleColor }]}>
-                When someone follows you, likes your work, or sends a message, you'll see it here.
+                {t("notifications.emptySubtitle")}
             </Text>
         </Animated.View>
     );
@@ -176,7 +178,7 @@ export default function NotificationsScreen() {
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <ArrowLeft size={22} color={textColor} strokeWidth={2} />
                 </Pressable>
-                <Text style={[styles.headerTitle, { color: textColor }]}>Notifications</Text>
+                <Text style={[styles.headerTitle, { color: textColor }]}>{t("notifications.title")}</Text>
                 <Pressable onPress={handleMarkAllRead} style={styles.markReadButton}>
                     <CheckCheck size={20} color={c.accent} strokeWidth={2} />
                 </Pressable>

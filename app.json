@@ -10,14 +10,13 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#121214"
+      "backgroundColor": "#0b0b0f"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.antum.app",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture photos and videos for activities.",
         "NSPhotoLibraryUsageDescription": "This app accesses your photos to select images for activities.",
@@ -29,7 +28,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#121214"
       },
-      "package": "com.antum.app"
+      "package": "com.antum.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -61,7 +67,8 @@
           "isAccessMediaLocationEnabled": true
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
@@ -71,8 +78,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "TODO-set-your-eas-project-id"
+        "projectId": "364be99e-1b1a-4ee0-b38c-46e3284be8b4"
       }
-    }
+    },
+    "owner": "hadwishes"
   }
 }

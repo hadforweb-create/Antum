@@ -12,7 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: AppError | null;
-  
+
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: AppError | null) => void;
@@ -26,20 +26,20 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       error: null,
-      
-      setUser: (user) => set({ 
-        user, 
+
+      setUser: (user) => set({
+        user,
         isAuthenticated: !!user,
         isLoading: false,
         error: null,
       }),
-      
+
       setLoading: (isLoading) => set({ isLoading }),
-      
+
       setError: (error) => set({ error, isLoading: false }),
-      
-      logout: () => set({ 
-        user: null, 
+
+      logout: () => set({
+        user: null,
         isAuthenticated: false,
         error: null,
       }),
@@ -61,13 +61,13 @@ interface ActivitiesState {
   currentActivity: Activity | null;
   loadingState: LoadingState;
   error: AppError | null;
-  
+
   // Joined activities (user has joined)
   joinedActivityIds: Set<string>;
-  
+
   // Saved activities (user has bookmarked)
   savedActivityIds: Set<string>;
-  
+
   setActivities: (activities: Activity[]) => void;
   addActivity: (activity: Activity) => void;
   updateActivity: (id: string, data: Partial<Activity>) => void;
@@ -75,17 +75,17 @@ interface ActivitiesState {
   setCurrentActivity: (activity: Activity | null) => void;
   setLoadingState: (state: LoadingState) => void;
   setError: (error: AppError | null) => void;
-  
+
   // Join/Leave
   markAsJoined: (activityId: string) => void;
   markAsLeft: (activityId: string) => void;
   isJoined: (activityId: string) => boolean;
-  
+
   // Save/Unsave
   markAsSaved: (activityId: string) => void;
   markAsUnsaved: (activityId: string) => void;
   isSaved: (activityId: string) => boolean;
-  
+
   // Clear
   clearActivities: () => void;
 }
@@ -97,64 +97,64 @@ export const useActivitiesStore = create<ActivitiesState>()((set, get) => ({
   error: null,
   joinedActivityIds: new Set(),
   savedActivityIds: new Set(),
-  
+
   setActivities: (activities) => set({ activities, loadingState: "success" }),
-  
+
   addActivity: (activity) => set((state) => ({
     activities: [activity, ...state.activities],
   })),
-  
+
   updateActivity: (id, data) => set((state) => ({
     activities: state.activities.map((a) =>
       a.id === id ? { ...a, ...data } : a
     ),
-    currentActivity: state.currentActivity?.id === id 
+    currentActivity: state.currentActivity?.id === id
       ? { ...state.currentActivity, ...data }
       : state.currentActivity,
   })),
-  
+
   removeActivity: (id) => set((state) => ({
     activities: state.activities.filter((a) => a.id !== id),
   })),
-  
+
   setCurrentActivity: (activity) => set({ currentActivity: activity }),
-  
+
   setLoadingState: (loadingState) => set({ loadingState }),
-  
+
   setError: (error) => set({ error, loadingState: "error" }),
-  
+
   // Join/Leave
   markAsJoined: (activityId) => set((state) => {
     const newSet = new Set(state.joinedActivityIds);
     newSet.add(activityId);
     return { joinedActivityIds: newSet };
   }),
-  
+
   markAsLeft: (activityId) => set((state) => {
     const newSet = new Set(state.joinedActivityIds);
     newSet.delete(activityId);
     return { joinedActivityIds: newSet };
   }),
-  
+
   isJoined: (activityId) => get().joinedActivityIds.has(activityId),
-  
+
   // Save/Unsave
   markAsSaved: (activityId) => set((state) => {
     const newSet = new Set(state.savedActivityIds);
     newSet.add(activityId);
     return { savedActivityIds: newSet };
   }),
-  
+
   markAsUnsaved: (activityId) => set((state) => {
     const newSet = new Set(state.savedActivityIds);
     newSet.delete(activityId);
     return { savedActivityIds: newSet };
   }),
-  
+
   isSaved: (activityId) => get().savedActivityIds.has(activityId),
-  
-  clearActivities: () => set({ 
-    activities: [], 
+
+  clearActivities: () => set({
+    activities: [],
     currentActivity: null,
     joinedActivityIds: new Set(),
     savedActivityIds: new Set(),
@@ -186,19 +186,19 @@ export const useReelsStore = create<ReelsState>()((set, get) => ({
   currentIndex: 0,
   loadingState: "idle",
   error: null,
-  
+
   setReels: (reels) => set({ reels, loadingState: "success" }),
-  
+
   addReel: (reel) => set((state) => ({
     reels: [reel, ...state.reels],
   })),
-  
+
   setCurrentIndex: (index) => set({ currentIndex: index }),
-  
+
   nextReel: () => set((state) => ({
     currentIndex: Math.min(state.currentIndex + 1, state.reels.length - 1),
   })),
-  
+
   prevReel: () => set((state) => ({
     currentIndex: Math.max(state.currentIndex - 1, 0),
   })),
@@ -214,7 +214,16 @@ export const useReelsStore = create<ReelsState>()((set, get) => ({
 // THEME STORE
 // ============================================
 
+import { Appearance } from "react-native";
+
 type ThemeMode = "light" | "dark" | "system";
+
+function resolveIsDark(mode: ThemeMode): boolean {
+  if (mode === "system") {
+    return Appearance.getColorScheme() === "dark";
+  }
+  return mode === "dark";
+}
 
 interface ThemeState {
   mode: ThemeMode;
@@ -226,14 +235,14 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      mode: "light",
-      isDark: false,
-      
-      setMode: (mode) => set({ 
+      mode: "system" as ThemeMode,
+      isDark: resolveIsDark("system"),
+
+      setMode: (mode) => set({
         mode,
-        isDark: mode === "dark",
+        isDark: resolveIsDark(mode),
       }),
-      
+
       toggleTheme: () => {
         const currentMode = get().mode;
         const newMode = currentMode === "dark" ? "light" : "dark";
@@ -247,8 +256,91 @@ export const useThemeStore = create<ThemeState>()(
   )
 );
 
+// Listen for system theme changes
+Appearance.addChangeListener(({ colorScheme }) => {
+  const { mode } = useThemeStore.getState();
+  if (mode === "system") {
+    useThemeStore.setState({ isDark: colorScheme === "dark" });
+  }
+});
+
 // ============================================
-// UI STORE (for modals, sheets, etc.)
+// LANGUAGE STORE
+// ============================================
+
+import { I18nManager, Platform, NativeModules, DevSettings } from "react-native";
+
+
+type LanguageMode = "system" | "en" | "ar";
+
+function getDeviceLocale(): string {
+  try {
+    if (Platform.OS === "ios") {
+      return (
+        NativeModules.SettingsManager?.settings?.AppleLocale ??
+        NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] ??
+        "en"
+      );
+    }
+    return NativeModules.I18nManager?.localeIdentifier ?? "en";
+  } catch {
+    return "en";
+  }
+}
+
+function resolveLanguage(mode: LanguageMode): "en" | "ar" {
+  if (mode === "system") {
+    const locale = getDeviceLocale();
+    return locale.startsWith("ar") ? "ar" : "en";
+  }
+  return mode;
+}
+
+interface LanguageState {
+  languageMode: LanguageMode;
+  resolvedLanguage: "en" | "ar";
+  setLanguage: (mode: LanguageMode) => void;
+}
+
+export const useLanguageStore = create<LanguageState>()(
+  persist(
+    (set) => ({
+      languageMode: "system" as LanguageMode,
+      resolvedLanguage: resolveLanguage("system"),
+
+      setLanguage: async (mode) => {
+        const resolved = resolveLanguage(mode);
+        const isRTL = resolved === "ar";
+        // Update RTL if needed
+        if (I18nManager.isRTL !== isRTL) {
+          I18nManager.allowRTL(isRTL);
+          I18nManager.forceRTL(isRTL);
+
+          // Reload to apply RTL/LTR switch immediately
+          // Relies on manual restart or DevSettings in dev
+          // expo-updates removed due to missing native module crash
+
+          // Fallback for development
+          if (__DEV__ && DevSettings && DevSettings.reload) {
+            DevSettings.reload();
+            return;
+          }
+
+          // Last resort
+          if (Platform.OS === 'web') {
+            window.location.reload();
+          }
+        }
+        set({ languageMode: mode, resolvedLanguage: resolved });
+      },
+    }),
+    {
+      name: "nightout-language",
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);
+
 // ============================================
 
 interface UIState {
@@ -256,7 +348,7 @@ interface UIState {
   isCreateReelOpen: boolean;
   isActivityDetailOpen: boolean;
   selectedActivityId: string | null;
-  
+
   openCreateActivity: () => void;
   closeCreateActivity: () => void;
   openCreateReel: () => void;

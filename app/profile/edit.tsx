@@ -23,6 +23,8 @@ import { useThemeStore, useAuthStore } from "@/lib/store";
 import { colors } from "@/lib/theme";
 import { getCurrentUser, updateCurrentUser, User, UpdateProfileData } from "@/lib/api/users";
 import { uploadMedia } from "@/lib/api/uploads";
+import { getMySkills, getSkills, updateMySkills } from "@/lib/api/skills";
+import type { Skill } from "@/types";
 import { toast } from "@/lib/ui/toast";
 
 export default function EditProfileScreen() {
@@ -39,8 +41,14 @@ export default function EditProfileScreen() {
     const [name, setName] = useState("");
     const [bio, setBio] = useState("");
     const [location, setLocation] = useState("");
+    const [website, setWebsite] = useState("");
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
     const [existingAvatarUrl, setExistingAvatarUrl] = useState<string | null>(null);
+
+    // Skills
+    const [allSkills, setAllSkills] = useState<Skill[]>([]);
+    const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+    const [originalSkillIds, setOriginalSkillIds] = useState<string[]>([]);
 
     // UI state
     const [saving, setSaving] = useState(false);
@@ -65,7 +73,18 @@ export default function EditProfileScreen() {
                 setName(data.name || "");
                 setBio(data.bio || "");
                 setLocation(data.location || "");
+                setWebsite((data as any).website || "");
                 setExistingAvatarUrl(data.avatarUrl);
+
+                // Fetch skills
+                const [myRes, allRes] = await Promise.all([
+                    getMySkills().catch(() => ({ skills: [] })),
+                    getSkills().catch(() => []),
+                ]);
+                const myIds = (myRes.skills || []).map((s) => s.id);
+                setSelectedSkillIds(myIds);
+                setOriginalSkillIds(myIds);
+                setAllSkills(Array.isArray(allRes) ? allRes : []);
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Failed to load profile";
                 setLoadError(message);
@@ -135,6 +154,11 @@ export default function EditProfileScreen() {
                 updateData.avatarUrl = avatarUrl;
             }
 
+            const trimmedWebsite = website.trim();
+            if (trimmedWebsite !== ((profile as any)?.website || "")) {
+                updateData.website = trimmedWebsite || null;
+            }
+
             // Only call API if there are changes
             if (Object.keys(updateData).length > 0) {
                 const updatedUser = await updateCurrentUser(updateData);
@@ -147,6 +171,14 @@ export default function EditProfileScreen() {
                     name: updatedUser.name,
                     avatarUrl: updatedUser.avatarUrl,
                 });
+            }
+
+            // Save skills if changed
+            const skillsChanged =
+                selectedSkillIds.length !== originalSkillIds.length ||
+                selectedSkillIds.some((id) => !originalSkillIds.includes(id));
+            if (skillsChanged) {
+                await updateMySkills(selectedSkillIds).catch(() => { });
             }
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -316,6 +348,63 @@ export default function EditProfileScreen() {
                             maxLength={100}
                         />
                     </Animated.View>
+
+                    {/* Website */}
+                    <Animated.View entering={FadeInDown.delay(270).duration(300)}>
+                        <Text style={[styles.label, { color: textColor }]}>Website</Text>
+                        <TextInput
+                            style={[
+                                styles.input,
+                                { backgroundColor: inputBg, color: textColor, borderColor },
+                            ]}
+                            placeholder="https://yoursite.com"
+                            placeholderTextColor={mutedColor}
+                            value={website}
+                            onChangeText={setWebsite}
+                            maxLength={200}
+                            autoCapitalize="none"
+                            keyboardType="url"
+                        />
+                    </Animated.View>
+
+                    {/* Skills */}
+                    {allSkills.length > 0 && (
+                        <Animated.View entering={FadeInDown.delay(285).duration(300)}>
+                            <Text style={[styles.label, { color: textColor }]}>Skills</Text>
+                            <View style={styles.skillsWrap}>
+                                {allSkills.map((skill) => {
+                                    const selected = selectedSkillIds.includes(skill.id);
+                                    return (
+                                        <Pressable
+                                            key={skill.id}
+                                            onPress={() => {
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                setSelectedSkillIds((prev) =>
+                                                    selected
+                                                        ? prev.filter((id) => id !== skill.id)
+                                                        : [...prev, skill.id]
+                                                );
+                                            }}
+                                            style={[
+                                                styles.skillChip,
+                                                { borderColor: selected ? colors.primary : borderColor },
+                                                selected && { backgroundColor: `${colors.primary}15` },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.skillChipText,
+                                                    { color: selected ? colors.primary : mutedColor },
+                                                ]}
+                                            >
+                                                {skill.name}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        </Animated.View>
+                    )}
 
                     {/* Email (read-only) */}
                     <Animated.View entering={FadeInDown.delay(300).duration(300)}>
@@ -519,5 +608,20 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
+    },
+    skillsWrap: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+    skillChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    skillChipText: {
+        fontSize: 13,
+        fontWeight: "600",
     },
 });

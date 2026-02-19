@@ -14,6 +14,8 @@ import { X, TrendingUp, TrendingDown, DollarSign, ArrowRight } from "lucide-reac
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
+import { useTranslation } from "@/lib/i18n";
+
 const { width: W } = Dimensions.get("window");
 
 // Figma design tokens — layout.builder (10)
@@ -77,6 +79,7 @@ function MetricCard({
 
 export default function AnalyticsScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [period, setPeriod] = useState<"7D" | "30D" | "90D">("30D");
     const [revenueMode, setRevenueMode] = useState<"Revenue" | "Expenses">("Revenue");
 
@@ -85,8 +88,8 @@ export default function AnalyticsScreen() {
             <SafeAreaView edges={["top"]} style={styles.header}>
                 <View style={styles.headerRow}>
                     <View>
-                        <Text style={styles.headerSub}>Dashboard</Text>
-                        <Text style={styles.headerTitle}>Analytics</Text>
+                        <Text style={styles.headerSub}>{t("analytics.dashboard")}</Text>
+                        <Text style={styles.headerTitle}>{t("analytics.title")}</Text>
                     </View>
                     <Pressable
                         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}
@@ -120,7 +123,7 @@ export default function AnalyticsScreen() {
                         style={[styles.toggleBtn, revenueMode === "Revenue" && styles.toggleBtnActive]}
                     >
                         <Text style={[styles.toggleText, revenueMode === "Revenue" && styles.toggleTextActive]}>
-                            Revenue
+                            {t("analytics.revenue")}
                         </Text>
                     </Pressable>
                     <Pressable
@@ -128,7 +131,7 @@ export default function AnalyticsScreen() {
                         style={[styles.toggleBtn, revenueMode === "Expenses" && styles.toggleBtnActive]}
                     >
                         <Text style={[styles.toggleText, revenueMode === "Expenses" && styles.toggleTextActive]}>
-                            Expenses
+                            {t("analytics.expenses")}
                         </Text>
                     </Pressable>
                 </Animated.View>
@@ -143,7 +146,7 @@ export default function AnalyticsScreen() {
                     >
                         <View style={styles.revenueHeroHeader}>
                             <Text style={styles.revenueLabel}>
-                                {revenueMode === "Revenue" ? "Monthly Revenue" : "Monthly Expenses"}
+                                {revenueMode === "Revenue" ? t("analytics.monthlyRevenue") : t("analytics.monthlyExpenses")}
                             </Text>
                             <View style={styles.revenueTrend}>
                                 <TrendingUp size={14} color={ACCENT} strokeWidth={2.5} />
@@ -154,9 +157,9 @@ export default function AnalyticsScreen() {
                             {revenueMode === "Revenue" ? "$42,850" : "$18,340"}
                         </Text>
                         <Text style={styles.revenueCompare}>
-                            vs <Text style={{ color: TEXT_MUTED }}>
+                            {t("analytics.vs")} <Text style={{ color: TEXT_MUTED }}>
                                 {revenueMode === "Revenue" ? "$34,560" : "$15,200"}
-                            </Text> last period
+                            </Text> {t("analytics.lastPeriod")}
                         </Text>
 
                         {/* Mini bar chart */}
@@ -176,15 +179,15 @@ export default function AnalyticsScreen() {
 
                 {/* Metric cards — 2x2 grid */}
                 <Animated.View entering={FadeInDown.delay(120)} style={styles.metricsGrid}>
-                    <MetricCard label="Total Revenue" value="$42.8K" trend={24} highlight />
-                    <MetricCard label="Profile Views" value="12.4K" trend={18} />
-                    <MetricCard label="New Clients" value="89" trend={32} />
-                    <MetricCard label="Conversion" value="68%" trend={-4} />
+                    <MetricCard label={t("analytics.totalRevenue")} value="$42.8K" trend={24} highlight />
+                    <MetricCard label={t("analytics.profileViews")} value="12.4K" trend={18} />
+                    <MetricCard label={t("analytics.newClients")} value="89" trend={32} />
+                    <MetricCard label={t("analytics.conversion")} value="68%" trend={-4} />
                 </Animated.View>
 
                 {/* Top Services — Figma-accurate data */}
                 <Animated.View entering={FadeInDown.delay(180)} style={styles.card}>
-                    <Text style={styles.cardTitle}>Top Services</Text>
+                    <Text style={styles.cardTitle}>{t("analytics.topServices")}</Text>
                     <View style={{ gap: 16 }}>
                         {TOP_SERVICES.map((s, i) => (
                             <View key={i}>
@@ -214,28 +217,28 @@ export default function AnalyticsScreen() {
 
                 {/* Client Growth */}
                 <Animated.View entering={FadeInDown.delay(220)} style={styles.card}>
-                    <Text style={styles.cardTitle}>Client Growth</Text>
+                    <Text style={styles.cardTitle}>{t("analytics.clientGrowth")}</Text>
                     <View style={styles.growthRow}>
                         <View style={styles.growthStat}>
                             <Text style={styles.growthNum}>127</Text>
-                            <Text style={styles.growthLabel}>Total Clients</Text>
+                            <Text style={styles.growthLabel}>{t("analytics.totalClients")}</Text>
                         </View>
                         <View style={styles.growthDivider} />
                         <View style={styles.growthStat}>
                             <Text style={[styles.growthNum, { color: ACCENT }]}>89</Text>
-                            <Text style={styles.growthLabel}>This Month</Text>
+                            <Text style={styles.growthLabel}>{t("analytics.thisMonth")}</Text>
                         </View>
                         <View style={styles.growthDivider} />
                         <View style={styles.growthStat}>
                             <Text style={[styles.growthNum, { color: PURPLE }]}>8</Text>
-                            <Text style={styles.growthLabel}>Active</Text>
+                            <Text style={styles.growthLabel}>{t("analytics.active")}</Text>
                         </View>
                     </View>
                 </Animated.View>
 
                 {/* Recent Activity — Figma-accurate items */}
                 <Animated.View entering={FadeInDown.delay(260)} style={styles.card}>
-                    <Text style={styles.cardTitle}>Recent Activity</Text>
+                    <Text style={styles.cardTitle}>{t("analytics.recentActivity")}</Text>
                     {ACTIVITY.map((a) => (
                         <View key={a.id} style={styles.activityItem}>
                             <View style={[styles.activityDot, { backgroundColor: a.positive ? ACCENT : ELEVATED }]} />
@@ -266,7 +269,7 @@ export default function AnalyticsScreen() {
                     >
                         <View style={styles.balanceHeader}>
                             <View>
-                                <Text style={styles.balanceLabel}>Available Balance</Text>
+                                <Text style={styles.balanceLabel}>{t("analytics.availableBalance")}</Text>
                                 <Text style={styles.balanceAmount}>$12,450</Text>
                             </View>
                             <View style={styles.balanceIcon}>
@@ -280,7 +283,7 @@ export default function AnalyticsScreen() {
                                 router.push("/wallet" as any);
                             }}
                         >
-                            <Text style={styles.walletLinkText}>View Wallet</Text>
+                            <Text style={styles.walletLinkText}>{t("analytics.viewWallet")}</Text>
                             <ArrowRight size={16} color={ACCENT} strokeWidth={2.5} />
                         </Pressable>
                     </LinearGradient>

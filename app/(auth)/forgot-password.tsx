@@ -6,17 +6,19 @@ import { useFigmaColors } from "@/lib/figma-colors";
 import { toast } from "@/lib/ui/toast";
 import { httpClient } from "@/lib/api/http";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { useTranslation } from "@/lib/i18n";
 
 export default function ForgotPassword() {
     const router = useRouter();
     const c = useFigmaColors();
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
 
     const handleSubmit = async () => {
         if (!email.includes("@")) {
-            toast.error("Please enter a valid email");
+            toast.error(t("auth.validEmailReq"));
             return;
         }
 
@@ -24,9 +26,9 @@ export default function ForgotPassword() {
         try {
             await httpClient.post("/api/password/forgot", { email });
             setSent(true);
-            toast.success("Reset link sent if account exists");
+            toast.success(t("auth.resetSent"));
         } catch (error) {
-            toast.error("Failed to send reset link");
+            toast.error(t("auth.resetFailed"));
         } finally {
             setLoading(false);
         }
@@ -43,9 +45,9 @@ export default function ForgotPassword() {
 
             <ScrollView contentContainerStyle={styles.content}>
                 <Animated.View entering={FadeInDown.duration(600).springify()}>
-                    <Text style={[styles.title, { color: c.text }]}>Reset Password</Text>
+                    <Text style={[styles.title, { color: c.text }]}>{t("auth.resetPassword")}</Text>
                     <Text style={[styles.subtitle, { color: c.textMuted }]}>
-                        Enter your email address and we'll send you a link to reset your password.
+                        {t("auth.resetSubtitle")}
                     </Text>
 
                     {!sent ? (
@@ -54,7 +56,7 @@ export default function ForgotPassword() {
                                 <Mail size={20} color={c.textMuted} style={styles.inputIcon} />
                                 <TextInput
                                     style={[styles.input, { color: c.text }]}
-                                    placeholder="Email"
+                                    placeholder={t("auth.emailPlaceholder")}
                                     placeholderTextColor={c.textMuted}
                                     value={email}
                                     onChangeText={setEmail}
@@ -69,7 +71,7 @@ export default function ForgotPassword() {
                                 disabled={loading}
                             >
                                 <Text style={[styles.buttonText, { color: "#0b0b0f" }]}>
-                                    {loading ? "Sending..." : "Send Reset Link"}
+                                    {loading ? t("auth.sending") : t("auth.sendResetLink")}
                                 </Text>
                             </Pressable>
                         </>
@@ -78,15 +80,15 @@ export default function ForgotPassword() {
                             <View style={[styles.successIcon, { backgroundColor: c.accent }]}>
                                 <Mail size={32} color="#0b0b0f" />
                             </View>
-                            <Text style={[styles.successTitle, { color: c.text }]}>Check your email</Text>
+                            <Text style={[styles.successTitle, { color: c.text }]}>{t("auth.checkEmail")}</Text>
                             <Text style={[styles.successText, { color: c.textMuted }]}>
-                                We've sent password reset instructions to {email}
+                                {t("auth.resetInstructions")} {email}
                             </Text>
                             <Pressable
                                 style={[styles.button, { backgroundColor: c.accent }]}
                                 onPress={() => router.push("/(auth)/login")}
                             >
-                                <Text style={[styles.buttonText, { color: "#0b0b0f" }]}>Back to Login</Text>
+                                <Text style={[styles.buttonText, { color: "#0b0b0f" }]}>{t("auth.backToLogin")}</Text>
                             </Pressable>
                         </View>
                     )}

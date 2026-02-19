@@ -19,6 +19,7 @@ const createServiceSchema = z.object({
     category: z.string().min(1, "Category is required").max(50),
     deliveryDays: z.number().int().min(1).max(365).default(7),
     imageUrl: z.string().url().optional().nullable(),
+    galleryUrls: z.array(z.string().url()).max(10).optional(),
 });
 
 const updateServiceSchema = z.object({
@@ -29,6 +30,26 @@ const updateServiceSchema = z.object({
     category: z.string().min(1).max(50).optional(),
     deliveryDays: z.number().int().min(1).max(365).optional(),
     imageUrl: z.string().url().optional().nullable(),
+    galleryUrls: z.array(z.string().url()).max(10).optional(),
+    isActive: z.boolean().optional(),
+});
+
+const createTierSchema = z.object({
+    name: z.enum(["Basic", "Standard", "Premium"]),
+    description: z.string().min(1).max(500),
+    price: z.number().int().min(100).max(100000000),
+    deliveryDays: z.number().int().min(1).max(365),
+    revisions: z.number().int().min(0).max(99).default(1),
+    features: z.array(z.string().max(200)).max(20).optional(),
+});
+
+const updateTierSchema = z.object({
+    name: z.enum(["Basic", "Standard", "Premium"]).optional(),
+    description: z.string().min(1).max(500).optional(),
+    price: z.number().int().min(100).max(100000000).optional(),
+    deliveryDays: z.number().int().min(1).max(365).optional(),
+    revisions: z.number().int().min(0).max(99).optional(),
+    features: z.array(z.string().max(200)).max(20).optional(),
     isActive: z.boolean().optional(),
 });
 
@@ -57,9 +78,22 @@ function formatServiceResponse(service: any) {
         category: service.category,
         deliveryDays: service.deliveryDays,
         imageUrl: service.imageUrl,
+        galleryUrls: service.galleryUrls ?? [],
+        viewCount: service.viewCount ?? 0,
         isActive: service.isActive,
         createdAt: service.createdAt.toISOString(),
         updatedAt: service.updatedAt.toISOString(),
+        tiers: (service.tiers ?? []).map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            price: t.price,
+            priceFormatted: `$${(t.price / 100).toFixed(2)}`,
+            deliveryDays: t.deliveryDays,
+            revisions: t.revisions,
+            features: t.features ?? [],
+            isActive: t.isActive,
+        })),
         user: service.user ? {
             id: service.user.id,
             displayName: service.user.displayName,
@@ -152,6 +186,10 @@ router.get("/", optionalAuth, async (req: AuthRequest, res: Response) => {
                         location: true,
                     },
                 },
+                tiers: {
+                    where: { isActive: true },
+                    orderBy: { price: "asc" },
+                },
             },
             orderBy: { createdAt: "desc" },
             skip: (page - 1) * limit,
@@ -200,7 +238,7 @@ router.get("/categories", async (_req, res: Response) => {
 
 /**
  * GET /api/services/:id
- * Get a single service by ID (public)
+ * Get a single service by ID (public) — also increments viewCount
  */
 router.get("/:id", async (req, res: Response) => {
     try {
@@ -217,6 +255,8 @@ router.get("/:id", async (req, res: Response) => {
                         avatarUrl: true,
                         location: true,
                         bio: true,
+                        completedOrderCount: true,
+                        isPro: true,
                         _count: {
                             select: {
                                 services: { where: { isActive: true } },
@@ -225,6 +265,10 @@ router.get("/:id", async (req, res: Response) => {
                         },
                     },
                 },
+                tiers: {
+                    where: { isActive: true },
+                    orderBy: { price: "asc" },
+                },
             },
         });
 
@@ -232,11 +276,16 @@ router.get("/:id", async (req, res: Response) => {
             return res.status(404).json({ error: "Service not found" });
         }
 
+        // Fire-and-forget viewCount increment
+        prisma.service.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
+
         const response = formatServiceResponse(service);
         // Add user stats
         if (service.user) {
             (response.user as any).servicesCount = service.user._count.services;
             (response.user as any).reelsCount = service.user._count.reels;
+            (response.user as any).completedOrderCount = service.user.completedOrderCount;
+            (response.user as any).isPro = service.user.isPro;
         }
 
         return res.json(response);
@@ -269,6 +318,8 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
 
         const { title, description, price, currency, category, deliveryDays, imageUrl } = validation.data;
 
+        const { galleryUrls } = validation.data;
+
         const service = await prisma.service.create({
             data: {
                 userId: currentUserId,
@@ -279,6 +330,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                 category,
                 deliveryDays: deliveryDays || 7,
                 imageUrl: imageUrl || null,
+                galleryUrls: galleryUrls || [],
             },
             include: {
                 user: {
@@ -290,6 +342,7 @@ router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
                         location: true,
                     },
                 },
+                tiers: { where: { isActive: true }, orderBy: { price: "asc" } },
             },
         });
 
@@ -420,6 +473,150 @@ router.get("/user/me", authenticate, async (req: AuthRequest, res: Response) => 
     } catch (error) {
         logger.error("Error getting user services:", error);
         return res.status(500).json({ error: "Failed to get services" });
+    }
+});
+
+// ============================================
+// TIER ROUTES
+// ============================================
+
+/**
+ * POST /api/services/:id/tiers
+ * Add a pricing tier (owner only)
+ */
+router.post("/:id/tiers", authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const currentUserId = req.user!.userId;
+
+        const service = await prisma.service.findUnique({ where: { id }, select: { userId: true } });
+        if (!service) return res.status(404).json({ error: "Service not found" });
+        if (service.userId !== currentUserId) return res.status(403).json({ error: "Not authorized" });
+
+        const validation = createTierSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({ error: "Invalid request", details: validation.error.flatten().fieldErrors });
+        }
+
+        const { name, description, price, deliveryDays, revisions, features } = validation.data;
+
+        const tier = await prisma.serviceTier.create({
+            data: { serviceId: id, name, description, price, deliveryDays, revisions: revisions ?? 1, features: features || [] },
+        });
+
+        return res.status(201).json({
+            ...tier,
+            priceFormatted: `$${(tier.price / 100).toFixed(2)}`,
+        });
+    } catch (error) {
+        logger.error("Error creating tier:", error);
+        return res.status(500).json({ error: "Failed to create tier" });
+    }
+});
+
+/**
+ * PATCH /api/services/:id/tiers/:tid
+ * Update a pricing tier (owner only)
+ */
+router.patch("/:id/tiers/:tid", authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { id, tid } = req.params;
+        const currentUserId = req.user!.userId;
+
+        const service = await prisma.service.findUnique({ where: { id }, select: { userId: true } });
+        if (!service) return res.status(404).json({ error: "Service not found" });
+        if (service.userId !== currentUserId) return res.status(403).json({ error: "Not authorized" });
+
+        const validation = updateTierSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({ error: "Invalid request", details: validation.error.flatten().fieldErrors });
+        }
+
+        const tier = await prisma.serviceTier.update({
+            where: { id: tid },
+            data: validation.data,
+        });
+
+        return res.json({ ...tier, priceFormatted: `$${(tier.price / 100).toFixed(2)}` });
+    } catch (error) {
+        logger.error("Error updating tier:", error);
+        return res.status(500).json({ error: "Failed to update tier" });
+    }
+});
+
+/**
+ * DELETE /api/services/:id/tiers/:tid
+ * Deactivate a tier (soft delete)
+ */
+router.delete("/:id/tiers/:tid", authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { id, tid } = req.params;
+        const currentUserId = req.user!.userId;
+
+        const service = await prisma.service.findUnique({ where: { id }, select: { userId: true } });
+        if (!service) return res.status(404).json({ error: "Service not found" });
+        if (service.userId !== currentUserId) return res.status(403).json({ error: "Not authorized" });
+
+        await prisma.serviceTier.update({ where: { id: tid }, data: { isActive: false } });
+        return res.json({ success: true });
+    } catch (error) {
+        logger.error("Error deleting tier:", error);
+        return res.status(500).json({ error: "Failed to delete tier" });
+    }
+});
+
+// ============================================
+// REVIEWS SUB-ROUTE
+// ============================================
+
+/**
+ * GET /api/services/:id/reviews
+ * Get reviews for a service with average rating
+ */
+router.get("/:id/reviews", async (req, res: Response) => {
+    try {
+        const { id } = req.params;
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+
+        const where = { serviceId: id };
+
+        const [reviews, total] = await Promise.all([
+            prisma.review.findMany({
+                where,
+                include: {
+                    reviewer: { select: { id: true, displayName: true, avatarUrl: true } },
+                },
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            prisma.review.count({ where }),
+        ]);
+
+        let avgRating: number | null = null;
+        if (total > 0) {
+            const agg = await prisma.review.aggregate({ where, _avg: { rating: true } });
+            avgRating = agg._avg.rating;
+        }
+
+        return res.json({
+            reviews: reviews.map((r) => ({
+                id: r.id,
+                rating: r.rating,
+                body: r.body,
+                mediaUrls: r.mediaUrls,
+                reply: r.reply,
+                repliedAt: r.repliedAt?.toISOString() ?? null,
+                createdAt: r.createdAt.toISOString(),
+                reviewer: r.reviewer,
+            })),
+            avgRating,
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        });
+    } catch (error) {
+        logger.error("Error getting service reviews:", error);
+        return res.status(500).json({ error: "Failed to get reviews" });
     }
 });
 

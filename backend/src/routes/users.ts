@@ -11,6 +11,8 @@ const updateProfileSchema = z.object({
     bio: z.string().max(500).optional().nullable(),
     location: z.string().max(100).optional().nullable(),
     avatarUrl: z.string().url().optional().nullable(),
+    website: z.string().url().optional().nullable(),
+    pushToken: z.string().max(500).optional().nullable(),
 });
 
 // ============================================
@@ -26,7 +28,10 @@ function formatUserResponse(user: any) {
         avatarUrl: user.avatarUrl,
         bio: user.bio,
         location: user.location,
+        website: user.website ?? null,
         role: user.role,
+        isPro: user.isPro ?? false,
+        completedOrderCount: user.completedOrderCount ?? 0,
         createdAt: user.createdAt?.toISOString?.() ?? user.createdAt,
     };
 }
@@ -51,6 +56,7 @@ router.get("/me", authenticate, async (req: AuthRequest, res: Response) => {
                 avatarUrl: true,
                 bio: true,
                 location: true,
+                website: true,
                 role: true,
                 createdAt: true,
                 _count: {
@@ -103,6 +109,7 @@ router.patch("/me", authenticate, async (req: AuthRequest, res: Response) => {
                 avatarUrl: true,
                 bio: true,
                 location: true,
+                website: true,
                 role: true,
                 createdAt: true,
             },
@@ -130,6 +137,7 @@ router.get("/:id", async (req, res: Response) => {
                 avatarUrl: true,
                 bio: true,
                 location: true,
+                website: true,
                 role: true,
                 createdAt: true,
                 _count: {
@@ -210,6 +218,132 @@ router.get("/:id/reels", async (req, res: Response) => {
 });
 
 /**
+ * GET /api/users/me/skills
+ * Get current user's skills
+ */
+router.get("/me/skills", authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userSkills = await prisma.userSkill.findMany({
+            where: { userId: req.user!.userId },
+            include: { skill: true },
+        });
+        return res.json({ skills: userSkills.map((us) => ({ id: us.skill.id, name: us.skill.name })) });
+    } catch (error) {
+        logger.error("Get skills error:", error);
+        return res.status(500).json({ error: "Failed to get skills" });
+    }
+});
+
+/**
+ * PUT /api/users/me/skills
+ * Replace current user's full skill set
+ */
+router.put("/me/skills", authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { skillIds } = req.body;
+        if (!Array.isArray(skillIds)) {
+            return res.status(400).json({ error: "skillIds must be an array" });
+        }
+
+        const currentUserId = req.user!.userId;
+
+        // Validate all skill IDs exist
+        const skills = await prisma.skill.findMany({
+            where: { id: { in: skillIds } },
+            select: { id: true, name: true },
+        });
+
+        if (skills.length !== skillIds.length) {
+            return res.status(400).json({ error: "One or more skill IDs are invalid" });
+        }
+
+        // Replace all skills in a transaction
+        await prisma.$transaction([
+            prisma.userSkill.deleteMany({ where: { userId: currentUserId } }),
+            prisma.userSkill.createMany({
+                data: skillIds.map((skillId: string) => ({ userId: currentUserId, skillId })),
+                skipDuplicates: true,
+            }),
+        ]);
+
+        return res.json({ skills: skills.map((s) => ({ id: s.id, name: s.name })) });
+    } catch (error) {
+        logger.error("Update skills error:", error);
+        return res.status(500).json({ error: "Failed to update skills" });
+    }
+});
+
+/**
+ * GET /api/users/:id/skills
+ * Get a user's public skills
+ */
+router.get("/:id/skills", async (req, res: Response) => {
+    try {
+        const userSkills = await prisma.userSkill.findMany({
+            where: { userId: req.params.id },
+            include: { skill: true },
+        });
+        return res.json({ skills: userSkills.map((us) => ({ id: us.skill.id, name: us.skill.name })) });
+    } catch (error) {
+        logger.error("Get user skills error:", error);
+        return res.status(500).json({ error: "Failed to get skills" });
+    }
+});
+
+/**
+ * GET /api/users/:id/reviews
+ * Get reviews received by a user
+ */
+router.get("/:id/reviews", async (req, res: Response) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page as string) || 1);
+        const limit = Math.min(50, parseInt(req.query.limit as string) || 10);
+
+        const [reviews, total] = await Promise.all([
+            prisma.review.findMany({
+                where: { revieweeId: req.params.id },
+                include: {
+                    reviewer: { select: { id: true, displayName: true, avatarUrl: true } },
+                    service: { select: { id: true, title: true } },
+                },
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            prisma.review.count({ where: { revieweeId: req.params.id } }),
+        ]);
+
+        let avgRating: number | null = null;
+        if (total > 0) {
+            const agg = await prisma.review.aggregate({
+                where: { revieweeId: req.params.id },
+                _avg: { rating: true },
+            });
+            avgRating = agg._avg.rating;
+        }
+
+        return res.json({
+            reviews: reviews.map((r) => ({
+                id: r.id,
+                rating: r.rating,
+                body: r.body,
+                mediaUrls: r.mediaUrls,
+                reply: r.reply,
+                repliedAt: r.repliedAt?.toISOString() ?? null,
+                createdAt: r.createdAt.toISOString(),
+                reviewer: r.reviewer,
+                service: r.service,
+            })),
+            avgRating,
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        });
+    } catch (error) {
+        logger.error("Get user reviews error:", error);
+        return res.status(500).json({ error: "Failed to get reviews" });
+    }
+});
+
+/**
  * PUT /api/users/:id (legacy)
  * Update user profile by ID (owner only)
  */
@@ -238,6 +372,7 @@ router.put("/:id", authenticate, async (req: AuthRequest, res: Response) => {
                 avatarUrl: true,
                 bio: true,
                 location: true,
+                website: true,
                 role: true,
                 createdAt: true,
             },
